@@ -94,13 +94,15 @@ pub fn bus(self: *Board, comptime name: []const u8, comptime bits: comptime_int)
     comptime var delta = 1;
     const lsb = comptime if (std.mem.lastIndexOfScalar(u8, name, '[')) |subscript_begin| lsb: {
         full_bus = false;
-        if (!std.mem.endsWith(u8, name, ']')) @compileError("Expected closing ] in bus name: " ++ name);
+        if (!std.mem.endsWith(u8, name, "]")) @compileError("Expected closing ] in bus name: " ++ name);
         base = name[0..subscript_begin];
         const subscript = name[subscript_begin + 1 .. name.len - 1];
         if (std.mem.indexOfScalar(u8, subscript, ':')) |separator_pos| {
-            const first = std.fmt.parseInt(u16, subscript[0..separator_pos]) catch @compileError("Invalid bus subscript: " ++ name);
-            const last = std.fmt.parseInt(u16, subscript[separator_pos + 1 ..]) catch @compileError("Invalid bus subscript: " ++ name);
-            const count = @max(first, last) - @min(first, last) + 1;
+            const first = std.fmt.parseInt(u16, subscript[0..separator_pos], 10) catch @compileError("Invalid bus subscript: " ++ name);
+            const last = std.fmt.parseInt(u16, subscript[separator_pos + 1 ..], 10) catch @compileError("Invalid bus subscript: " ++ name);
+            const max: u16 = @max(first, last);
+            const min: u16 = @min(first, last);
+            const count = max - min + 1;
             if (bits != count) {
                 @compileError(std.fmt.comptimePrint("Subscript indicates bus length of {} but result has length {}", .{ count, bits }));
             }

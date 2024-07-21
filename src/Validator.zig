@@ -122,6 +122,10 @@ pub fn set_bus(self: *Validator, bus: anytype, value: usize, comptime levels: ty
     }
 }
 
+pub fn set_bus_hiz(self: *Validator, bus: anytype) !void {
+    for (bus) |net| try self.set_adv(net, .gnd, .hiz);
+}
+
 pub fn set_update(self: *Validator, net: Net_ID, v: Voltage) !void {
     try self.set_adv(net, v, .strong);
     try self.update();
@@ -416,7 +420,7 @@ fn expect_bus_valid(self: *const Validator, bus: anytype, comptime levels: type)
 }
 
 fn expect_net_hiz(self: *const Validator, net: Net_ID) !void {
-    const s = self.nets.items(.s)[@intFromEnum(net)];
+    const s = self.read_net_strength(net);
     if (s != .hiz) {
         std.debug.print("Expected {s} to be Hi-Z; found {} @ {}\n", .{ self.b.net_name(net), self.read_net(net), s });
         return error.InvalidNetState;
@@ -424,7 +428,7 @@ fn expect_net_hiz(self: *const Validator, net: Net_ID) !void {
 }
 
 fn expect_net_not_hiz(self: *const Validator, net: Net_ID) !void {
-    const s = self.nets.items(.s)[@intFromEnum(net)];
+    const s = self.read_net_strength(net);
     if (s == .hiz) {
         std.debug.print("Unexpected Hi-Z net: {s}\n", .{ self.b.net_name(net) });
         return error.InvalidNetState;
@@ -436,7 +440,7 @@ fn expect_net_not_hiz(self: *const Validator, net: Net_ID) !void {
 }
 
 fn expect_net_strong(self: *const Validator, net: Net_ID) !void {
-    const s = self.nets.items(.s)[@intFromEnum(net)];
+    const s = self.read_net_strength(net);
     if (s == .contending) {
         std.debug.print("Contention on net: {s}\n", .{ self.b.net_name(net) });
         return error.InvalidNetState;
@@ -448,7 +452,7 @@ fn expect_net_strong(self: *const Validator, net: Net_ID) !void {
 }
 
 fn expect_net_weak(self: *const Validator, net: Net_ID) !void {
-    const s = self.nets.items(.s)[@intFromEnum(net)];
+    const s = self.read_net_strength(net);
     if (s == .hiz or @intFromEnum(s) >= @intFromEnum(Drive_Strength.strong)) {
         std.debug.print("Expected {s} to be weakly driven; found {} @ {}\n", .{ self.b.net_name(net), self.read_net(net), s });
         return error.InvalidNetState;
@@ -456,7 +460,7 @@ fn expect_net_weak(self: *const Validator, net: Net_ID) !void {
 }
 
 fn expect_net_above(self: *const Validator, net: Net_ID, v: Voltage) !void {
-    const found_v = self.nets.items(.v)[@intFromEnum(net)];
+    const found_v = self.read_net(net);
     if (found_v.raw() < v.raw()) {
         std.debug.print("Expected {s} >= {}; found {} @ {}\n", .{ self.b.net_name(net), v, found_v, self.read_net_strength(net) });
         return error.InvalidNetState;
@@ -464,7 +468,7 @@ fn expect_net_above(self: *const Validator, net: Net_ID, v: Voltage) !void {
 }
 
 fn expect_net_below(self: *const Validator, net: Net_ID, v: Voltage) !void {
-    const found_v = self.nets.items(.v)[@intFromEnum(net)];
+    const found_v = self.read_net(net);
     if (found_v.raw() > v.raw()) {
         std.debug.print("Expected {s} <= {}; found {} @ {}\n", .{ self.b.net_name(net), v, found_v, self.read_net_strength(net) });
         return error.InvalidNetState;
@@ -472,7 +476,7 @@ fn expect_net_below(self: *const Validator, net: Net_ID, v: Voltage) !void {
 }
 
 fn expect_net_approx(self: *const Validator, net: Net_ID, v: Voltage, epsilon: f32) !void {
-    const found_v = self.nets.items(.v)[@intFromEnum(net)];
+    const found_v = self.read_net(net);
     if (!std.math.approxEqAbs(f32, v.as_float(), found_v.as_float(), epsilon)) {
         std.debug.print("Expected {s} ~= {} +/- {d}; found {} @ {}\n", .{ self.b.net_name(net), v, epsilon, found_v, self.read_net_strength(net) });
         return error.InvalidNetState;
@@ -492,7 +496,7 @@ fn expect_net_low(self: *const Validator, net: Net_ID, comptime levels: type) !v
 
 fn expect_net_valid(self: *const Validator, net: Net_ID, comptime levels: type) !void {
     try self.expect_net_not_hiz(net);
-    const found_v = self.nets.items(.v)[@intFromEnum(net)];
+    const found_v = self.read_net(net);
     if (found_v.raw() <= levels.Vil.raw()) return;
     if (found_v.raw() >= levels.Vih.raw() and found_v.raw() <= levels.Vclamp.raw()) return;
 

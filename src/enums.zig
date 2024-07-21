@@ -148,6 +148,7 @@ pub const Drive_Strength = enum (u8) {
     weak = 1,
     strong = 128,
     contending = 255,
+    _,
 
     pub fn init(raw_int: u8) Drive_Strength {
         return @enumFromInt(raw_int);

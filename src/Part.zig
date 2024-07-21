@@ -14,8 +14,8 @@ pub const Base = struct {
 pub const VTable = struct {
     finalize_power_nets: *const fn(base: *Part.Base, b: *Board) anyerror!void,
     validate: ?*const fn(base: *const Part.Base, v: *Validator, state: *anyopaque, mode: Validator.Update_Mode) anyerror!void,
-    validator_state_bytes: u16,
-    validator_state_align: u16,
+    validator_state_bytes: usize,
+    validator_state_align: usize,
 
     pub fn init(comptime P: type) *const VTable {
         const has_validate = @hasDecl(P, "validate");
@@ -25,7 +25,7 @@ pub const VTable = struct {
         if (has_validate and @typeInfo(@TypeOf(P.validate)).Fn.params.len == 4) {
             Validator_State_Pointer = @typeInfo(@TypeOf(P.validate)).Fn.params[2].type.?;
             const param_info = @typeInfo(Validator_State_Pointer).Pointer;
-            std.debug.assert(param_info.Size == .One);
+            std.debug.assert(param_info.size == .One);
             Validator_State = param_info.child;
             validator_state_alignment = param_info.alignment;
         }

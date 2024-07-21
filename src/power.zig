@@ -172,22 +172,22 @@ pub fn Single_1V(comptime Maybe_Decoupler: ?type) type {
     };
 }
 
-pub fn Multi(comptime v: Net_ID, comptime Maybe_Decoupler: ?type) type {
+pub fn Multi(comptime count: comptime_int, comptime v: Net_ID, comptime Maybe_Decoupler: ?type) type {
     return switch (v) {
-        .p24v => Multi_24V(Maybe_Decoupler),
-        .p19v => Multi_19V(Maybe_Decoupler),
-        .p15v => Multi_15V(Maybe_Decoupler),
-        .p12v => Multi_12V(Maybe_Decoupler),
-        .p9v => Multi_9V(Maybe_Decoupler),
-        .p6v => Multi_6V(Maybe_Decoupler),
-        .p5v => Multi_5V(Maybe_Decoupler),
-        .p3v3 => Multi_3V3(Maybe_Decoupler),
-        .p3v => Multi_3V(Maybe_Decoupler),
-        .p2v5 => Multi_2V5(Maybe_Decoupler),
-        .p1v8 => Multi_1V8(Maybe_Decoupler),
-        .p1v5 => Multi_1V5(Maybe_Decoupler),
-        .p1v2 => Multi_1V2(Maybe_Decoupler),
-        .p1v => Multi_1V(Maybe_Decoupler),
+        .p24v => Multi_24V(count, Maybe_Decoupler),
+        .p19v => Multi_19V(count, Maybe_Decoupler),
+        .p15v => Multi_15V(count, Maybe_Decoupler),
+        .p12v => Multi_12V(count, Maybe_Decoupler),
+        .p9v => Multi_9V(count, Maybe_Decoupler),
+        .p6v => Multi_6V(count, Maybe_Decoupler),
+        .p5v => Multi_5V(count, Maybe_Decoupler),
+        .p3v3 => Multi_3V3(count, Maybe_Decoupler),
+        .p3v => Multi_3V(count, Maybe_Decoupler),
+        .p2v5 => Multi_2V5(count, Maybe_Decoupler),
+        .p1v8 => Multi_1V8(count, Maybe_Decoupler),
+        .p1v5 => Multi_1V5(count, Maybe_Decoupler),
+        .p1v2 => Multi_1V2(count, Maybe_Decoupler),
+        .p1v => Multi_1V(count, Maybe_Decoupler),
         else => @compileError(unreachable),
     };
 }

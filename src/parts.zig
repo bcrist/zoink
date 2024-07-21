@@ -1,8 +1,8 @@
 pub const CY7C0241 = @import("parts/CY7C0241.zig");
 
-pub const GS71116TP = mem.Async_SRAM_16b(16, power.Multi(2, .p3v3, C0402_Decoupler), LVCMOS, mem.Pins_GSI_SRAM_16b, pkg.TSOP_II_44);
-pub const GS71116J  = mem.Async_SRAM_16b(16, power.Multi(2, .p3v3, C0402_Decoupler), LVCMOS, mem.Pins_GSI_SRAM_16b, pkg.SOJ_44);
-pub const GS71116U  = mem.Async_SRAM_16b(16, power.Multi(2, .p3v3, C0402_Decoupler), LVCMOS, mem.Pins_GSI_SRAM_16b, pkg.FBGA_48);
+pub const GS71116TP = mem.Async_SRAM_16b(16, power.Multi(2, .p3v3, C0402_Decoupler), LVCMOS, mem.Pins_SRAM_16b_GSI, pkg.TSOP_II_44);
+pub const GS71116J  = mem.Async_SRAM_16b(16, power.Multi(2, .p3v3, C0402_Decoupler), LVCMOS, mem.Pins_SRAM_16b_GSI, pkg.SOJ_44);
+pub const GS71116U  = mem.Async_SRAM_16b(16, power.Multi(2, .p3v3, C0402_Decoupler), LVCMOS, mem.Pins_SRAM_16b_GSI, pkg.FBGA_48);
 
 pub const SN74LVC00AD   = _74.x00(.p3v3, C0402_Decoupler, CMOS33, pkg.SOIC_14);
 pub const SN74LVC00ADB  = _74.x00(.p3v3, C0402_Decoupler, CMOS33, pkg.SSOP_14);

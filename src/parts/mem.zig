@@ -130,11 +130,11 @@ pub fn Async_SRAM_16b(
         lower_data: [8]Net_ID = .{ .unset } ** 8,
         upper_data: [8]Net_ID = .{ .unset } ** 8,
         addr: [addr_bits]Net_ID = .{ .unset } ** addr_bits,
-        chip_enable_low: Net_ID,
-        lower_byte_enable_low: Net_ID,
-        upper_byte_enable_low: Net_ID,
-        write_enable_low: Net_ID,
-        output_enable_low: Net_ID,
+        chip_enable_low: Net_ID = .unset,
+        lower_byte_enable_low: Net_ID = .unset,
+        upper_byte_enable_low: Net_ID = .unset,
+        write_enable_low: Net_ID = .unset,
+        output_enable_low: Net_ID = .unset,
 
         pub const pin = Pins_Provider(@This(), Pkg).pin;
 
@@ -150,31 +150,29 @@ pub fn Async_SRAM_16b(
         pub fn validate(self: @This(), v: *Validator, state: *Validator_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
-                    @memset(&state.mem, 0xAAAA);
-                    state.lower_write_in_progress = false;
-                    state.upper_write_in_progress = false;
+                    @memset(&state.mem, .{ .lower = 0xAA, .upper = 0xAA });
                 },
                 .commit => {
-                    try v.expect_valid(self.lower_data, levels);
-                    try v.expect_valid(self.upper_data, levels);
-                    try v.expect_valid(self.addr, levels);
                     try v.expect_valid(self.chip_enable_low, levels);
                     try v.expect_valid(self.lower_byte_enable_low, levels);
                     try v.expect_valid(self.upper_byte_enable_low, levels);
                     try v.expect_valid(self.write_enable_low, levels);
                     try v.expect_valid(self.output_enable_low, levels);
 
-                    var lower_write = false;
-                    var upper_write = false;
-                    if (v.read_logic(self.chip_enable_low, levels) == false and v.read_logic(self.write_enable_low, levels) == false) {
-                        lower_write = v.read_logic(self.lower_byte_enable_low, levels) == false;
-                        upper_write = v.read_logic(self.upper_byte_enable_low, levels) == false;
-                    }
+                    if (v.read_logic(self.chip_enable_low, levels) == false) {
+                        try v.expect_valid(self.addr, levels);
 
-                    if (lower_write or upper_write) {
-                        const addr = v.read_bus(self.addr, levels);
-                        if (lower_write) state.mem[addr].lower = v.read_bus(self.lower_data, levels);
-                        if (upper_write) state.mem[addr].upper = v.read_bus(self.upper_data, levels);
+                        const lb = v.read_logic(self.lower_byte_enable_low, levels) == false;
+                        const ub = v.read_logic(self.upper_byte_enable_low, levels) == false;
+
+                        if (lb) try v.expect_valid(self.lower_data, levels);
+                        if (ub) try v.expect_valid(self.upper_data, levels);
+
+                        if (v.read_logic(self.write_enable_low, levels) == false) {
+                            const addr = v.read_bus(self.addr, levels);
+                            if (lb) state.mem[addr].lower = @intCast(v.read_bus(self.lower_data, levels));
+                            if (ub) state.mem[addr].upper = @intCast(v.read_bus(self.upper_data, levels));
+                        }
                     }
                 },
                 .nets_only => {
