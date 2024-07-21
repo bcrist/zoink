@@ -2,6 +2,9 @@ pub const TQFP_100 = struct {
     pub const pkg: Package = .{};
 };
 
+pub const TSOP_II_32 = struct {
+    pub const pkg: Package = .{};
+};
 pub const TSOP_II_44 = struct {
     pub const pkg: Package = .{};
 };
@@ -32,13 +35,16 @@ pub const FBGA_48 = struct {
     };
 };
 
-pub fn SOJ(comptime pin_count: comptime_int) type {
+pub fn SOJ(comptime pin_count: comptime_int, comptime width_mils: comptime_int) type {
     _ = pin_count;
+    _ = width_mils;
     return struct {
         pub const pkg: Package = .{};
     };
 }
-pub const SOJ_44 = SOJ(44);
+pub const SOJ_32_300 = SOJ(32, 300);
+pub const SOJ_32_400 = SOJ(32, 400);
+pub const SOJ_44 = SOJ(44, 400);
 
 pub fn SOIC(comptime pin_count: comptime_int) type {
     _ = pin_count;

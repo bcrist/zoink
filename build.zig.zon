@@ -2,7 +2,11 @@
     .name = "zoink",
     .version = "0.0.0",
     .minimum_zig_version = "0.13.0",
-    .paths = .{""},
+    .paths = .{
+        "src/",
+        "build.zig",
+        "build.zig.zon",
+    },
     .dependencies = .{
     },
 }

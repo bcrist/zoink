@@ -1,25 +1,33 @@
 const std = @import("std");
 
+var builder: *std.Build = undefined;
+var target: std.Build.ResolvedTarget = undefined;
+var optimize: std.builtin.OptimizeMode = undefined;
+var zoink: *std.Build.Module = undefined;
+var all_tests_step: *std.Build.Step = undefined;
 
 pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
+    builder = b;
+    target = b.standardTargetOptions(.{});
+    optimize = b.standardOptimizeOption(.{});
+    all_tests_step = b.step("test", "run all tests");
 
-    const all_tests = b.step("test", "run all tests");
-
-    const zoink = b.createModule(.{
+    zoink = b.createModule(.{
         .root_source_file = b.path("src/zoink.zig"),
     });
 
-    const simple = b.addTest(.{
-        .name = "simple",
-        .root_source_file = b.path("simple.zig"),
+    add_test("simple");
+    add_test("AS7C31025");
+    add_test("GS71116");
+}
+
+fn add_test(comptime name: []const u8) void {
+    const test_exe = builder.addTest(.{
+        .name = name,
+        .root_source_file = builder.path("test/" ++ name ++ ".zig"),
         .target = target,
         .optimize = optimize,
     });
-    simple.root_module.addImport("zoink", zoink);
-
-    b.installArtifact(simple);
-
-    all_tests.dependOn(&b.addRunArtifact(simple).step);
+    test_exe.root_module.addImport("zoink", zoink);
+    all_tests_step.dependOn(&builder.addRunArtifact(test_exe).step);
 }

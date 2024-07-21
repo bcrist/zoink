@@ -108,7 +108,12 @@ pub const Voltage = enum (u8) {
         pub const Vclamp = from_float(5.3);
 
         pub const Vol = from_float(0.4);
-        pub const Voh = from_float(2.4);
+
+        // Voh is often only guaranteed to be 2.4V for TTL devices,
+        // but using that might hide errors when a TTL signal is
+        // fed into a (non-5V tolerant) LVTTL/LVCMOS input, so we're
+        // using 3.8V instead:
+        pub const Voh = from_float(3.8);
     };
 
     pub const LVTTL = struct {
