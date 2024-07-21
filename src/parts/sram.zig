@@ -1,4 +1,4 @@
-pub fn Pins_SRAM_8b_Alliance(comptime Self: type, comptime Pkg: type) type {
+pub fn Pins_8b_Alliance(comptime Self: type, comptime Pkg: type) type {
     if (Pkg == packages.TSOP_II_32 or Pkg == packages.SOJ_32) return struct {
         pub fn pin(self: Self, pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -44,7 +44,7 @@ pub fn Pins_SRAM_8b_Alliance(comptime Self: type, comptime Pkg: type) type {
     };
 }
 
-pub fn Pins_SRAM_16b_GSI(comptime Self: type, comptime Pkg: type) type {
+pub fn Pins_16b_GSI(comptime Self: type, comptime Pkg: type) type {
     if (Pkg == packages.FBGA_48) return struct {
         pub fn pin(self: Self, pin_id: Pin_ID) Net_ID {
             return switch (packages.FBGA_48.Pin_ID.from_generic(pin_id)) {
@@ -162,7 +162,7 @@ pub fn Pins_SRAM_16b_GSI(comptime Self: type, comptime Pkg: type) type {
 }
 
 
-pub fn Async_SRAM_8b(
+pub fn Async_8b(
     comptime addr_bits: comptime_int,
     comptime Power: type,
     comptime levels: type,
@@ -222,7 +222,7 @@ pub fn Async_SRAM_8b(
     };
 }
 
-pub fn Async_SRAM_16b(
+pub fn Async_16b(
     comptime addr_bits: comptime_int,
     comptime Power: type,
     comptime levels: type,
