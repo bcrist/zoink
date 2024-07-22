@@ -35,6 +35,14 @@ pub const FBGA_48 = struct {
     };
 };
 
+pub fn PLCC(comptime pin_count: comptime_int) type {
+    _ = pin_count;
+    return struct {
+        pub const pkg: Package = .{};
+    };
+}
+pub const PLCC_84 = PLCC(84);
+
 pub fn SOJ(comptime pin_count: comptime_int, comptime width_mils: comptime_int) type {
     _ = pin_count;
     _ = width_mils;

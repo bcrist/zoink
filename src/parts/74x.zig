@@ -10,14 +10,14 @@ pub const Gate2_Impl = struct {
     y: Net_ID = .unset,
 };
 
-fn Quad_Gate(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
+fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
             .prefix = .U,
         },
 
-        pwr: power.Single(pwr, Maybe_Decoupler) = .{},
+        pwr: power.Single(pwr, Decoupler) = .{},
         logic: union (enum) {
             bus: Quad_Gate2_Impl,
             gates: [4]Gate2_Impl,
@@ -124,32 +124,32 @@ fn nor_gate(a: usize, b: usize) usize {
 }
 
 /// Quad 2-in NAND
-pub fn x00(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Maybe_Decoupler, levels, Pkg, nand_gate);
+pub fn x00(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, nand_gate);
 }
 
 /// Quad 2-in NOR
-pub fn x02(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Maybe_Decoupler, levels, Pkg, nor_gate);
+pub fn x02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, nor_gate);
 }
 
 /// Quad 2-in AND
-pub fn x08(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Maybe_Decoupler, levels, Pkg, and_gate);
+pub fn x08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, and_gate);
 }
 
 /// Quad 2-in OR
-pub fn x32(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Maybe_Decoupler, levels, Pkg, or_gate);
+pub fn x32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, or_gate);
 }
 
 /// Quad 2-in XOR
-pub fn x86(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Maybe_Decoupler, levels, Pkg, xor_gate);
+pub fn x86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
 }
 
 /// 8b buffer, tri-state (dual OE)
-pub fn x541(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime levels: type, comptime Pkg: type) type {
+pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
@@ -159,7 +159,7 @@ pub fn x541(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime leve
         a: [8]Net_ID = .{ .unset } ** 8,
         y: [8]Net_ID = .{ .unset } ** 8,
         output_enable_low: [2]Net_ID = .{ .unset } ** 2,
-        pwr: power.Single(pwr, Maybe_Decoupler) = .{},
+        pwr: power.Single(pwr, Decoupler) = .{},
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -213,7 +213,7 @@ pub fn x541(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime leve
 }
 
 /// 8b transparent latch, tri-state
-pub fn x573(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime levels: type, comptime Pkg: type) type {
+pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
@@ -224,7 +224,7 @@ pub fn x573(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime leve
         q: [8]Net_ID,
         transparent_low: Net_ID,
         output_enable_low: Net_ID,
-        pwr: power.Single(pwr, Maybe_Decoupler),
+        pwr: power.Single(pwr, Decoupler),
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -290,7 +290,7 @@ pub fn x573(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime leve
 }
 
 /// 8b positive-edge-triggered D register, tri-state
-pub fn x574(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime levels: type, comptime Pkg: type) type {
+pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
@@ -301,7 +301,7 @@ pub fn x574(comptime pwr: Net_ID, comptime Maybe_Decoupler: ?type, comptime leve
         q: [8]Net_ID,
         clk: Net_ID,
         output_enable_low: Net_ID,
-        pwr: power.Single(pwr, Maybe_Decoupler),
+        pwr: power.Single(pwr, Decoupler),
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {

@@ -1,19 +1,49 @@
-pub const CY7C0241 = @import("parts/CY7C0241.zig");
+const dpsram = @import("parts/dpsram.zig");
 
-pub const AS7C31025_T  = sram.Async_8b(17, power.Multi(2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_8b_Alliance, pkg.TSOP_II_32);
-pub const AS7C31025_TJ = sram.Async_8b(17, power.Multi(2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_8b_Alliance, pkg.SOJ_32_300);
-pub const AS7C31025_J  = sram.Async_8b(17, power.Multi(2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_8b_Alliance, pkg.SOJ_32_400);
-pub const AS7C1025_T  = sram.Async_8b(17, power.Multi(2, .p5v, C0402_Decoupler), TTL, sram.Pins_8b_Alliance, pkg.TSOP_II_32);
-pub const AS7C1025_TJ = sram.Async_8b(17, power.Multi(2, .p5v, C0402_Decoupler), TTL, sram.Pins_8b_Alliance, pkg.SOJ_32_300);
-pub const AS7C1025_J  = sram.Async_8b(17, power.Multi(2, .p5v, C0402_Decoupler), TTL, sram.Pins_8b_Alliance, pkg.SOJ_32_400);
+// 4Kword
+pub const CY7C024_A = dpsram.CY7C0xx(8, 12, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100);
+pub const CY7C024_J = dpsram.CY7C0xx(8, 12, .p5v,  C0402_Decoupler, TTL, pkg.PLCC_84);
+pub const CY7C024V  = dpsram.CY7C0xx(8, 12, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C0241  = dpsram.CY7C0xx(9, 12, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100);
+pub const CY7C0241V = dpsram.CY7C0xx(9, 12, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
 
-pub const GS71116TP = sram.Async_16b(16, power.Multi(2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.TSOP_II_44);
-pub const GS71116J  = sram.Async_16b(16, power.Multi(2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.SOJ_44);
-pub const GS71116U  = sram.Async_16b(16, power.Multi(2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.FBGA_48);
+// 8Kword
+pub const CY7C025_A = dpsram.CY7C0xx(8, 13, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100);
+pub const CY7C025_J = dpsram.CY7C0xx(8, 13, .p5v,  C0402_Decoupler, TTL, pkg.PLCC_84);
+pub const CY7C025V  = dpsram.CY7C0xx(8, 13, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C0251  = dpsram.CY7C0xx(9, 13, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100);
+pub const CY7C0251V = dpsram.CY7C0xx(9, 13, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
 
-pub const GS72116TP = sram.Async_16b(17, power.Multi(2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.TSOP_II_44);
-pub const GS72116J  = sram.Async_16b(17, power.Multi(2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.SOJ_44);
-pub const GS72116U  = sram.Async_16b(17, power.Multi(2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.FBGA_48);
+// 16Kword
+pub const CY7C026V = dpsram.CY7C0xx(8, 14, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C036V = dpsram.CY7C0xx(9, 14, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+
+// 32Kword
+pub const CY7C027V = dpsram.CY7C0xx(8, 15, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C037V = dpsram.CY7C0xx(9, 15, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+
+// 64Kword
+pub const CY7C028V = dpsram.CY7C0xx(8, 16, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C038V = dpsram.CY7C0xx(9, 16, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+
+const sram = @import("parts/sram.zig");
+
+pub const AS7C31025_T  = sram.Async_8b(17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_8b_Alliance, pkg.TSOP_II_32);
+pub const AS7C31025_TJ = sram.Async_8b(17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_8b_Alliance, pkg.SOJ_32_300);
+pub const AS7C31025_J  = sram.Async_8b(17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_8b_Alliance, pkg.SOJ_32_400);
+pub const AS7C1025_T  = sram.Async_8b(17, power.Multi(2, 2, .p5v, C0402_Decoupler), TTL, sram.Pins_8b_Alliance, pkg.TSOP_II_32);
+pub const AS7C1025_TJ = sram.Async_8b(17, power.Multi(2, 2, .p5v, C0402_Decoupler), TTL, sram.Pins_8b_Alliance, pkg.SOJ_32_300);
+pub const AS7C1025_J  = sram.Async_8b(17, power.Multi(2, 2, .p5v, C0402_Decoupler), TTL, sram.Pins_8b_Alliance, pkg.SOJ_32_400);
+
+pub const GS71116TP = sram.Async_16b(16, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.TSOP_II_44);
+pub const GS71116J  = sram.Async_16b(16, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.SOJ_44);
+pub const GS71116U  = sram.Async_16b(16, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.FBGA_48);
+
+pub const GS72116TP = sram.Async_16b(17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.TSOP_II_44);
+pub const GS72116J  = sram.Async_16b(17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.SOJ_44);
+pub const GS72116U  = sram.Async_16b(17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.FBGA_48);
+
+const _74 = @import("parts/74x.zig");
 
 pub const SN74LVC00AD   = _74.x00(.p3v3, C0402_Decoupler, CMOS33, pkg.SOIC_14);
 pub const SN74LVC00ADB  = _74.x00(.p3v3, C0402_Decoupler, CMOS33, pkg.SSOP_14);
@@ -59,6 +89,11 @@ pub const SN74LVC574APW  = _74.x574(.p3v3, C0402_Decoupler, CMOS33, pkg.TSSOP_20
 pub const SN74LVC574ARGY = _74.x574(.p3v3, C0402_Decoupler, CMOS33, pkg.VQFN_20);
 
 
+const passive = @import("parts/passive.zig");
+pub const Resistor = passive.Resistor;
+pub const Cap = passive.Cap;
+pub const Cap_Decoupler = passive.Cap_Decoupler;
+
 pub const R1206 = Resistor(pkg.R1206);
 pub const R0805 = Resistor(pkg.R0805);
 pub const R0603 = Resistor(pkg.R0603);
@@ -77,13 +112,6 @@ pub const C0603_Decoupler = Cap_Decoupler(pkg.C0603);
 pub const C0402_Decoupler = Cap_Decoupler(pkg.C0402);
 pub const C0201_Decoupler = Cap_Decoupler(pkg.C0201);
 
-pub const Resistor = passive.Resistor;
-pub const Cap = passive.Cap;
-pub const Cap_Decoupler = passive.Cap_Decoupler;
-
-const _74 = @import("parts/74x.zig");
-const sram = @import("parts/sram.zig");
-const passive = @import("parts/passive.zig");
 
 const LVCMOS = Voltage.LVCMOS;
 const CMOS33 = Voltage.CMOS33;

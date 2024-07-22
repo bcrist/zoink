@@ -19,6 +19,7 @@ pub fn build(b: *std.Build) void {
     add_test("simple");
     add_test("AS7C31025");
     add_test("GS71116");
+    add_test("CY7C024");
 }
 
 fn add_test(comptime name: []const u8) void {

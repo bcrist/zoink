@@ -49,27 +49,30 @@ pub const VTable = struct {
                     };
                 }
 
-                try check_for_unset_nets(P, part.*);
+                try check_for_unset_nets(P, part.*, base, "");
             }
 
-            fn check_for_unset_nets(comptime T: type, value: T) !void {
-                if (T == Part.Base) return;
+            fn check_for_unset_nets(comptime T: type, value: T, base: *Part.Base, comptime prefix: []const u8) !void {
+                if (T == Part.Base or T == void) return;
                 if (T == Net_ID) {
-                    if (value == .unset) return error.UnassignedSignal;
+                    if (value == .unset) {
+                        std.debug.print("{s}{s} has not been assigned\n", .{ base.name, prefix });
+                        return error.UnassignedSignal;
+                    }
                     return;
                 }
 
                 switch (@typeInfo(T)) {
                     .Struct => |struct_info| inline for (struct_info.fields) |field_info| {
-                        try check_for_unset_nets(field_info.type, @field(value, field_info.name));
+                        try check_for_unset_nets(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
                     },
                     .Union => |union_info| inline for (union_info.fields) |field_info| {
                         if (value == @field(union_info.tag_type.?, field_info.name)) {
-                            try check_for_unset_nets(field_info.type, @field(value, field_info.name));
+                            try check_for_unset_nets(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
                         }
                     },
                     else => for (value) |item| {
-                        try check_for_unset_nets(@TypeOf(item), item);
+                        try check_for_unset_nets(@TypeOf(item), item, base, prefix ++ "[]");
                     },
                 }
             }
@@ -77,7 +80,7 @@ pub const VTable = struct {
             fn maybe_set_power_net_or_generate_decoupler(comptime Pwr: type, comptime power_net: Net_ID, net_ptr: *Net_ID, b: *Board) void {
                 if (net_ptr.* != .unset) return;
 
-                if (@hasDecl(Pwr, "Decouple") and power_net != .gnd) {
+                if (@hasDecl(Pwr, "Decouple") and Pwr.Decouple != void and power_net != .gnd) {
                     const decoupler = b.part(Pwr.Decouple);
                     decoupler.gnd = .gnd;
                     decoupler.internal = b.unique_net(@tagName(power_net));

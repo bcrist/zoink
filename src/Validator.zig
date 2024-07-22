@@ -139,6 +139,7 @@ pub fn set_adv(self: *Validator, net: Net_ID, v: Voltage, s: Drive_Strength) !vo
 }
 
 pub fn drive_net(self: *Validator, net: Net_ID, v: Voltage, s: Drive_Strength) !void {
+    if (net == .no_connect or net == .unset) return;
     const idx = @intFromEnum(net);
     if (idx >= @intFromEnum(Net_ID.p24v)) return error.CantDrivePower;
     if (idx >= self.nets.len) return error.InvalidNet;
