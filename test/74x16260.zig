@@ -1,5 +1,5 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(SN74ALVCH162260DGGR);
+    const U1 = b.part(SN74ALVCH16260DGG);
     U1.a.data = b.bus("A", 12);
     U1.bx.data = b.bus("BX", 12);
     U1.by.data = b.bus("BY", 12);
@@ -51,7 +51,7 @@ test {
     try v.expect_bus(A, 0x123, LVCMOS); // bus hold keeps the last value even though OE is no longer asserted
 }
 
-const SN74ALVCH162260DGGR = zoink.parts.SN74ALVCH162260DGGR;
+const SN74ALVCH16260DGG = zoink.parts.SN74ALVCH16260DGG;
 
 const LVCMOS = zoink.Voltage.LVCMOS;
 const Board = zoink.Board;

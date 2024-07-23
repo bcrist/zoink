@@ -88,14 +88,22 @@ pub const SN74LVC574ADW  = _74.x574(.p3v3, C0402_Decoupler, CMOS33, pkg.SOIC_20)
 pub const SN74LVC574APW  = _74.x574(.p3v3, C0402_Decoupler, CMOS33, pkg.TSSOP_20);
 pub const SN74LVC574ARGY = _74.x574(.p3v3, C0402_Decoupler, CMOS33, pkg.VQFN_20);
 
-pub const @"74VCX16721MTD" = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, false);
-pub const SN74ALVCH16721DL   = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
-pub const SN74ALVCH16721DGGR = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
+pub const SN74ABT16260DL    = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, false);
+pub const SN74ABTH16260DL   = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, true);
+pub const SN74ALVCH16260DL  = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
+pub const SN74ALVCH16260DGG = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
+// 162260 is functionally identical to 16260, but has built-in series terminations on the B ports:
+pub const SN74ABT162260DL    = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, false);
+pub const SN74ABTH162260DL   = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, true);
+pub const SN74ALVCH162260DL  = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
+pub const SN74ALVCH162260DGG = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
 
-pub const SN74ABT162260DL     = _74.x162260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, false);
-pub const SN74ABTH162260DL    = _74.x162260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, true);
-pub const SN74ALVCH162260DL   = _74.x162260(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
-pub const SN74ALVCH162260DGGR = _74.x162260(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
+pub const SN74ALVC16721DL   = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, false);
+pub const SN74ALVC16721DGG  = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, false);
+pub const SN74ALVCH16721DL  = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
+pub const SN74ALVCH16721DGG = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
+
+
 
 const passive = @import("parts/passive.zig");
 pub const Resistor = passive.Resistor;

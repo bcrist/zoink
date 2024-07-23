@@ -126,8 +126,15 @@ pub fn set_bus_hiz(self: *Validator, bus: anytype) !void {
     for (bus) |net| try self.set_adv(net, .gnd, .hiz);
 }
 
-pub fn set_update(self: *Validator, net: Net_ID, v: Voltage) !void {
-    try self.set_adv(net, v, .strong);
+pub fn clock_high(self: *Validator, net: Net_ID, comptime levels: type) !void {
+    try self.set_adv(net, levels.Voh, .strong);
+    try self.update();
+    try self.update();
+}
+
+pub fn clock_low(self: *Validator, net: Net_ID, comptime levels: type) !void {
+    try self.set_adv(net, levels.Vol, .strong);
+    try self.update();
     try self.update();
 }
 
