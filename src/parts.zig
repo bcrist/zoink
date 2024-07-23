@@ -1,30 +1,30 @@
 const dpsram = @import("parts/dpsram.zig");
 
 // 4Kword
-pub const CY7C024_A = dpsram.CY7C0xx(8, 12, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100);
+pub const CY7C024_A = dpsram.CY7C0xx(8, 12, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100_14mm);
 pub const CY7C024_J = dpsram.CY7C0xx(8, 12, .p5v,  C0402_Decoupler, TTL, pkg.PLCC_84);
-pub const CY7C024V  = dpsram.CY7C0xx(8, 12, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
-pub const CY7C0241  = dpsram.CY7C0xx(9, 12, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100);
-pub const CY7C0241V = dpsram.CY7C0xx(9, 12, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C024V  = dpsram.CY7C0xx(8, 12, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
+pub const CY7C0241  = dpsram.CY7C0xx(9, 12, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100_14mm);
+pub const CY7C0241V = dpsram.CY7C0xx(9, 12, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
 
 // 8Kword
-pub const CY7C025_A = dpsram.CY7C0xx(8, 13, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100);
+pub const CY7C025_A = dpsram.CY7C0xx(8, 13, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100_14mm);
 pub const CY7C025_J = dpsram.CY7C0xx(8, 13, .p5v,  C0402_Decoupler, TTL, pkg.PLCC_84);
-pub const CY7C025V  = dpsram.CY7C0xx(8, 13, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
-pub const CY7C0251  = dpsram.CY7C0xx(9, 13, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100);
-pub const CY7C0251V = dpsram.CY7C0xx(9, 13, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C025V  = dpsram.CY7C0xx(8, 13, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
+pub const CY7C0251  = dpsram.CY7C0xx(9, 13, .p5v,  C0402_Decoupler, TTL, pkg.TQFP_100_14mm);
+pub const CY7C0251V = dpsram.CY7C0xx(9, 13, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
 
 // 16Kword
-pub const CY7C026V = dpsram.CY7C0xx(8, 14, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
-pub const CY7C036V = dpsram.CY7C0xx(9, 14, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C026V = dpsram.CY7C0xx(8, 14, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
+pub const CY7C036V = dpsram.CY7C0xx(9, 14, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
 
 // 32Kword
-pub const CY7C027V = dpsram.CY7C0xx(8, 15, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
-pub const CY7C037V = dpsram.CY7C0xx(9, 15, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C027V = dpsram.CY7C0xx(8, 15, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
+pub const CY7C037V = dpsram.CY7C0xx(9, 15, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
 
 // 64Kword
-pub const CY7C028V = dpsram.CY7C0xx(8, 16, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
-pub const CY7C038V = dpsram.CY7C0xx(9, 16, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100);
+pub const CY7C028V = dpsram.CY7C0xx(8, 16, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
+pub const CY7C038V = dpsram.CY7C0xx(9, 16, .p3v3, C0402_Decoupler, LVTTL, pkg.TQFP_100_14mm);
 
 const sram = @import("parts/sram.zig");
 
@@ -88,6 +88,14 @@ pub const SN74LVC574ADW  = _74.x574(.p3v3, C0402_Decoupler, CMOS33, pkg.SOIC_20)
 pub const SN74LVC574APW  = _74.x574(.p3v3, C0402_Decoupler, CMOS33, pkg.TSSOP_20);
 pub const SN74LVC574ARGY = _74.x574(.p3v3, C0402_Decoupler, CMOS33, pkg.VQFN_20);
 
+pub const @"74VCX16721MTD" = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, false);
+pub const SN74ALVCH16721DL   = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
+pub const SN74ALVCH16721DGGR = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
+
+pub const SN74ABT162260DL     = _74.x162260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, false);
+pub const SN74ABTH162260DL    = _74.x162260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, true);
+pub const SN74ALVCH162260DL   = _74.x162260(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
+pub const SN74ALVCH162260DGGR = _74.x162260(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
 
 const passive = @import("parts/passive.zig");
 pub const Resistor = passive.Resistor;

@@ -170,6 +170,10 @@ pub fn drive_logic(self: *Validator, net: Net_ID, high: bool, comptime levels: t
     try self.drive_net(net, if (high) levels.Voh else levels.Vol, .strong);
 }
 
+pub fn drive_logic_weak(self: *Validator, net: Net_ID, high: bool, comptime levels: type) !void {
+    try self.drive_net(net, if (high) levels.Voh else levels.Vol, .weak);
+}
+
 pub fn drive_bus(self: *Validator, bus: anytype, value: usize, comptime levels: type) !void {
     var bit: usize = 1;
     for (bus) |net| {
@@ -178,12 +182,19 @@ pub fn drive_bus(self: *Validator, bus: anytype, value: usize, comptime levels: 
     }
 }
 
+pub fn drive_bus_weak(self: *Validator, bus: anytype, value: usize, comptime levels: type) !void {
+    var bit: usize = 1;
+    for (bus) |net| {
+        try self.drive_logic_weak(net, (value & bit) != 0, levels);
+        bit = @shlExact(bit, 1);
+    }
+}
+
 pub fn read_net_strength(self: *const Validator, net: Net_ID) Drive_Strength {
     return switch (net) {
-        .unset, .no_connect, .gnd,
-        .p1v, .p1v2, .p1v5, .p1v8,
-        .p2v5, .p3v, .p3v3,
-        .p5v, .p6v,.p9v,
+        .unset, .no_connect => Drive_Strength.hiz,
+        .gnd, .p1v, .p1v2, .p1v5, .p1v8,
+        .p2v5, .p3v, .p3v3, .p5v, .p6v,.p9v,
         .p12v, .p15v, .p19v, .p24v,
         => Drive_Strength.init(200),
         else => self.nets.items(.s)[@intFromEnum(net)],
@@ -220,6 +231,20 @@ pub fn read_bus(self: *const Validator, bus: anytype, comptime levels: type) usi
     var result: usize = 0;
     for (bus) |net| {
         if (self.read_logic(net, levels)) result |= bit;
+        bit = @shlExact(bit, 1);
+    }
+    return result;
+}
+
+pub fn read_bus_fallback(self: *const Validator, bus: anytype, comptime levels: type, fallback: usize) usize {
+    var bit: usize = 1;
+    var result: usize = 0;
+    for (bus) |net| {
+        if (self.read_net_strength(net) == .hiz) {
+            if ((fallback & bit) != 0) result |= bit;
+        } else if (self.read_logic(net, levels)) {
+            result |= bit;
+        }
         bit = @shlExact(bit, 1);
     }
     return result;
@@ -339,6 +364,17 @@ pub fn expect_valid(self: *const Validator, what: anytype, comptime levels: type
     }
 }
 
+pub fn expect_valid_or_nc(self: *const Validator, what: anytype, comptime levels: type) !void {
+    switch (@typeInfo(@TypeOf(what))) {
+        .Enum => try self.expect_net_valid_or_nc(what, levels),
+        else => self.expect_bus_valid_or_nc(what, levels) catch {
+            self.b.print_bus_name(what, std.io.getStdErr().writer()) catch {};
+            std.debug.print(" is {X}\n", .{ self.read_bus(what, levels) });
+            return error.InvalidNetState;
+        },
+    }
+}
+
 pub fn expect_bus(self: *const Validator, bus: anytype, expected: usize, comptime levels: type) !void {
     self.expect_bus_state(bus, expected, levels) catch {
         std.debug.print("Expected bus ", .{});
@@ -411,6 +447,12 @@ fn expect_bus_high(self: *const Validator, bus: anytype, comptime levels: type) 
 fn expect_bus_low(self: *const Validator, bus: anytype, comptime levels: type) !void {
     for (bus) |net| {
         try self.expect_net_low(net, levels);
+    }
+}
+
+fn expect_bus_valid_or_nc(self: *const Validator, bus: anytype, comptime levels: type) !void {
+    for (bus) |net| {
+        try self.expect_net_valid_or_nc(net, levels);
     }
 }
 
@@ -493,6 +535,11 @@ fn expect_net_high(self: *const Validator, net: Net_ID, comptime levels: type) !
 fn expect_net_low(self: *const Validator, net: Net_ID, comptime levels: type) !void {
     try self.expect_net_not_hiz(net);
     try self.expect_net_below(net, levels.Vil);
+}
+
+fn expect_net_valid_or_nc(self: *const Validator, net: Net_ID, comptime levels: type) !void {
+    if (net == .no_connect) return;
+    try self.expect_net_valid(net, levels);
 }
 
 fn expect_net_valid(self: *const Validator, net: Net_ID, comptime levels: type) !void {

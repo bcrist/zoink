@@ -15,11 +15,12 @@ pub fn build(b: *std.Build) void {
     zoink = b.createModule(.{
         .root_source_file = b.path("src/zoink.zig"),
     });
-
+    
     add_test("simple");
     add_test("AS7C31025");
     add_test("GS71116");
     add_test("CY7C024");
+    add_test("74x162260");
 }
 
 fn add_test(comptime name: []const u8) void {

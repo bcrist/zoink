@@ -25,6 +25,7 @@ If you answered "yes" to many of the above questions, you may be interested in _
 * Export to KiCAD/pcbnew board file
 
 ## Stretch Goals / Brainstorm Area
+* Integration with [Zig-LC4k](https://github.com/bcrist/Zig-LC4k)
 * Constraint-based component placement
 * Code-assisted routing
 * Default trace widths by net

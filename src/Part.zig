@@ -5,6 +5,7 @@ const Part = @This();
 
 pub const Base = struct {
     package: *const Package,
+    footprint: ?*const Footprint = null,
     prefix: enums.Prefix,
     designator: u16 = 0,
     name: []const u8 = "",
@@ -116,6 +117,7 @@ pub fn finalize_power_nets(self: Part, b: *Board) !void {
 
 const Net_ID = enums.Net_ID;
 const enums = @import("enums.zig");
+const Footprint = @import("Footprint.zig");
 const Package = @import("Package.zig");
 const Validator = @import("Validator.zig");
 const Board = @import("Board.zig");

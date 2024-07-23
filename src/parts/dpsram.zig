@@ -11,7 +11,7 @@ pub fn CY7C0xx(
     if (Pkg == packages.PLCC_84) {
         std.debug.assert(byte_bits == 8);
         std.debug.assert(addr_bits <= 13);
-    } else std.debug.assert(Pkg == packages.TQFP_100);
+    } else std.debug.assert(Pkg == packages.TQFP_100_14mm);
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
@@ -542,6 +542,10 @@ pub fn CY7C0xx(
                 },
                 .commit => {
                     try v.expect_valid(self.master, levels);
+                    if (v.read_logic(self.master, levels) == false) {
+                        try v.expect_valid(self.left.busy_low, levels);
+                        try v.expect_valid(self.right.busy_low, levels);
+                    }
 
                     try write_port(self.left, v, .{
                         .busy = state.left_busy,
@@ -666,8 +670,6 @@ pub fn CY7C0xx(
             try v.expect_valid(port.write_enable_low, levels);
             try v.expect_valid(port.output_enable_low, levels);
             try v.expect_valid(port.semaphore_enable_low, levels);
-            try v.expect_valid(port.interrupt_low, levels);
-            try v.expect_valid(port.busy_low, levels);
 
             var new_mutex_addr: usize = std.math.maxInt(usize);
 
