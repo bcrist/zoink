@@ -310,7 +310,7 @@ pub fn x244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
     return Dual_4b_Tristate_Buffer(pwr, Decoupler, levels, Pkg, .{ false, false });
 }
 
-/// 8b bus transciever
+/// 8b bus transceiver
 pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
@@ -1067,6 +1067,208 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 return @truncate(v.read_bus_fallback(self.by.data, levels, state.by_hold));
             } else {
                 return @truncate(v.read_bus(self.by.data, levels));
+            }
+        }
+    };
+}
+
+/// 2x 8b bus transceiver and bidirectional positive-edge-triggered register, tri-state
+pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime bus_hold: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        u: [2]Unit = .{ .{} } ** 2,
+        pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+
+        pub const Unit = struct {
+            a: [8]Net_ID = .{ .unset } ** 8,
+            b: [8]Net_ID = .{ .unset } ** 8,
+            a_to_b: struct {
+                output_enable: Net_ID = .unset,
+                output_register: Net_ID = .unset, // when low, output data will come from register input instead
+                clk: Net_ID = .unset,
+            } = .{},
+            b_to_a: struct {
+                output_enable_low: Net_ID = .unset,
+                output_register: Net_ID = .unset, // when low, output data will come from register input instead
+                clk: Net_ID = .unset,
+            } = .{},
+        };
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.u[0].a_to_b.output_enable,
+                2 => self.u[0].a_to_b.clk,
+                3 => self.u[0].a_to_b.output_register,
+                56 => self.u[0].b_to_a.output_enable_low,
+                55 => self.u[0].b_to_a.clk,
+                54 => self.u[0].b_to_a.output_register,
+
+                28 => self.u[1].a_to_b.output_enable,
+                29 => self.u[1].a_to_b.clk,
+                27 => self.u[1].a_to_b.output_register,
+                30 => self.u[1].b_to_a.output_enable_low,
+                26 => self.u[1].b_to_a.clk,
+                31 => self.u[1].b_to_a.output_register,
+
+                5 => self.u[0].a[0],
+                6 => self.u[0].a[1],
+                8 => self.u[0].a[2],
+                9 => self.u[0].a[3],
+                10 => self.u[0].a[4],
+                12 => self.u[0].a[5],
+                13 => self.u[0].a[6],
+                14 => self.u[0].a[7],
+
+                15 => self.u[1].a[0],
+                16 => self.u[1].a[1],
+                17 => self.u[1].a[2],
+                19 => self.u[1].a[3],
+                20 => self.u[1].a[4],
+                21 => self.u[1].a[5],
+                23 => self.u[1].a[6],
+                24 => self.u[1].a[7],
+
+                52 => self.u[0].b[0],
+                51 => self.u[0].b[1],
+                49 => self.u[0].b[2],
+                48 => self.u[0].b[3],
+                47 => self.u[0].b[4],
+                45 => self.u[0].b[5],
+                44 => self.u[0].b[6],
+                43 => self.u[0].b[7],
+
+                42 => self.u[1].b[0],
+                41 => self.u[1].b[1],
+                40 => self.u[1].b[2],
+                38 => self.u[1].b[3],
+                37 => self.u[1].b[4],
+                36 => self.u[1].b[5],
+                34 => self.u[1].b[6],
+                33 => self.u[1].b[7],
+                
+                4 => self.pwr.gnd[0],
+                11 => self.pwr.gnd[1],
+                18 => self.pwr.gnd[2],
+                25 => self.pwr.gnd[3],
+                32 => self.pwr.gnd[4],
+                39 => self.pwr.gnd[5],
+                46 => self.pwr.gnd[6],
+                53 => self.pwr.gnd[7],
+
+                7 => @field(self.pwr, @tagName(pwr))[0],
+                22 => @field(self.pwr, @tagName(pwr))[1],
+                35 => @field(self.pwr, @tagName(pwr))[2],
+                50 => @field(self.pwr, @tagName(pwr))[3],
+
+                else => unreachable,
+            };
+        }
+
+        const Validate_State = struct {
+            a_to_b: u8,
+            b_to_a: u8,
+            a_to_b_clk: bool,
+            b_to_a_clk: bool,
+            a_hold: if (bus_hold) u8 else void,
+            b_hold: if (bus_hold) u8 else void,
+        };
+
+        pub fn validate(self: @This(), v: *Validator, state: *[2]Validate_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => for (state) |*unit_state| {
+                    unit_state.a_to_b = 0xAA;
+                    unit_state.b_to_a = 0xAA;
+                    unit_state.a_to_b_clk = true;
+                    unit_state.b_to_a_clk = true;
+                    if (bus_hold) {
+                        unit_state.a_hold = 0;
+                        unit_state.b_hold = 0;
+                    }
+                },
+                .commit => for (self.u, state) |unit, *unit_state| {
+                    try v.expect_valid(unit.a_to_b.output_enable, levels);
+                    try v.expect_valid(unit.b_to_a.output_enable_low, levels);
+
+                    try v.expect_valid(unit.a_to_b.output_register, levels);
+                    try v.expect_valid(unit.b_to_a.output_register, levels);
+
+                    try v.expect_valid(unit.a_to_b.clk, levels);
+                    try v.expect_valid(unit.b_to_a.clk, levels);
+
+                    if (v.read_logic(unit.b_to_a.output_enable_low, levels) == true) {
+                        if (bus_hold) try v.expect_valid_or_nc(unit.a, levels) else try v.expect_valid(unit.a, levels);
+                    }
+                    if (v.read_logic(unit.a_to_b.output_enable, levels) == false) {
+                        if (bus_hold) try v.expect_valid_or_nc(unit.b, levels) else try v.expect_valid(unit.b, levels);
+                    }
+
+                    {
+                        const new_a_to_b_clk = v.read_logic(unit.a_to_b.clk, levels);
+                        if (new_a_to_b_clk and !unit_state.a_to_b_clk) {
+                            unit_state.a_to_b = read_a(unit, v, unit_state, 2);
+                        }
+                        unit_state.a_to_b_clk = new_a_to_b_clk;
+                    }
+                    {
+                        const new_b_to_a_clk = v.read_logic(unit.b_to_a.clk, levels);
+                        if (new_b_to_a_clk and !unit_state.b_to_a_clk) {
+                            unit_state.b_to_a = read_b(unit, v, unit_state, 2);
+                        }
+                        unit_state.b_to_a_clk = new_b_to_a_clk;
+                    }
+                },
+                .nets_only => for (self.u, state) |unit, *unit_state| {
+                    if (bus_hold) {
+                        try v.drive_bus_weak(unit.a, unit_state.a_hold, levels);
+                        try v.drive_bus_weak(unit.b, unit_state.b_hold, levels);
+                        unit_state.a_hold = read_a(unit, v, unit_state, 2);
+                        unit_state.b_hold = read_b(unit, v, unit_state, 2);
+                    }
+                    if (v.read_logic(unit.b_to_a.output_enable_low, levels) == false) {
+                        const data = read_a(unit, v, unit_state, 2);
+                        try v.drive_bus(unit.a, data, levels);
+                        if (bus_hold) unit_state.a_hold = data;
+                    }
+                    if (v.read_logic(unit.a_to_b.output_enable, levels) == true) {
+                        const data = read_b(unit, v, unit_state, 2);
+                        try v.drive_bus(unit.b, data, levels);
+                        if (bus_hold) unit_state.b_hold = data;
+                    }
+                },
+            }
+        }
+
+        fn read_a(unit: Unit, v: *Validator, state: *Validate_State, limit: usize) u8 {
+            if (limit > 0 and v.read_logic(unit.b_to_a.output_enable_low, levels) == false) {
+                if (v.read_logic(unit.b_to_a.output_register, levels)) {
+                    return state.b_to_a;
+                } else {
+                    return read_b(unit, v, state, limit - 1);
+                }
+            } else if (bus_hold) {
+                return @truncate(v.read_bus_fallback(unit.a, levels, state.a_hold));
+            } else {
+                return @truncate(v.read_bus(unit.a, levels));
+            }
+        }
+
+        fn read_b(unit: Unit, v: *Validator, state: *Validate_State, limit: usize) u8 {
+            if (limit > 0 and v.read_logic(unit.a_to_b.output_enable, levels) == true) {
+                if (v.read_logic(unit.a_to_b.output_register, levels)) {
+                    return state.a_to_b;
+                } else {
+                    return read_a(unit, v, state, limit - 1);
+                }
+            } else if (bus_hold) {
+                return @truncate(v.read_bus_fallback(unit.b, levels, state.b_hold));
+            } else {
+                return @truncate(v.read_bus(unit.b, levels));
             }
         }
     };

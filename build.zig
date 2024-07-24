@@ -23,6 +23,7 @@ pub fn build(b: *std.Build) void {
     add_test("74x16244");
     add_test("74x16245");
     add_test("74x16260");
+    add_test("74x16652");
     add_test("74x16721");
 }
 

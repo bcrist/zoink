@@ -136,6 +136,10 @@ pub const SN74ABTH162260DL   = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_5
 pub const SN74ALVCH162260DL  = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
 pub const SN74ALVCH162260DGG = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
 
+pub const SN74ABT16652DL   = _74.x16652(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, false);
+pub const SN74LVT16652DL   = _74.x16652(.p3v3, C0402_Decoupler, LVTTL_5VT, pkg.SSOP_56, false);
+pub const SN74LVTH16652DGG = _74.x16652(.p3v3, C0402_Decoupler, LVTTL_5VT, pkg.TSSOP_56, true);
+
 pub const SN74ALVC16721DL   = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, false);
 pub const SN74ALVC16721DGG  = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, false);
 pub const SN74ALVCH16721DL  = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
