@@ -1,25 +1,3 @@
-const Quad_Gate2_Impl = struct {
-    a: [4]Net_ID = .{ .unset } ** 4,
-    b: [4]Net_ID = .{ .unset } ** 4,
-    y: [4]Net_ID = .{ .unset } ** 4,
-};
-
-pub const Gate2_Impl = struct {
-    a: Net_ID = .unset,
-    b: Net_ID = .unset,
-    y: Net_ID = .unset,
-};
-
-const Hex_Buf_Impl = struct {
-    a: [6]Net_ID = .{ .unset } ** 6,
-    y: [6]Net_ID = .{ .unset } ** 6,
-};
-
-pub const Buf_Impl = struct {
-    a: Net_ID = .unset,
-    y: Net_ID = .unset,
-};
-
 fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
     return struct {
         base: Part.Base = .{
@@ -32,6 +10,18 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
             bus: Quad_Gate2_Impl,
             gates: [4]Gate2_Impl,
         } = .{ .bus = .{} },
+
+        const Quad_Gate2_Impl = struct {
+            a: [4]Net_ID = .{ .unset } ** 4,
+            b: [4]Net_ID = .{ .unset } ** 4,
+            y: [4]Net_ID = .{ .unset } ** 4,
+        };
+
+        const Gate2_Impl = struct {
+            a: Net_ID = .unset,
+            b: Net_ID = .unset,
+            y: Net_ID = .unset,
+        };
 
         fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
@@ -129,6 +119,16 @@ fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
             bus: Hex_Buf_Impl,
             gates: [6]Buf_Impl,
         } = .{ .bus = .{} },
+
+        const Hex_Buf_Impl = struct {
+            a: [6]Net_ID = .{ .unset } ** 6,
+            y: [6]Net_ID = .{ .unset } ** 6,
+        };
+
+        const Buf_Impl = struct {
+            a: Net_ID = .unset,
+            y: Net_ID = .unset,
+        };
 
         fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
