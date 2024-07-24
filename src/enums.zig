@@ -116,6 +116,7 @@ pub const Voltage = enum (u8) {
         pub const Voh = from_float(3.8);
     };
 
+    /// TTL with 3.3V Vcc and input clamping
     pub const LVTTL = struct {
         pub const Vil = from_float(0.7);
         pub const Vth = from_float(1.4);
@@ -125,13 +126,28 @@ pub const Voltage = enum (u8) {
         pub const Vol = from_float(0.4);
         pub const Voh = from_float(2.4);
     };
+    
+    /// LVTTL with 5V tolerant input clamping
+    pub const LVTTL_5VT = struct {
+        pub const Vil = from_float(0.7);
+        pub const Vth = from_float(1.4);
+        pub const Vih = from_float(2.2);
+        pub const Vclamp = from_float(5.3);
+
+        pub const Vol = from_float(0.4);
+        pub const Voh = from_float(2.4);
+    };
 
     pub const LVCMOS18 = CMOS_V(.p1v8, .p1v8);
-    pub const LVCMOS25 = CMOS_V(.p2v5, .p2v5);
-    pub const LVCMOS = CMOS_V(.p3v3, .p3v3);
+    pub const LVCMOS18_3V3T = CMOS_V(.p1v8, .p3v3);
 
-    pub const CMOS25 = CMOS_V(.p2v5, .p5v);
-    pub const CMOS33 = CMOS_V(.p3v3, .p5v);
+    pub const LVCMOS25 = CMOS_V(.p2v5, .p2v5);
+    pub const LVCMOS25_3V3T = CMOS_V(.p2v5, .p3v3);
+    pub const LVCMOS25_5VT = CMOS_V(.p2v5, .p5v);
+
+    pub const LVCMOS = CMOS_V(.p3v3, .p3v3);
+    pub const LVCMOS_5VT = CMOS_V(.p3v3, .p5v);
+    
     pub const CMOS = CMOS_V(.p5v, .p5v);
 
     pub fn CMOS_V(vcc: Voltage, vclamp: Voltage) type {

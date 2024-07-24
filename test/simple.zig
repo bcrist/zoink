@@ -52,23 +52,23 @@ test {
     const OE = b.get_net("~OE");
 
     try v.reset();
-    try v.set_bus(A, 3, CMOS33);
-    try v.set_bus(B, 7, CMOS33);
-    try v.set_bus(C, 1, CMOS33);
+    try v.set_bus(A, 3, LVCMOS_5VT);
+    try v.set_bus(B, 7, LVCMOS_5VT);
+    try v.set_bus(C, 1, LVCMOS_5VT);
     try v.set_bus(addr, 0x123, LVCMOS);
     try v.set_bus(D, 0xBCDE, LVCMOS);
     try v.set(WE, .gnd);
     try v.set(OE, .gnd);
     try v.update();
-    try v.expect_bus(Result, 3, CMOS33);
+    try v.expect_bus(Result, 3, LVCMOS_5VT);
 
-    try v.set_bus(A, 3, CMOS33);
-    try v.set_bus(B, 4, CMOS33);
-    try v.set_bus(C, 4, CMOS33);
+    try v.set_bus(A, 3, LVCMOS_5VT);
+    try v.set_bus(B, 4, LVCMOS_5VT);
+    try v.set_bus(C, 4, LVCMOS_5VT);
     try v.set(WE, .p3v3);
     try v.set_bus_hiz(D);
     try v.update();
-    try v.expect_bus(Result, 4, CMOS33);
+    try v.expect_bus(Result, 4, LVCMOS_5VT);
     try v.expect_bus(D, 0xBCDE, LVCMOS);
 }
 
@@ -77,7 +77,7 @@ const SN74LVC32ADB = zoink.parts.SN74LVC32ADB;
 const GS71116U = zoink.parts.GS71116U;
 
 const LVCMOS = zoink.Voltage.LVCMOS;
-const CMOS33 = zoink.Voltage.CMOS33;
+const LVCMOS_5VT = zoink.Voltage.LVCMOS_5VT;
 const Board = zoink.Board;
 const zoink = @import("zoink");
 const std = @import("std");

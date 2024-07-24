@@ -223,6 +223,7 @@ pub fn SSOP(comptime pin_count: comptime_int) type {
 }
 pub const SSOP_14 = SSOP(14);
 pub const SSOP_20 = SSOP(20);
+pub const SSOP_48 = SSOP(48);
 pub const SSOP_56 = SSOP(56);
 
 pub fn TSSOP(comptime pin_count: comptime_int) type {
@@ -235,6 +236,7 @@ pub fn TSSOP(comptime pin_count: comptime_int) type {
 }
 pub const TSSOP_14 = TSSOP(14);
 pub const TSSOP_20 = TSSOP(20);
+pub const TSSOP_48 = TSSOP(48);
 pub const TSSOP_56 = TSSOP(56);
 
 pub fn VQFN(comptime pin_count: comptime_int) type {
@@ -257,6 +259,7 @@ pub fn TVSOP(comptime pin_count: comptime_int) type {
     };
 }
 pub const TVSOP_20 = TVSOP(20);
+pub const TVSOP_48 = TVSOP(48);
 
 
 

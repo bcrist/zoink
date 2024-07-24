@@ -198,7 +198,7 @@ pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 .reset => {},
                 .commit => {
                     try v.expect_valid(self.a, levels);
-                    try v.expect_valid(self.oe, levels);
+                    try v.expect_valid(self.output_enable_low, levels);
                 },
                 .nets_only => {
                     const oe = v.read_bus(self.output_enable_low, levels);
@@ -360,6 +360,125 @@ pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     const oe = v.read_logic(self.output_enable_low, levels);
                     if (oe == false) {
                         try v.drive_bus(self.q, state.data, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+/// 4x 4b buffer, tri-state
+pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime bus_hold: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        u: [4]Unit = .{ .{} } ** 4,
+        pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+
+        pub const Unit = struct {
+            a: [4]Net_ID = .{ .unset } ** 4,
+            y: [4]Net_ID = .{ .unset } ** 4,
+            output_enable_low: Net_ID = .unset,
+        };
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.u[0].output_enable_low,
+                48 => self.u[1].output_enable_low,
+                25 => self.u[2].output_enable_low,
+                24 => self.u[3].output_enable_low,
+
+                47 => self.u[0].a[0],
+                46 => self.u[0].a[1],
+                44 => self.u[0].a[2],
+                43 => self.u[0].a[3],
+
+                41 => self.u[1].a[0],
+                40 => self.u[1].a[1],
+                38 => self.u[1].a[2],
+                37 => self.u[1].a[3],
+
+                36 => self.u[2].a[0],
+                35 => self.u[2].a[1],
+                33 => self.u[2].a[2],
+                32 => self.u[2].a[3],
+
+                30 => self.u[3].a[0],
+                29 => self.u[3].a[1],
+                27 => self.u[3].a[2],
+                26 => self.u[3].a[3],
+
+                2 => self.u[0].y[0],
+                3 => self.u[0].y[1],
+                5 => self.u[0].y[2],
+                6 => self.u[0].y[3],
+
+                8 => self.u[1].y[0],
+                9 => self.u[1].y[1],
+                11 => self.u[1].y[2],
+                12 => self.u[1].y[3],
+
+                13 => self.u[2].y[0],
+                14 => self.u[2].y[1],
+                16 => self.u[2].y[2],
+                17 => self.u[2].y[3],
+
+                19 => self.u[3].y[0],
+                20 => self.u[3].y[1],
+                22 => self.u[3].y[2],
+                23 => self.u[3].y[3],
+
+                
+                4 => self.pwr.gnd[0],
+                10 => self.pwr.gnd[1],
+                15 => self.pwr.gnd[2],
+                21 => self.pwr.gnd[3],
+                28 => self.pwr.gnd[4],
+                34 => self.pwr.gnd[5],
+                39 => self.pwr.gnd[6],
+                45 => self.pwr.gnd[7],
+
+                7 => @field(self.pwr, @tagName(pwr))[0],
+                18 => @field(self.pwr, @tagName(pwr))[1],
+                31 => @field(self.pwr, @tagName(pwr))[2],
+                42 => @field(self.pwr, @tagName(pwr))[3],
+
+                else => unreachable,
+            };
+        }
+
+        const Validate_State = struct {
+            bus_hold: u16,
+        };
+
+        pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => for (self.u) |unit| {
+                    if (bus_hold) {
+                        try v.expect_valid_or_nc(unit.a, levels);
+                    } else {
+                        try v.expect_valid(unit.a, levels);
+                    }
+                    try v.expect_valid(unit.output_enable_low, levels);
+                },
+                .nets_only => {
+                    for (self.u) |unit| {
+                        if (v.read_logic(unit.output_enable_low, levels) == false) {
+                            const data = v.read_bus(unit.a, levels);
+                            try v.drive_bus(unit.y, data, levels);
+                        }
+                    }
+
+                    if (bus_hold) {
+                        const a = self.u[0].a ++ self.u[1].a ++ self.u[2].a ++ self.u[3].a;
+                        try v.drive_bus_weak(a, state.bus_hold, levels);
+                        state.bus_hold = @truncate(v.read_bus_fallback(a, levels, state.bus_hold));
                     }
                 },
             }
