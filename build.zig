@@ -21,6 +21,7 @@ pub fn build(b: *std.Build) void {
     add_test("GS71116");
     add_test("CY7C024");
     add_test("74x16244");
+    add_test("74x16245");
     add_test("74x16260");
     add_test("74x16721");
 }

@@ -148,6 +148,242 @@ pub fn x86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
     return Quad_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
 }
 
+fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert_outputs: bool) type {
+        return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        u: [2]Unit = .{ .{} } ** 2,
+        pwr: power.Single(pwr, Decoupler) = .{},
+
+        pub const Unit = struct {
+            a: [4]Net_ID = .{ .unset } ** 4,
+            y: [4]Net_ID = .{ .unset } ** 4,
+            output_enable_low: Net_ID = .unset,
+        };
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.u[0].output_enable_low,
+                19 => self.u[1].output_enable_low,
+
+                10 => self.pwr.gnd,
+                20 => @field(self.pwr, @tagName(pwr)),
+
+                2 => self.u[0].a[0],
+                4 => self.u[0].a[1],
+                6 => self.u[0].a[2],
+                8 => self.u[0].a[3],
+
+                17 => self.u[1].a[0],
+                15 => self.u[1].a[1],
+                13 => self.u[1].a[2],
+                11 => self.u[1].a[3],
+
+                18 => self.u[0].y[0],
+                16 => self.u[0].y[1],
+                14 => self.u[0].y[2],
+                12 => self.u[0].y[3],
+
+                3 => self.u[1].y[0],
+                5 => self.u[1].y[1],
+                7 => self.u[1].y[2],
+                9 => self.u[1].y[3],
+
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => for (self.u) |unit| {
+                    try v.expect_valid(unit.a, levels);
+                    try v.expect_valid(unit.output_enable_low, levels);
+                },
+                .nets_only => for (self.u) |unit| {
+                    if (v.read_logic(unit.output_enable_low, levels) == false) {
+                        var data = v.read_bus(unit.a, levels);
+                        if (invert_outputs) {
+                            data = ~data;
+                        }
+                        try v.drive_bus(unit.y, data, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+/// Dual 4b inverter, tri-state
+pub fn x240(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_4b_Tristate_Buffer(pwr, Decoupler, levels, Pkg, .{ true, true });
+}
+
+/// Dual 4b buffer, tri-state (one active low and one active high OE)
+pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        u0: Unit_Active_Low_OE = .{},
+        u1: Unit_Active_High_OE = .{},
+        pwr: power.Single(pwr, Decoupler) = .{},
+
+        pub const Unit_Active_Low_OE = struct {
+            a: [4]Net_ID = .{ .unset } ** 4,
+            y: [4]Net_ID = .{ .unset } ** 4,
+            output_enable_low: Net_ID = .unset,
+        };
+        pub const Unit_Active_High_OE = struct {
+            a: [4]Net_ID = .{ .unset } ** 4,
+            y: [4]Net_ID = .{ .unset } ** 4,
+            output_enable: Net_ID = .unset,
+        };
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.u0.output_enable_low,
+                19 => self.u1.output_enable,
+
+                10 => self.pwr.gnd,
+                20 => @field(self.pwr, @tagName(pwr)),
+
+                2 => self.u0.a[0],
+                4 => self.u0.a[1],
+                6 => self.u0.a[2],
+                8 => self.u0.a[3],
+
+                17 => self.u1.a[0],
+                15 => self.u1.a[1],
+                13 => self.u1.a[2],
+                11 => self.u1.a[3],
+
+                18 => self.u0.y[0],
+                16 => self.u0.y[1],
+                14 => self.u0.y[2],
+                12 => self.u0.y[3],
+
+                3 => self.u1.y[0],
+                5 => self.u1.y[1],
+                7 => self.u1.y[2],
+                9 => self.u1.y[3],
+
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.u0.a, levels);
+                    try v.expect_valid(self.u0.output_enable_low, levels);
+                    try v.expect_valid(self.u1.a, levels);
+                    try v.expect_valid(self.u1.output_enable, levels);
+                },
+                .nets_only => {
+                    if (v.read_logic(self.u0.output_enable_low, levels) == false) {
+                        const data = v.read_bus(self.u0.a, levels);
+                        try v.drive_bus(self.u0.y, data, levels);
+                    }
+                    if (v.read_logic(self.u1.output_enable, levels) == true) {
+                        const data = v.read_bus(self.u1.a, levels);
+                        try v.drive_bus(self.u1.y, data, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+/// Dual 4b buffer, tri-state
+pub fn x244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_4b_Tristate_Buffer(pwr, Decoupler, levels, Pkg, .{ false, false });
+}
+
+/// 8b bus transciever
+pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        a: [8]Net_ID = .{ .unset } ** 8,
+        b: [8]Net_ID = .{ .unset } ** 8,
+        output_enable_low: Net_ID = .unset,
+        a_to_b: Net_ID = .unset, // B to A when low
+        pwr: power.Single(pwr, Decoupler) = .{},
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.a_to_b,
+                19 => self.output_enable_low,
+
+                10 => self.pwr.gnd,
+                20 => @field(self.pwr, @tagName(pwr)),
+
+                2 => self.a[0],
+                3 => self.a[1],
+                4 => self.a[2],
+                5 => self.a[3],
+                6 => self.a[4],
+                7 => self.a[5],
+                8 => self.a[6],
+                9 => self.a[7],
+
+                18 => self.b[0],
+                17 => self.b[1],
+                16 => self.b[2],
+                15 => self.b[3],
+                14 => self.b[4],
+                13 => self.b[5],
+                12 => self.b[6],
+                11 => self.b[7],
+
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.output_enable_low, levels);
+                    try v.expect_valid(self.a_to_b, levels);
+                    if (v.read_logic(self.a_to_b, levels)) {
+                        try v.expect_valid(self.a, levels);
+                    } else {
+                        try v.expect_valid(self.b, levels);
+                    }
+                },
+                .nets_only => {
+                    if (v.read_logic(self.output_enable_low, levels) == false) {
+                        if (v.read_logic(self.a_to_b, levels)) {
+                            const data = v.read_bus(self.a, levels);
+                            try v.drive_bus(self.b, data, levels);
+                        } else {
+                            const data = v.read_bus(self.b, levels);
+                            try v.drive_bus(self.a, data, levels);
+                        }
+                    }
+                },
+            }
+        }
+    };
+}
+
 /// 8b buffer, tri-state (dual OE)
 pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return struct {
@@ -433,7 +669,6 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 22 => self.u[3].y[2],
                 23 => self.u[3].y[3],
 
-                
                 4 => self.pwr.gnd[0],
                 10 => self.pwr.gnd[1],
                 15 => self.pwr.gnd[2],
@@ -453,12 +688,14 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
         }
 
         const Validate_State = struct {
-            bus_hold: u16,
+            bus_hold: if (bus_hold) u16 else void,
         };
 
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
-                .reset => {},
+                .reset => if (bus_hold) {
+                    state.bus_hold = 0;
+                },
                 .commit => for (self.u) |unit| {
                     if (bus_hold) {
                         try v.expect_valid_or_nc(unit.a, levels);
@@ -481,6 +718,151 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                         state.bus_hold = @truncate(v.read_bus_fallback(a, levels, state.bus_hold));
                     }
                 },
+            }
+        }
+    };
+}
+
+/// 4x 4b buffer, tri-state
+pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime bus_hold: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        u: [2]Unit = .{ .{} } ** 2,
+        pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+
+        pub const Unit = struct {
+            a: [8]Net_ID = .{ .unset } ** 8,
+            b: [8]Net_ID = .{ .unset } ** 8,
+            output_enable_low: Net_ID = .unset,
+            a_to_b: Net_ID = .unset, // B to A when low
+        };
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.u[0].a_to_b,
+                48 => self.u[0].output_enable_low,
+                25 => self.u[1].output_enable_low,
+                24 => self.u[1].a_to_b,
+
+                47 => self.u[0].a[0],
+                46 => self.u[0].a[1],
+                44 => self.u[0].a[2],
+                43 => self.u[0].a[3],
+                41 => self.u[0].a[4],
+                40 => self.u[0].a[5],
+                38 => self.u[0].a[6],
+                37 => self.u[0].a[7],
+
+                36 => self.u[1].a[0],
+                35 => self.u[1].a[1],
+                33 => self.u[1].a[2],
+                32 => self.u[1].a[3],
+                30 => self.u[1].a[4],
+                29 => self.u[1].a[5],
+                27 => self.u[1].a[6],
+                26 => self.u[1].a[7],
+
+                2 => self.u[0].b[0],
+                3 => self.u[0].b[1],
+                5 => self.u[0].b[2],
+                6 => self.u[0].b[3],
+                8 => self.u[0].b[4],
+                9 => self.u[0].b[5],
+                11 => self.u[0].b[6],
+                12 => self.u[0].b[7],
+
+                13 => self.u[1].b[0],
+                14 => self.u[1].b[1],
+                16 => self.u[1].b[2],
+                17 => self.u[1].b[3],
+                19 => self.u[1].b[4],
+                20 => self.u[1].b[5],
+                22 => self.u[1].b[6],
+                23 => self.u[1].b[7],
+                
+                4 => self.pwr.gnd[0],
+                10 => self.pwr.gnd[1],
+                15 => self.pwr.gnd[2],
+                21 => self.pwr.gnd[3],
+                28 => self.pwr.gnd[4],
+                34 => self.pwr.gnd[5],
+                39 => self.pwr.gnd[6],
+                45 => self.pwr.gnd[7],
+
+                7 => @field(self.pwr, @tagName(pwr))[0],
+                18 => @field(self.pwr, @tagName(pwr))[1],
+                31 => @field(self.pwr, @tagName(pwr))[2],
+                42 => @field(self.pwr, @tagName(pwr))[3],
+
+                else => unreachable,
+            };
+        }
+
+        const Validate_State = struct {
+            a_hold: if (bus_hold) u8 else void,
+            b_hold: if (bus_hold) u8 else void,
+        };
+
+        pub fn validate(self: @This(), v: *Validator, state: *[2]Validate_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => if (bus_hold) {
+                    state[0].a_hold = 0;
+                    state[0].b_hold = 0;
+                    state[1].a_hold = 0;
+                    state[1].b_hold = 0;
+                },
+                .commit => for (self.u) |unit| {
+                    try v.expect_valid(unit.output_enable_low, levels);
+                    try v.expect_valid(unit.a_to_b, levels);
+                    if (v.read_logic(unit.a_to_b, levels)) {
+                        if (bus_hold) try v.expect_valid_or_nc(unit.a, levels) else try v.expect_valid(unit.a, levels);
+                    } else {
+                        if (bus_hold) try v.expect_valid_or_nc(unit.b, levels) else try v.expect_valid(unit.b, levels);
+                    }
+                },
+                .nets_only => {
+                    for (self.u, state) |unit, *unit_state| {
+                        if (bus_hold) {
+                            try v.drive_bus_weak(unit.a, unit_state.a_hold, levels);
+                            try v.drive_bus_weak(unit.b, unit_state.b_hold, levels);
+                            unit_state.a_hold = read_a(unit, v, unit_state);
+                            unit_state.b_hold = read_b(unit, v, unit_state);
+                        }
+                        if (v.read_logic(unit.output_enable_low, levels) == false) {
+                            if (v.read_logic(unit.a_to_b, levels)) {
+                                const data = read_a(unit, v, unit_state);
+                                try v.drive_bus(unit.b, data, levels);
+                                if (bus_hold) unit_state.b_hold = data;
+                            } else {
+                                const data = read_b(unit, v, unit_state);
+                                try v.drive_bus(unit.a, data, levels);
+                                if (bus_hold) unit_state.a_hold = data;
+                            }
+                        }
+                    }
+                },
+            }
+        }
+
+        fn read_a(unit: Unit, v: *Validator, state: *Validate_State) u8 {
+            if (bus_hold) {
+                return @truncate(v.read_bus_fallback(unit.a, levels, state.a_hold));
+            } else {
+                return @truncate(v.read_bus(unit.a, levels));
+            }
+        }
+
+        fn read_b(unit: Unit, v: *Validator, state: *Validate_State) u8 {
+            if (bus_hold) {
+                return @truncate(v.read_bus_fallback(unit.b, levels, state.b_hold));
+            } else {
+                return @truncate(v.read_bus(unit.b, levels));
             }
         }
     };
@@ -586,9 +968,9 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             by_to_a: u12,
             a_to_bx: u12,
             a_to_by: u12,
-            a_hold: u12,
-            bx_hold: u12,
-            by_hold: u12,
+            a_hold: if (bus_hold) u12 else void,
+            bx_hold: if (bus_hold) u12 else void,
+            by_hold: if (bus_hold) u12 else void,
         };
         
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
@@ -598,6 +980,11 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     state.by_to_a = 0xAAA;
                     state.a_to_bx = 0xAAA;
                     state.a_to_by = 0xAAA;
+                    if (bus_hold) {
+                        state.a_hold = 0;
+                        state.bx_hold = 0;
+                        state.by_hold = 0;
+                    }
                 },
                 .commit => {
                     if (bus_hold) {
@@ -628,29 +1015,29 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 },
                 .nets_only => {
                     if (v.read_logic(self.a.output_enable_low, levels) == false) {
-                        if (v.read_logic(self.a.enable_bx, levels)) {
-                            state.a_hold = if (v.read_logic(self.bx.latch_input_data, levels)) self.read_bx(v, state) else state.bx_to_a;
-                            try v.drive_bus(self.a.data, state.a_hold, levels);
-                        } else {
-                            state.a_hold = if (v.read_logic(self.by.latch_input_data, levels)) self.read_by(v, state) else state.by_to_a;
-                            try v.drive_bus(self.a.data, state.a_hold, levels);
-                        }
+                        const data = if (v.read_logic(self.a.enable_bx, levels)) data: {
+                            break :data if (v.read_logic(self.bx.latch_input_data, levels)) self.read_bx(v, state) else state.bx_to_a;
+                        } else if (v.read_logic(self.by.latch_input_data, levels)) self.read_by(v, state) else state.by_to_a;
+                        try v.drive_bus(self.a.data, data, levels);
+                        if (bus_hold) state.a_hold = data;
                     } else if (bus_hold) {
                         try v.drive_bus_weak(self.a.data, state.a_hold, levels);
                         state.a_hold = @truncate(v.read_bus_fallback(self.a.data, levels, state.a_hold));
                     }
 
                     if (v.read_logic(self.bx.output_enable_low, levels) == false) {
-                        state.bx_hold = if (v.read_logic(self.bx.latch_output_data, levels)) self.read_a(v, state) else state.a_to_bx;
-                        try v.drive_bus(self.bx.data, state.bx_hold, levels);
+                        const data = if (v.read_logic(self.bx.latch_output_data, levels)) self.read_a(v, state) else state.a_to_bx;
+                        try v.drive_bus(self.bx.data, data, levels);
+                        if (bus_hold) state.bx_hold = data;
                     } else if (bus_hold) {
                         try v.drive_bus_weak(self.bx.data, state.bx_hold, levels);
                         state.bx_hold = @truncate(v.read_bus_fallback(self.bx.data, levels, state.bx_hold));
                     }
 
                     if (v.read_logic(self.by.output_enable_low, levels) == false) {
-                        state.by_hold = if (v.read_logic(self.by.latch_output_data, levels)) self.read_a(v, state) else state.a_to_by;
-                        try v.drive_bus(self.by.data, state.by_hold, levels);
+                        const data = if (v.read_logic(self.by.latch_output_data, levels)) self.read_a(v, state) else state.a_to_by;
+                        try v.drive_bus(self.by.data, data, levels);
+                        if (bus_hold) state.by_hold = data;
                     } else if (bus_hold) {
                         try v.drive_bus_weak(self.by.data, state.by_hold, levels);
                         state.by_hold = @truncate(v.read_bus_fallback(self.by.data, levels, state.by_hold));
@@ -772,16 +1159,18 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         const Validate_State = struct {
             data: u20,
-            bus_hold: u20,
+            bus_hold: if (bus_hold) u20 else void,
             clk: bool,
         };
         
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
-                    state.data = 0xAAAAA;
-                    state.bus_hold = 0xAAAAA;
                     state.clk = true;
+                    state.data = 0xAAAAA;
+                    if (bus_hold) {
+                        state.bus_hold = 0xAAAAA;
+                    }
                 },
                 .commit => {
                     if (bus_hold) {
