@@ -10,6 +10,16 @@ pub const Gate2_Impl = struct {
     y: Net_ID = .unset,
 };
 
+const Hex_Buf_Impl = struct {
+    a: [6]Net_ID = .{ .unset } ** 6,
+    y: [6]Net_ID = .{ .unset } ** 6,
+};
+
+pub const Buf_Impl = struct {
+    a: Net_ID = .unset,
+    y: Net_ID = .unset,
+};
+
 fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
     return struct {
         base: Part.Base = .{
@@ -107,6 +117,104 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
     };
 }
 
+fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, invert: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        logic: union (enum) {
+            bus: Hex_Buf_Impl,
+            gates: [6]Buf_Impl,
+        } = .{ .bus = .{} },
+
+        fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (self.logic) {
+                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    7 => self.pwr.gnd,
+                    14 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl.a[0],
+                    2 => impl.y[0],
+
+                    3 => impl.a[1],
+                    4 => impl.y[1],
+
+                    5 => impl.a[2],
+                    6 => impl.y[2],
+
+                    9 => impl.a[3],
+                    8 => impl.y[3],
+
+                    11 => impl.a[4],
+                    10 => impl.y[4],
+
+                    13 => impl.a[5],
+                    12 => impl.y[5],
+
+                    else => unreachable,
+                },
+                .gates => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    7 => self.pwr.gnd,
+                    14 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl[0].a,
+                    2 => impl[0].y,
+
+                    3 => impl[1].a,
+                    4 => impl[1].y,
+
+                    5 => impl[2].a,
+                    6 => impl[2].y,
+
+                    9 => impl[3].a,
+                    8 => impl[3].y,
+
+                    11 => impl[4].a,
+                    10 => impl[4].y,
+
+                    13 => impl[5].a,
+                    12 => impl[5].y,
+
+                    else => unreachable,
+                },
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => switch (self.logic) {
+                    .bus => |impl| {
+                        try v.expect_valid(impl.a, levels);
+                    },
+                    .gates => |impl| for (impl) |gate| {
+                        try v.expect_valid(gate.a, levels);
+                    },
+                },
+                .nets_only => switch (self.logic) {
+                    .bus => |impl| {
+                        var a = v.read_bus(impl.a, levels);
+                        if (invert) a = ~a;
+                        try v.drive_bus(impl.y, a, levels);
+                    },
+                    .gates => |impl| for (impl) |gate| {
+                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        if (invert) a = !a;
+                        try v.drive_logic(gate.y, a, levels);
+                    },
+                },
+            }
+        }
+    };
+}
+
 fn and_gate(a: usize, b: usize) usize {
     return a & b;
 }
@@ -133,14 +241,29 @@ pub fn x02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
     return Quad_Gate(pwr, Decoupler, levels, Pkg, nor_gate);
 }
 
+/// Hex inverter
+pub fn x04(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Hex_Buf(pwr, Decoupler, levels, Pkg, true);
+}
+
 /// Quad 2-in AND
 pub fn x08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Quad_Gate(pwr, Decoupler, levels, Pkg, and_gate);
 }
 
+/// Hex inverter, ST inputs
+pub fn x14(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Hex_Buf(pwr, Decoupler, levels, Pkg, true);
+}
+
 /// Quad 2-in OR
 pub fn x32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Quad_Gate(pwr, Decoupler, levels, Pkg, or_gate);
+}
+
+/// Hex buffer
+pub fn x34(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Hex_Buf(pwr, Decoupler, levels, Pkg, false);
 }
 
 /// Quad 2-in XOR
