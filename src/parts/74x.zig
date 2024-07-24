@@ -10,6 +10,7 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
             bus: Quad_Gate2_Impl,
             gates: [4]Gate2_Impl,
         } = .{ .bus = .{} },
+        remap: [4]u2 = .{ 0, 1, 2, 3 },
 
         const Quad_Gate2_Impl = struct {
             a: [4]Net_ID = .{ .unset } ** 4,
@@ -23,7 +24,20 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
             y: Net_ID = .unset,
         };
 
-        fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+        pub fn check_config(self: @This()) !void {
+            var mapped_logical_gates: [4]bool = .{ false } ** 4;
+            for (self.remap) |logical| {
+                mapped_logical_gates[logical] = true;
+            }
+            for (0.., mapped_logical_gates) |logical_gate, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
                 .bus => |impl| switch (@intFromEnum(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
@@ -31,21 +45,21 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                     7 => self.pwr.gnd,
                     14 => @field(self.pwr, @tagName(pwr)),
 
-                    1 => impl.a[0],
-                    2 => impl.b[0],
-                    3 => impl.y[0],
+                    1 => impl.a[self.remap[0]],
+                    2 => impl.b[self.remap[0]],
+                    3 => impl.y[self.remap[0]],
 
-                    4 => impl.a[1],
-                    5 => impl.b[1],
-                    6 => impl.y[1],
+                    4 => impl.a[self.remap[1]],
+                    5 => impl.b[self.remap[1]],
+                    6 => impl.y[self.remap[1]],
 
-                    10 => impl.a[2],
-                    9 => impl.b[2],
-                    8 => impl.y[2],
+                    10 => impl.a[self.remap[2]],
+                    9 => impl.b[self.remap[2]],
+                    8 => impl.y[self.remap[2]],
 
-                    13 => impl.a[3],
-                    12 => impl.b[3],
-                    11 => impl.y[3],
+                    13 => impl.a[self.remap[3]],
+                    12 => impl.b[self.remap[3]],
+                    11 => impl.y[self.remap[3]],
 
                     else => unreachable,
                 },
@@ -55,21 +69,21 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                     7 => self.pwr.gnd,
                     14 => @field(self.pwr, @tagName(pwr)),
 
-                    1 => impl[0].a,
-                    2 => impl[0].b,
-                    3 => impl[0].y,
+                    1 => impl[self.remap[0]].a,
+                    2 => impl[self.remap[0]].b,
+                    3 => impl[self.remap[0]].y,
 
-                    4 => impl[1].a,
-                    5 => impl[1].b,
-                    6 => impl[1].y,
+                    4 => impl[self.remap[1]].a,
+                    5 => impl[self.remap[1]].b,
+                    6 => impl[self.remap[1]].y,
 
-                    10 => impl[2].a,
-                    9 => impl[2].b,
-                    8 => impl[2].y,
+                    10 => impl[self.remap[2]].a,
+                    9 => impl[self.remap[2]].b,
+                    8 => impl[self.remap[2]].y,
 
-                    13 => impl[3].a,
-                    12 => impl[3].b,
-                    11 => impl[3].y,
+                    13 => impl[self.remap[3]].a,
+                    12 => impl[self.remap[3]].b,
+                    11 => impl[self.remap[3]].y,
 
                     else => unreachable,
                 },
@@ -119,6 +133,7 @@ fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
             bus: Hex_Buf_Impl,
             gates: [6]Buf_Impl,
         } = .{ .bus = .{} },
+        remap: [6]u3 = .{ 0, 1, 2, 3, 4, 5 },
 
         const Hex_Buf_Impl = struct {
             a: [6]Net_ID = .{ .unset } ** 6,
@@ -130,6 +145,19 @@ fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
             y: Net_ID = .unset,
         };
 
+        pub fn check_config(self: @This()) !void {
+            var mapped_logical_gates: [6]bool = .{ false } ** 6;
+            for (self.remap) |logical| {
+                mapped_logical_gates[logical] = true;
+            }
+            for (0.., mapped_logical_gates) |logical_gate, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
         fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
                 .bus => |impl| switch (@intFromEnum(pin_id)) {
@@ -138,23 +166,23 @@ fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
                     7 => self.pwr.gnd,
                     14 => @field(self.pwr, @tagName(pwr)),
 
-                    1 => impl.a[0],
-                    2 => impl.y[0],
+                    1 => impl.a[self.remap[0]],
+                    2 => impl.y[self.remap[0]],
 
-                    3 => impl.a[1],
-                    4 => impl.y[1],
+                    3 => impl.a[self.remap[1]],
+                    4 => impl.y[self.remap[1]],
 
-                    5 => impl.a[2],
-                    6 => impl.y[2],
+                    5 => impl.a[self.remap[2]],
+                    6 => impl.y[self.remap[2]],
 
-                    9 => impl.a[3],
-                    8 => impl.y[3],
+                    9 => impl.a[self.remap[3]],
+                    8 => impl.y[self.remap[3]],
 
-                    11 => impl.a[4],
-                    10 => impl.y[4],
+                    11 => impl.a[self.remap[4]],
+                    10 => impl.y[self.remap[4]],
 
-                    13 => impl.a[5],
-                    12 => impl.y[5],
+                    13 => impl.a[self.remap[5]],
+                    12 => impl.y[self.remap[5]],
 
                     else => unreachable,
                 },
@@ -164,23 +192,23 @@ fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
                     7 => self.pwr.gnd,
                     14 => @field(self.pwr, @tagName(pwr)),
 
-                    1 => impl[0].a,
-                    2 => impl[0].y,
+                    1 => impl[self.remap[0]].a,
+                    2 => impl[self.remap[0]].y,
 
-                    3 => impl[1].a,
-                    4 => impl[1].y,
+                    3 => impl[self.remap[1]].a,
+                    4 => impl[self.remap[1]].y,
 
-                    5 => impl[2].a,
-                    6 => impl[2].y,
+                    5 => impl[self.remap[2]].a,
+                    6 => impl[self.remap[2]].y,
 
-                    9 => impl[3].a,
-                    8 => impl[3].y,
+                    9 => impl[self.remap[3]].a,
+                    8 => impl[self.remap[3]].y,
 
-                    11 => impl[4].a,
-                    10 => impl[4].y,
+                    11 => impl[self.remap[4]].a,
+                    10 => impl[self.remap[4]].y,
 
-                    13 => impl[5].a,
-                    12 => impl[5].y,
+                    13 => impl[self.remap[5]].a,
+                    12 => impl[self.remap[5]].y,
 
                     else => unreachable,
                 },
@@ -280,42 +308,78 @@ fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, compt
 
         u: [2]Unit = .{ .{} } ** 2,
         pwr: power.Single(pwr, Decoupler) = .{},
+        remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
             a: [4]Net_ID = .{ .unset } ** 4,
             y: [4]Net_ID = .{ .unset } ** 4,
             output_enable_low: Net_ID = .unset,
+            remap: [4]u2 = .{ 0, 1, 2, 3 },
+
+            fn logical_a_bit(self: Unit, physical_bit: usize) usize {
+                return self.a[self.remap[physical_bit]];
+            }
+
+            fn logical_y_bit(self: Unit, physical_bit: usize) usize {
+                return self.y[self.remap[physical_bit]];
+            }
         };
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_units: [2]bool = .{ false } ** 2;
+            for (self.remap) |logical| {
+                mapped_units[logical] = true;
+            }
+            for (0.., mapped_units) |logical_unit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
+                    return error.InvalidRemap;
+                }
+            }
+
+            for (0.., self.u) |unit_idx, unit| {
+                var mapped_bits: [4]bool = .{ false } ** 4;
+                for (unit.remap) |logical| {
+                    mapped_bits[logical] = true;
+                }
+                for (0.., mapped_bits) |logical_bit, mapped| {
+                    if (!mapped) {
+                        std.debug.print("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
+                        return error.InvalidRemap;
+                    }
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
-                1 => self.u[0].output_enable_low,
-                19 => self.u[1].output_enable_low,
+                1 => self.u[self.remap[0]].output_enable_low,
+                19 => self.u[self.remap[1]].output_enable_low,
 
                 10 => self.pwr.gnd,
                 20 => @field(self.pwr, @tagName(pwr)),
 
-                2 => self.u[0].a[0],
-                4 => self.u[0].a[1],
-                6 => self.u[0].a[2],
-                8 => self.u[0].a[3],
+                2 => self.u[self.remap[0]].logical_a_bit(0),
+                4 => self.u[self.remap[0]].logical_a_bit(1),
+                6 => self.u[self.remap[0]].logical_a_bit(2),
+                8 => self.u[self.remap[0]].logical_a_bit(3),
 
-                17 => self.u[1].a[0],
-                15 => self.u[1].a[1],
-                13 => self.u[1].a[2],
-                11 => self.u[1].a[3],
+                17 => self.u[self.remap[1]].logical_a_bit(0),
+                15 => self.u[self.remap[1]].logical_a_bit(1),
+                13 => self.u[self.remap[1]].logical_a_bit(2),
+                11 => self.u[self.remap[1]].logical_a_bit(3),
 
-                18 => self.u[0].y[0],
-                16 => self.u[0].y[1],
-                14 => self.u[0].y[2],
-                12 => self.u[0].y[3],
+                18 => self.u[self.remap[0]].logical_y_bit(0),
+                16 => self.u[self.remap[0]].logical_y_bit(1),
+                14 => self.u[self.remap[0]].logical_y_bit(2),
+                12 => self.u[self.remap[0]].logical_y_bit(3),
 
-                3 => self.u[1].y[0],
-                5 => self.u[1].y[1],
-                7 => self.u[1].y[2],
-                9 => self.u[1].y[3],
+                3 => self.u[self.remap[1]].logical_y_bit(0),
+                5 => self.u[self.remap[1]].logical_y_bit(1),
+                7 => self.u[self.remap[1]].logical_y_bit(2),
+                9 => self.u[self.remap[1]].logical_y_bit(3),
 
                 else => unreachable,
             };
@@ -363,12 +427,55 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             a: [4]Net_ID = .{ .unset } ** 4,
             y: [4]Net_ID = .{ .unset } ** 4,
             output_enable_low: Net_ID = .unset,
+            remap: [4]u2 = .{ 0, 1, 2, 3 },
+
+            fn logical_a_bit(self: Unit_Active_Low_OE, physical_bit: usize) usize {
+                return self.a[self.remap[physical_bit]];
+            }
+            fn logical_y_bit(self: Unit_Active_Low_OE, physical_bit: usize) usize {
+                return self.y[self.remap[physical_bit]];
+            }
         };
         pub const Unit_Active_High_OE = struct {
             a: [4]Net_ID = .{ .unset } ** 4,
             y: [4]Net_ID = .{ .unset } ** 4,
             output_enable: Net_ID = .unset,
+            remap: [4]u2 = .{ 0, 1, 2, 3 },
+
+            fn logical_a_bit(self: Unit_Active_Low_OE, physical_bit: usize) usize {
+                return self.a[self.remap[physical_bit]];
+            }
+            fn logical_y_bit(self: Unit_Active_Low_OE, physical_bit: usize) usize {
+                return self.y[self.remap[physical_bit]];
+            }
         };
+
+        pub fn check_config(self: @This()) !void {
+            {
+                var mapped_bits: [4]bool = .{ false } ** 4;
+                for (self.u0.remap) |logical| {
+                    mapped_bits[logical] = true;
+                }
+                for (0.., mapped_bits) |logical_bit, mapped| {
+                    if (!mapped) {
+                        std.debug.print("{s} unit 0: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                        return error.InvalidRemap;
+                    }
+                }
+            }
+            {
+                var mapped_bits: [4]bool = .{ false } ** 4;
+                for (self.u1.remap) |logical| {
+                    mapped_bits[logical] = true;
+                }
+                for (0.., mapped_bits) |logical_bit, mapped| {
+                    if (!mapped) {
+                        std.debug.print("{s} unit 1: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                        return error.InvalidRemap;
+                    }
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -380,25 +487,25 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 10 => self.pwr.gnd,
                 20 => @field(self.pwr, @tagName(pwr)),
 
-                2 => self.u0.a[0],
-                4 => self.u0.a[1],
-                6 => self.u0.a[2],
-                8 => self.u0.a[3],
+                2 => self.u0.logical_a_bit(0),
+                4 => self.u0.logical_a_bit(1),
+                6 => self.u0.logical_a_bit(2),
+                8 => self.u0.logical_a_bit(3),
 
-                17 => self.u1.a[0],
-                15 => self.u1.a[1],
-                13 => self.u1.a[2],
-                11 => self.u1.a[3],
+                17 => self.u1.logical_a_bit(0),
+                15 => self.u1.logical_a_bit(1),
+                13 => self.u1.logical_a_bit(2),
+                11 => self.u1.logical_a_bit(3),
 
-                18 => self.u0.y[0],
-                16 => self.u0.y[1],
-                14 => self.u0.y[2],
-                12 => self.u0.y[3],
+                18 => self.u0.logical_y_bit(0),
+                16 => self.u0.logical_y_bit(1),
+                14 => self.u0.logical_y_bit(2),
+                12 => self.u0.logical_y_bit(3),
 
-                3 => self.u1.y[0],
-                5 => self.u1.y[1],
-                7 => self.u1.y[2],
-                9 => self.u1.y[3],
+                3 => self.u1.logical_y_bit(0),
+                5 => self.u1.logical_y_bit(1),
+                7 => self.u1.logical_y_bit(2),
+                9 => self.u1.logical_y_bit(3),
 
                 else => unreachable,
             };
@@ -446,6 +553,20 @@ pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
         output_enable_low: Net_ID = .unset,
         a_to_b: Net_ID = .unset, // B to A when low
         pwr: power.Single(pwr, Decoupler) = .{},
+        remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_bits: [8]bool = .{ false } ** 8;
+            for (self.remap) |logical| {
+                mapped_bits[logical] = true;
+            }
+            for (0.., mapped_bits) |logical_bit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    return error.InvalidRemap;
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -457,23 +578,23 @@ pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 10 => self.pwr.gnd,
                 20 => @field(self.pwr, @tagName(pwr)),
 
-                2 => self.a[0],
-                3 => self.a[1],
-                4 => self.a[2],
-                5 => self.a[3],
-                6 => self.a[4],
-                7 => self.a[5],
-                8 => self.a[6],
-                9 => self.a[7],
+                2 => self.a[self.remap[0]],
+                3 => self.a[self.remap[1]],
+                4 => self.a[self.remap[2]],
+                5 => self.a[self.remap[3]],
+                6 => self.a[self.remap[4]],
+                7 => self.a[self.remap[5]],
+                8 => self.a[self.remap[6]],
+                9 => self.a[self.remap[7]],
 
-                18 => self.b[0],
-                17 => self.b[1],
-                16 => self.b[2],
-                15 => self.b[3],
-                14 => self.b[4],
-                13 => self.b[5],
-                12 => self.b[6],
-                11 => self.b[7],
+                18 => self.b[self.remap[0]],
+                17 => self.b[self.remap[1]],
+                16 => self.b[self.remap[2]],
+                15 => self.b[self.remap[3]],
+                14 => self.b[self.remap[4]],
+                13 => self.b[self.remap[5]],
+                12 => self.b[self.remap[6]],
+                11 => self.b[self.remap[7]],
 
                 else => unreachable,
             };
@@ -519,6 +640,20 @@ pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
         y: [8]Net_ID = .{ .unset } ** 8,
         output_enable_low: [2]Net_ID = .{ .unset } ** 2,
         pwr: power.Single(pwr, Decoupler) = .{},
+        remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_bits: [8]bool = .{ false } ** 8;
+            for (self.remap) |logical| {
+                mapped_bits[logical] = true;
+            }
+            for (0.., mapped_bits) |logical_bit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    return error.InvalidRemap;
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -530,23 +665,23 @@ pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 10 => self.pwr.gnd,
                 20 => @field(self.pwr, @tagName(pwr)),
 
-                2 => self.a[0],
-                3 => self.a[1],
-                4 => self.a[2],
-                5 => self.a[3],
-                6 => self.a[4],
-                7 => self.a[5],
-                8 => self.a[6],
-                9 => self.a[7],
+                2 => self.a[self.remap[0]],
+                3 => self.a[self.remap[1]],
+                4 => self.a[self.remap[2]],
+                5 => self.a[self.remap[3]],
+                6 => self.a[self.remap[4]],
+                7 => self.a[self.remap[5]],
+                8 => self.a[self.remap[6]],
+                9 => self.a[self.remap[7]],
 
-                18 => self.y[0],
-                17 => self.y[1],
-                16 => self.y[2],
-                15 => self.y[3],
-                14 => self.y[4],
-                13 => self.y[5],
-                12 => self.y[6],
-                11 => self.y[7],
+                18 => self.y[self.remap[0]],
+                17 => self.y[self.remap[1]],
+                16 => self.y[self.remap[2]],
+                15 => self.y[self.remap[3]],
+                14 => self.y[self.remap[4]],
+                13 => self.y[self.remap[5]],
+                12 => self.y[self.remap[6]],
+                11 => self.y[self.remap[7]],
 
                 else => unreachable,
             };
@@ -584,6 +719,20 @@ pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
         transparent: Net_ID = .unset,
         output_enable_low: Net_ID = .unset,
         pwr: power.Single(pwr, Decoupler) = .{},
+        remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_bits: [8]bool = .{ false } ** 8;
+            for (self.remap) |logical| {
+                mapped_bits[logical] = true;
+            }
+            for (0.., mapped_bits) |logical_bit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    return error.InvalidRemap;
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -595,23 +744,23 @@ pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 10 => self.pwr.gnd,
                 20 => @field(self.pwr, @tagName(pwr)),
 
-                2 => self.d[0],
-                3 => self.d[1],
-                4 => self.d[2],
-                5 => self.d[3],
-                6 => self.d[4],
-                7 => self.d[5],
-                8 => self.d[6],
-                9 => self.d[7],
+                2 => self.d[self.remap[0]],
+                3 => self.d[self.remap[1]],
+                4 => self.d[self.remap[2]],
+                5 => self.d[self.remap[3]],
+                6 => self.d[self.remap[4]],
+                7 => self.d[self.remap[5]],
+                8 => self.d[self.remap[6]],
+                9 => self.d[self.remap[7]],
 
-                19 => self.q[0],
-                18 => self.q[1],
-                17 => self.q[2],
-                16 => self.q[3],
-                15 => self.q[4],
-                14 => self.q[5],
-                13 => self.q[6],
-                12 => self.q[7],
+                19 => self.q[self.remap[0]],
+                18 => self.q[self.remap[1]],
+                17 => self.q[self.remap[2]],
+                16 => self.q[self.remap[3]],
+                15 => self.q[self.remap[4]],
+                14 => self.q[self.remap[5]],
+                13 => self.q[self.remap[6]],
+                12 => self.q[self.remap[7]],
 
                 else => unreachable,
             };
@@ -661,6 +810,20 @@ pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
         clk: Net_ID = .unset,
         output_enable_low: Net_ID = .unset,
         pwr: power.Single(pwr, Decoupler) = .{},
+        remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_bits: [8]bool = .{ false } ** 8;
+            for (self.remap) |logical| {
+                mapped_bits[logical] = true;
+            }
+            for (0.., mapped_bits) |logical_bit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    return error.InvalidRemap;
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -672,23 +835,23 @@ pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 10 => self.pwr.gnd,
                 20 => @field(self.pwr, @tagName(pwr)),
 
-                2 => self.d[0],
-                3 => self.d[1],
-                4 => self.d[2],
-                5 => self.d[3],
-                6 => self.d[4],
-                7 => self.d[5],
-                8 => self.d[6],
-                9 => self.d[7],
+                2 => self.d[self.remap[0]],
+                3 => self.d[self.remap[1]],
+                4 => self.d[self.remap[2]],
+                5 => self.d[self.remap[3]],
+                6 => self.d[self.remap[4]],
+                7 => self.d[self.remap[5]],
+                8 => self.d[self.remap[6]],
+                9 => self.d[self.remap[7]],
 
-                19 => self.q[0],
-                18 => self.q[1],
-                17 => self.q[2],
-                16 => self.q[3],
-                15 => self.q[4],
-                14 => self.q[5],
-                13 => self.q[6],
-                12 => self.q[7],
+                19 => self.q[self.remap[0]],
+                18 => self.q[self.remap[1]],
+                17 => self.q[self.remap[2]],
+                16 => self.q[self.remap[3]],
+                15 => self.q[self.remap[4]],
+                14 => self.q[self.remap[5]],
+                13 => self.q[self.remap[6]],
+                12 => self.q[self.remap[7]],
 
                 else => unreachable,
             };
@@ -736,61 +899,97 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         u: [4]Unit = .{ .{} } ** 4,
         pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        remap: [4]u2 = .{ 0, 1, 2, 3 },
 
         pub const Unit = struct {
             a: [4]Net_ID = .{ .unset } ** 4,
             y: [4]Net_ID = .{ .unset } ** 4,
             output_enable_low: Net_ID = .unset,
+            remap: [4]u2 = .{ 0, 1, 2, 3 },
+
+            fn logical_a_bit(self: Unit, physical_bit: usize) usize {
+                return self.a[self.remap[physical_bit]];
+            }
+
+            fn logical_y_bit(self: Unit, physical_bit: usize) usize {
+                return self.y[self.remap[physical_bit]];
+            }
         };
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_units: [4]bool = .{ false } ** 4;
+            for (self.remap) |logical| {
+                mapped_units[logical] = true;
+            }
+            for (0.., mapped_units) |logical_unit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
+                    return error.InvalidRemap;
+                }
+            }
+
+            for (0.., self.u) |unit_idx, unit| {
+                var mapped_bits: [4]bool = .{ false } ** 4;
+                for (unit.remap) |logical| {
+                    mapped_bits[logical] = true;
+                }
+                for (0.., mapped_bits) |logical_bit, mapped| {
+                    if (!mapped) {
+                        std.debug.print("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
+                        return error.InvalidRemap;
+                    }
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
-                1 => self.u[0].output_enable_low,
-                48 => self.u[1].output_enable_low,
-                25 => self.u[2].output_enable_low,
-                24 => self.u[3].output_enable_low,
+                1 => self.u[self.remap[0]].output_enable_low,
+                48 => self.u[self.remap[1]].output_enable_low,
+                25 => self.u[self.remap[2]].output_enable_low,
+                24 => self.u[self.remap[3]].output_enable_low,
 
-                47 => self.u[0].a[0],
-                46 => self.u[0].a[1],
-                44 => self.u[0].a[2],
-                43 => self.u[0].a[3],
+                47 => self.u[self.remap[0]].logical_a_bit(0),
+                46 => self.u[self.remap[0]].logical_a_bit(1),
+                44 => self.u[self.remap[0]].logical_a_bit(2),
+                43 => self.u[self.remap[0]].logical_a_bit(3),
 
-                41 => self.u[1].a[0],
-                40 => self.u[1].a[1],
-                38 => self.u[1].a[2],
-                37 => self.u[1].a[3],
+                41 => self.u[self.remap[1]].logical_a_bit(0),
+                40 => self.u[self.remap[1]].logical_a_bit(1),
+                38 => self.u[self.remap[1]].logical_a_bit(2),
+                37 => self.u[self.remap[1]].logical_a_bit(3),
 
-                36 => self.u[2].a[0],
-                35 => self.u[2].a[1],
-                33 => self.u[2].a[2],
-                32 => self.u[2].a[3],
+                36 => self.u[self.remap[2]].logical_a_bit(0),
+                35 => self.u[self.remap[2]].logical_a_bit(1),
+                33 => self.u[self.remap[2]].logical_a_bit(2),
+                32 => self.u[self.remap[2]].logical_a_bit(3),
 
-                30 => self.u[3].a[0],
-                29 => self.u[3].a[1],
-                27 => self.u[3].a[2],
-                26 => self.u[3].a[3],
+                30 => self.u[self.remap[3]].logical_a_bit(0),
+                29 => self.u[self.remap[3]].logical_a_bit(1),
+                27 => self.u[self.remap[3]].logical_a_bit(2),
+                26 => self.u[self.remap[3]].logical_a_bit(3),
 
-                2 => self.u[0].y[0],
-                3 => self.u[0].y[1],
-                5 => self.u[0].y[2],
-                6 => self.u[0].y[3],
+                2 => self.u[self.remap[0]].logical_y_bit(0),
+                3 => self.u[self.remap[0]].logical_y_bit(1),
+                5 => self.u[self.remap[0]].logical_y_bit(2),
+                6 => self.u[self.remap[0]].logical_y_bit(3),
 
-                8 => self.u[1].y[0],
-                9 => self.u[1].y[1],
-                11 => self.u[1].y[2],
-                12 => self.u[1].y[3],
+                8 => self.u[self.remap[1]].logical_y_bit(0),
+                9 => self.u[self.remap[1]].logical_y_bit(1),
+                11 => self.u[self.remap[1]].logical_y_bit(2),
+                12 => self.u[self.remap[1]].logical_y_bit(3),
 
-                13 => self.u[2].y[0],
-                14 => self.u[2].y[1],
-                16 => self.u[2].y[2],
-                17 => self.u[2].y[3],
+                13 => self.u[self.remap[2]].logical_y_bit(0),
+                14 => self.u[self.remap[2]].logical_y_bit(1),
+                16 => self.u[self.remap[2]].logical_y_bit(2),
+                17 => self.u[self.remap[2]].logical_y_bit(3),
 
-                19 => self.u[3].y[0],
-                20 => self.u[3].y[1],
-                22 => self.u[3].y[2],
-                23 => self.u[3].y[3],
+                19 => self.u[self.remap[3]].logical_y_bit(0),
+                20 => self.u[self.remap[3]].logical_y_bit(1),
+                22 => self.u[self.remap[3]].logical_y_bit(2),
+                23 => self.u[self.remap[3]].logical_y_bit(3),
 
                 4 => self.pwr.gnd[0],
                 10 => self.pwr.gnd[1],
@@ -856,58 +1055,94 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         u: [2]Unit = .{ .{} } ** 2,
         pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
             a: [8]Net_ID = .{ .unset } ** 8,
             b: [8]Net_ID = .{ .unset } ** 8,
             output_enable_low: Net_ID = .unset,
             a_to_b: Net_ID = .unset, // B to A when low
+            remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
+
+            fn logical_a_bit(self: Unit, physical_bit: usize) usize {
+                return self.a[self.remap[physical_bit]];
+            }
+
+            fn logical_b_bit(self: Unit, physical_bit: usize) usize {
+                return self.b[self.remap[physical_bit]];
+            }
         };
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_units: [2]bool = .{ false } ** 2;
+            for (self.remap) |logical| {
+                mapped_units[logical] = true;
+            }
+            for (0.., mapped_units) |logical_unit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
+                    return error.InvalidRemap;
+                }
+            }
+
+            for (0.., self.u) |unit_idx, unit| {
+                var mapped_bits: [8]bool = .{ false } ** 8;
+                for (unit.remap) |logical| {
+                    mapped_bits[logical] = true;
+                }
+                for (0.., mapped_bits) |logical_bit, mapped| {
+                    if (!mapped) {
+                        std.debug.print("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
+                        return error.InvalidRemap;
+                    }
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
-                1 => self.u[0].a_to_b,
-                48 => self.u[0].output_enable_low,
-                25 => self.u[1].output_enable_low,
-                24 => self.u[1].a_to_b,
+                1 => self.u[self.remap[0]].a_to_b,
+                48 => self.u[self.remap[0]].output_enable_low,
+                25 => self.u[self.remap[1]].output_enable_low,
+                24 => self.u[self.remap[1]].a_to_b,
 
-                47 => self.u[0].a[0],
-                46 => self.u[0].a[1],
-                44 => self.u[0].a[2],
-                43 => self.u[0].a[3],
-                41 => self.u[0].a[4],
-                40 => self.u[0].a[5],
-                38 => self.u[0].a[6],
-                37 => self.u[0].a[7],
+                47 => self.u[self.remap[0]].logical_a_bit(0),
+                46 => self.u[self.remap[0]].logical_a_bit(1),
+                44 => self.u[self.remap[0]].logical_a_bit(2),
+                43 => self.u[self.remap[0]].logical_a_bit(3),
+                41 => self.u[self.remap[0]].logical_a_bit(4),
+                40 => self.u[self.remap[0]].logical_a_bit(5),
+                38 => self.u[self.remap[0]].logical_a_bit(6),
+                37 => self.u[self.remap[0]].logical_a_bit(7),
 
-                36 => self.u[1].a[0],
-                35 => self.u[1].a[1],
-                33 => self.u[1].a[2],
-                32 => self.u[1].a[3],
-                30 => self.u[1].a[4],
-                29 => self.u[1].a[5],
-                27 => self.u[1].a[6],
-                26 => self.u[1].a[7],
+                36 => self.u[self.remap[1]].logical_a_bit(0),
+                35 => self.u[self.remap[1]].logical_a_bit(1),
+                33 => self.u[self.remap[1]].logical_a_bit(2),
+                32 => self.u[self.remap[1]].logical_a_bit(3),
+                30 => self.u[self.remap[1]].logical_a_bit(4),
+                29 => self.u[self.remap[1]].logical_a_bit(5),
+                27 => self.u[self.remap[1]].logical_a_bit(6),
+                26 => self.u[self.remap[1]].logical_a_bit(7),
 
-                2 => self.u[0].b[0],
-                3 => self.u[0].b[1],
-                5 => self.u[0].b[2],
-                6 => self.u[0].b[3],
-                8 => self.u[0].b[4],
-                9 => self.u[0].b[5],
-                11 => self.u[0].b[6],
-                12 => self.u[0].b[7],
+                2 => self.u[self.remap[0]].logical_b_bit(0),
+                3 => self.u[self.remap[0]].logical_b_bit(1),
+                5 => self.u[self.remap[0]].logical_b_bit(2),
+                6 => self.u[self.remap[0]].logical_b_bit(3),
+                8 => self.u[self.remap[0]].logical_b_bit(4),
+                9 => self.u[self.remap[0]].logical_b_bit(5),
+                11 => self.u[self.remap[0]].logical_b_bit(6),
+                12 => self.u[self.remap[0]].logical_b_bit(7),
 
-                13 => self.u[1].b[0],
-                14 => self.u[1].b[1],
-                16 => self.u[1].b[2],
-                17 => self.u[1].b[3],
-                19 => self.u[1].b[4],
-                20 => self.u[1].b[5],
-                22 => self.u[1].b[6],
-                23 => self.u[1].b[7],
+                13 => self.u[self.remap[1]].logical_b_bit(0),
+                14 => self.u[self.remap[1]].logical_b_bit(1),
+                16 => self.u[self.remap[1]].logical_b_bit(2),
+                17 => self.u[self.remap[1]].logical_b_bit(3),
+                19 => self.u[self.remap[1]].logical_b_bit(4),
+                20 => self.u[self.remap[1]].logical_b_bit(5),
+                22 => self.u[self.remap[1]].logical_b_bit(6),
+                23 => self.u[self.remap[1]].logical_b_bit(7),
                 
                 4 => self.pwr.gnd[0],
                 10 => self.pwr.gnd[1],
@@ -1003,6 +1238,7 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
         bx: Port_B = .{},
         by: Port_B = .{},
         pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        remap: [12]u4 = .{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 },
 
         pub const Port_A = struct {
             data: [12]Net_ID = .{ .unset } ** 12,
@@ -1017,56 +1253,69 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             latch_output_data: Net_ID = .unset, // latch data from A side; transparent when high
         };
 
+        pub fn check_config(self: @This()) !void {
+            var mapped_bits: [12]bool = .{ false } ** 12;
+            for (self.remap) |logical| {
+                mapped_bits[logical] = true;
+            }
+            for (0.., mapped_bits) |logical_bit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.a.output_enable_low,
                 28 => self.a.enable_bx,
-                8 => self.a.data[0],
-                9 => self.a.data[1],
-                10 => self.a.data[2],
-                12 => self.a.data[3],
-                13 => self.a.data[4],
-                14 => self.a.data[5],
-                15 => self.a.data[6],
-                16 => self.a.data[7],
-                17 => self.a.data[8],
-                19 => self.a.data[9],
-                20 => self.a.data[10],
-                21 => self.a.data[11],
+                8 => self.a.data[self.remap[0]],
+                9 => self.a.data[self.remap[1]],
+                10 => self.a.data[self.remap[2]],
+                12 => self.a.data[self.remap[3]],
+                13 => self.a.data[self.remap[4]],
+                14 => self.a.data[self.remap[5]],
+                15 => self.a.data[self.remap[6]],
+                16 => self.a.data[self.remap[7]],
+                17 => self.a.data[self.remap[8]],
+                19 => self.a.data[self.remap[9]],
+                20 => self.a.data[self.remap[10]],
+                21 => self.a.data[self.remap[11]],
 
                 2 => self.bx.latch_input_data,
                 30 => self.bx.latch_output_data,
                 29 => self.bx.output_enable_low,
-                23 => self.bx.data[0],
-                24 => self.bx.data[1],
-                26 => self.bx.data[2],
-                31 => self.bx.data[3],
-                33 => self.bx.data[4],
-                34 => self.bx.data[5],
-                36 => self.bx.data[6],
-                37 => self.bx.data[7],
-                38 => self.bx.data[8],
-                40 => self.bx.data[9],
-                41 => self.bx.data[10],
-                42 => self.bx.data[11],
+                23 => self.bx.data[self.remap[0]],
+                24 => self.bx.data[self.remap[1]],
+                26 => self.bx.data[self.remap[2]],
+                31 => self.bx.data[self.remap[3]],
+                33 => self.bx.data[self.remap[4]],
+                34 => self.bx.data[self.remap[5]],
+                36 => self.bx.data[self.remap[6]],
+                37 => self.bx.data[self.remap[7]],
+                38 => self.bx.data[self.remap[8]],
+                40 => self.bx.data[self.remap[9]],
+                41 => self.bx.data[self.remap[10]],
+                42 => self.bx.data[self.remap[11]],
 
                 27 => self.by.latch_input_data,
                 55 => self.by.latch_output_data,
                 56 => self.by.output_enable_low,
-                52 => self.by.data[0],
-                5 => self.by.data[1],
-                3 => self.by.data[2],
-                54 => self.by.data[3],
-                6 => self.by.data[4],
-                51 => self.by.data[5],
-                49 => self.by.data[6],
-                48 => self.by.data[7],
-                47 => self.by.data[8],
-                45 => self.by.data[9],
-                44 => self.by.data[10],
-                43 => self.by.data[11],
+                52 => self.by.data[self.remap[0]],
+                5 => self.by.data[self.remap[1]],
+                3 => self.by.data[self.remap[2]],
+                54 => self.by.data[self.remap[3]],
+                6 => self.by.data[self.remap[4]],
+                51 => self.by.data[self.remap[5]],
+                49 => self.by.data[self.remap[6]],
+                48 => self.by.data[self.remap[7]],
+                47 => self.by.data[self.remap[8]],
+                45 => self.by.data[self.remap[9]],
+                44 => self.by.data[self.remap[10]],
+                43 => self.by.data[self.remap[11]],
 
                 4 => self.pwr.gnd[0],
                 11 => self.pwr.gnd[1],
@@ -1205,6 +1454,7 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         u: [2]Unit = .{ .{} } ** 2,
         pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
             a: [8]Net_ID = .{ .unset } ** 8,
@@ -1219,61 +1469,96 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 output_register: Net_ID = .unset, // when low, output data will come from register input instead
                 clk: Net_ID = .unset,
             } = .{},
+            remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
+            
+            fn logical_a_bit(self: Unit, physical_bit: usize) usize {
+                return self.a[self.remap[physical_bit]];
+            }
+
+            fn logical_b_bit(self: Unit, physical_bit: usize) usize {
+                return self.b[self.remap[physical_bit]];
+            }
         };
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_units: [2]bool = .{ false } ** 2;
+            for (self.remap) |logical| {
+                mapped_units[logical] = true;
+            }
+            for (0.., mapped_units) |logical_unit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
+                    return error.InvalidRemap;
+                }
+            }
+
+            for (0.., self.u) |unit_idx, unit| {
+                var mapped_bits: [8]bool = .{ false } ** 8;
+                for (unit.remap) |logical| {
+                    mapped_bits[logical] = true;
+                }
+                for (0.., mapped_bits) |logical_bit, mapped| {
+                    if (!mapped) {
+                        std.debug.print("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
+                        return error.InvalidRemap;
+                    }
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
-                1 => self.u[0].a_to_b.output_enable,
-                2 => self.u[0].a_to_b.clk,
-                3 => self.u[0].a_to_b.output_register,
-                56 => self.u[0].b_to_a.output_enable_low,
-                55 => self.u[0].b_to_a.clk,
-                54 => self.u[0].b_to_a.output_register,
+                1 => self.u[self.remap[0]].a_to_b.output_enable,
+                2 => self.u[self.remap[0]].a_to_b.clk,
+                3 => self.u[self.remap[0]].a_to_b.output_register,
+                56 => self.u[self.remap[0]].b_to_a.output_enable_low,
+                55 => self.u[self.remap[0]].b_to_a.clk,
+                54 => self.u[self.remap[0]].b_to_a.output_register,
 
-                28 => self.u[1].a_to_b.output_enable,
-                29 => self.u[1].a_to_b.clk,
-                27 => self.u[1].a_to_b.output_register,
-                30 => self.u[1].b_to_a.output_enable_low,
-                26 => self.u[1].b_to_a.clk,
-                31 => self.u[1].b_to_a.output_register,
+                28 => self.u[self.remap[1]].a_to_b.output_enable,
+                29 => self.u[self.remap[1]].a_to_b.clk,
+                27 => self.u[self.remap[1]].a_to_b.output_register,
+                30 => self.u[self.remap[1]].b_to_a.output_enable_low,
+                26 => self.u[self.remap[1]].b_to_a.clk,
+                31 => self.u[self.remap[1]].b_to_a.output_register,
 
-                5 => self.u[0].a[0],
-                6 => self.u[0].a[1],
-                8 => self.u[0].a[2],
-                9 => self.u[0].a[3],
-                10 => self.u[0].a[4],
-                12 => self.u[0].a[5],
-                13 => self.u[0].a[6],
-                14 => self.u[0].a[7],
+                5 => self.u[self.remap[0]].logical_a_bit(0),
+                6 => self.u[self.remap[0]].logical_a_bit(1),
+                8 => self.u[self.remap[0]].logical_a_bit(2),
+                9 => self.u[self.remap[0]].logical_a_bit(3),
+                10 => self.u[self.remap[0]].logical_a_bit(4),
+                12 => self.u[self.remap[0]].logical_a_bit(5),
+                13 => self.u[self.remap[0]].logical_a_bit(6),
+                14 => self.u[self.remap[0]].logical_a_bit(7),
 
-                15 => self.u[1].a[0],
-                16 => self.u[1].a[1],
-                17 => self.u[1].a[2],
-                19 => self.u[1].a[3],
-                20 => self.u[1].a[4],
-                21 => self.u[1].a[5],
-                23 => self.u[1].a[6],
-                24 => self.u[1].a[7],
+                15 => self.u[self.remap[1]].logical_a_bit(0),
+                16 => self.u[self.remap[1]].logical_a_bit(1),
+                17 => self.u[self.remap[1]].logical_a_bit(2),
+                19 => self.u[self.remap[1]].logical_a_bit(3),
+                20 => self.u[self.remap[1]].logical_a_bit(4),
+                21 => self.u[self.remap[1]].logical_a_bit(5),
+                23 => self.u[self.remap[1]].logical_a_bit(6),
+                24 => self.u[self.remap[1]].logical_a_bit(7),
 
-                52 => self.u[0].b[0],
-                51 => self.u[0].b[1],
-                49 => self.u[0].b[2],
-                48 => self.u[0].b[3],
-                47 => self.u[0].b[4],
-                45 => self.u[0].b[5],
-                44 => self.u[0].b[6],
-                43 => self.u[0].b[7],
+                52 => self.u[self.remap[0]].logical_b_bit(0),
+                51 => self.u[self.remap[0]].logical_b_bit(1),
+                49 => self.u[self.remap[0]].logical_b_bit(2),
+                48 => self.u[self.remap[0]].logical_b_bit(3),
+                47 => self.u[self.remap[0]].logical_b_bit(4),
+                45 => self.u[self.remap[0]].logical_b_bit(5),
+                44 => self.u[self.remap[0]].logical_b_bit(6),
+                43 => self.u[self.remap[0]].logical_b_bit(7),
 
-                42 => self.u[1].b[0],
-                41 => self.u[1].b[1],
-                40 => self.u[1].b[2],
-                38 => self.u[1].b[3],
-                37 => self.u[1].b[4],
-                36 => self.u[1].b[5],
-                34 => self.u[1].b[6],
-                33 => self.u[1].b[7],
+                42 => self.u[self.remap[1]].logical_b_bit(0),
+                41 => self.u[self.remap[1]].logical_b_bit(1),
+                40 => self.u[self.remap[1]].logical_b_bit(2),
+                38 => self.u[self.remap[1]].logical_b_bit(3),
+                37 => self.u[self.remap[1]].logical_b_bit(4),
+                36 => self.u[self.remap[1]].logical_b_bit(5),
+                34 => self.u[self.remap[1]].logical_b_bit(6),
+                33 => self.u[self.remap[1]].logical_b_bit(7),
                 
                 4 => self.pwr.gnd[0],
                 11 => self.pwr.gnd[1],
@@ -1411,6 +1696,20 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
         enable_clk_low: Net_ID = .unset,
         output_enable_low: Net_ID = .unset,
         pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        remap: [20]u5 = .{ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 },
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_bits: [20]bool = .{ false } ** 20;
+            for (self.remap) |logical| {
+                mapped_bits[logical] = true;
+            }
+            for (0.., mapped_bits) |logical_bit, mapped| {
+                if (!mapped) {
+                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    return error.InvalidRemap;
+                }
+            }
+        }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -1420,47 +1719,47 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 56 => self.clk,
                 29 => self.enable_clk_low,
 
-                55 => self.d[0],
-                54 => self.d[1],
-                52 => self.d[2],
-                51 => self.d[3],
-                49 => self.d[4],
-                48 => self.d[5],
-                47 => self.d[6],
-                45 => self.d[7],
-                44 => self.d[8],
-                43 => self.d[9],
-                42 => self.d[10],
-                41 => self.d[11],
-                40 => self.d[12],
-                38 => self.d[13],
-                37 => self.d[14],
-                36 => self.d[15],
-                34 => self.d[16],
-                33 => self.d[17],
-                31 => self.d[18],
-                30 => self.d[19],
+                55 => self.d[self.remap[0]],
+                54 => self.d[self.remap[1]],
+                52 => self.d[self.remap[2]],
+                51 => self.d[self.remap[3]],
+                49 => self.d[self.remap[4]],
+                48 => self.d[self.remap[5]],
+                47 => self.d[self.remap[6]],
+                45 => self.d[self.remap[7]],
+                44 => self.d[self.remap[8]],
+                43 => self.d[self.remap[9]],
+                42 => self.d[self.remap[10]],
+                41 => self.d[self.remap[11]],
+                40 => self.d[self.remap[12]],
+                38 => self.d[self.remap[13]],
+                37 => self.d[self.remap[14]],
+                36 => self.d[self.remap[15]],
+                34 => self.d[self.remap[16]],
+                33 => self.d[self.remap[17]],
+                31 => self.d[self.remap[18]],
+                30 => self.d[self.remap[19]],
 
-                2 => self.q[0],
-                3 => self.q[1],
-                5 => self.q[2],
-                6 => self.q[3],
-                8 => self.q[4],
-                9 => self.q[5],
-                10 => self.q[6],
-                12 => self.q[7],
-                13 => self.q[8],
-                14 => self.q[9],
-                15 => self.q[10],
-                16 => self.q[11],
-                17 => self.q[12],
-                19 => self.q[13],
-                20 => self.q[14],
-                21 => self.q[15],
-                23 => self.q[16],
-                24 => self.q[17],
-                26 => self.q[18],
-                27 => self.q[19],
+                2 => self.q[self.remap[0]],
+                3 => self.q[self.remap[1]],
+                5 => self.q[self.remap[2]],
+                6 => self.q[self.remap[3]],
+                8 => self.q[self.remap[4]],
+                9 => self.q[self.remap[5]],
+                10 => self.q[self.remap[6]],
+                12 => self.q[self.remap[7]],
+                13 => self.q[self.remap[8]],
+                14 => self.q[self.remap[9]],
+                15 => self.q[self.remap[10]],
+                16 => self.q[self.remap[11]],
+                17 => self.q[self.remap[12]],
+                19 => self.q[self.remap[13]],
+                20 => self.q[self.remap[14]],
+                21 => self.q[self.remap[15]],
+                23 => self.q[self.remap[16]],
+                24 => self.q[self.remap[17]],
+                26 => self.q[self.remap[18]],
+                27 => self.q[self.remap[19]],
 
                 4 => self.pwr.gnd[0],
                 11 => self.pwr.gnd[1],
@@ -1543,3 +1842,4 @@ const power = @import("../power.zig");
 const Part = @import("../Part.zig");
 const Package = @import("../Package.zig");
 const Validator = @import("../Validator.zig");
+const std = @import("std");

@@ -16,9 +16,9 @@ If you answered "yes" to many of the above questions, you may be interested in _
 * Automatic connection of power pins and insertion of decoupling caps
 * Automatic component designation assignment
 * Framework for writing ERC validation tests in Zig
+* Easily remap units/gates/bits for parts with multiple identical units
 
 ## Planned Features
-* Remap bits/gates for parts with multiple identical units
 * Programmatic package footprint generation
 * Definition of board edges & filled zones in Zig code
 * Board component placement in Zig code

@@ -151,6 +151,18 @@ pub fn part(self: *Board, comptime Type: type) *Type {
 
 
 pub fn finish_configuration(self: *Board, temp: std.mem.Allocator) !void {
+    { // call check_config functions
+        // This process may add new parts, so we can't assume self.parts.items will be stable
+        var i: usize = self.parts.items.len;
+        while (i > 0) {
+            i -= 1;
+            const p = self.parts.items[i];
+            if (p.vt.check_config) |func| {
+                try func(p.base, self);
+            }
+        }
+    }
+
     { // generate decoupling caps and ensure power nets are set
         // This process may add new parts, so we can't assume self.parts.items will be stable
         var i: usize = self.parts.items.len;

@@ -13,12 +13,14 @@ pub const Base = struct {
 };
 
 pub const VTable = struct {
+    check_config: ?*const fn(base: *Part.Base, b: *Board) anyerror!void,
     finalize_power_nets: *const fn(base: *Part.Base, b: *Board) anyerror!void,
     validate: ?*const fn(base: *const Part.Base, v: *Validator, state: *anyopaque, mode: Validator.Update_Mode) anyerror!void,
     validator_state_bytes: usize,
     validator_state_align: usize,
 
     pub fn init(comptime P: type) *const VTable {
+        const has_check_config = @hasDecl(P, "check_config");
         const has_validate = @hasDecl(P, "validate");
         comptime var Validator_State = void;
         comptime var Validator_State_Pointer = void;
@@ -32,6 +34,16 @@ pub const VTable = struct {
         }
 
         const impl = struct {
+            pub fn check_config(base: *Part.Base, b: *Board) !void {
+                const part: *P = @fieldParentPtr("base", base);
+                const func_info: std.builtin.Type.Fn = @typeInfo(@TypeOf(P.check_config)).Fn;
+                if (func_info.params.len == 2) {
+                    try part.check_config(b);
+                } else {
+                    try part.check_config();
+                }
+            }
+
             pub fn finalize_power_nets(base: *Part.Base, b: *Board) !void {
                 const part: *P = @fieldParentPtr("base", base);
 
@@ -64,6 +76,8 @@ pub const VTable = struct {
                 }
 
                 switch (@typeInfo(T)) {
+                    .Int => return,
+                    .Float => return,
                     .Struct => |struct_info| inline for (struct_info.fields) |field_info| {
                         try check_for_unset_nets(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
                     },
@@ -103,6 +117,7 @@ pub const VTable = struct {
             }
         };
         return &.{
+            .check_config = if (has_check_config) impl.check_config else null,
             .finalize_power_nets = impl.finalize_power_nets,
             .validate = if (has_validate) impl.validate else null,
             .validator_state_bytes = @sizeOf(Validator_State),
@@ -113,6 +128,14 @@ pub const VTable = struct {
 
 pub fn finalize_power_nets(self: Part, b: *Board) !void {
     try self.vt.finalize_power_nets(self.base, b);
+}
+
+pub fn identity_remap(comptime T: type, comptime n: usize) [n]T {
+    var remap: [n]T = undefined;
+    for (&remap, 0..) |*out, i| {
+        out.* = i;
+    }
+    return remap;
 }
 
 const Net_ID = enums.Net_ID;
