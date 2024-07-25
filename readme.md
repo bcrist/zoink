@@ -1,9 +1,9 @@
 # Zoink!
-### Programmatic Digital Design & Board Layout
+### Programmer's Digital Design & Board Layout Tool
 
 Are you tired of painstakingly entering your designs in KiCAD's schematic editor before you can lay out the board?
 Have you ever wished that putting together a board design was less like photo editing and more like programming?
-Do you hate manually creating KiCAD symbols and footprints for every part you use but just can't bring yourself to trust the default KiCAD component libraries?
+Do you hate manually creating KiCAD symbols and footprints for every part you use, but just can't bring yourself to trust the default KiCAD component libraries?
 Are your wracked with disappointment when you send a board off to the fab only to notice that you forgot a decoupling cap somewhere?
 Do you wish KiCAD's ERC could check for logic level incompatibilities, bus contention, and behavioral correctness of your design?
 Are you addicted to writing Zig code?
@@ -15,8 +15,8 @@ If you answered "yes" to many of the above questions, you may be interested in _
 * Limited built-in component library 
 * Automatic connection of power pins and insertion of decoupling caps
 * Automatic component designation assignment
-* Framework for writing ERC validation tests in Zig
-* Easily remap units/gates/bits for parts with multiple identical units
+* Remap units/gates/bits for parts with multiple functionally equivalent data paths
+* Framework for writing ERC/behavioral validation tests in Zig
 
 ## Planned Features
 * Programmatic package footprint generation

@@ -1,5 +1,5 @@
 
-pub fn QFP(comptime Pkg: type) type {
+pub fn SQ(comptime Pkg: type) type {
     _ = Pkg;
     return struct {
         pub const fp: Footprint = .{
@@ -7,15 +7,7 @@ pub fn QFP(comptime Pkg: type) type {
     };
 }
 
-pub fn QFN(comptime Pkg: type) type {
-    _ = Pkg;
-    return struct {
-        pub const fp: Footprint = .{
-        };
-    };
-}
-
-pub fn DFN(comptime Pkg: type) type {
+pub fn SD(comptime Pkg: type) type {
     _ = Pkg;
     return struct {
         pub const fp: Footprint = .{
@@ -30,31 +22,6 @@ pub fn BGA_Full(comptime Pkg: type) type {
         };
     };
 }
-
-pub fn SO(comptime Pkg: type) type {
-    _ = Pkg;
-    return struct {
-        pub const fp: Footprint = .{
-        };
-    };
-}
-
-pub fn SOJ(comptime Pkg: type) type {
-    _ = Pkg;
-    return struct {
-        pub const fp: Footprint = .{
-        };
-    };
-}
-
-pub fn PLCC(comptime Pkg: type) type {
-    _ = Pkg;
-    return struct {
-        pub const fp: Footprint = .{
-        };
-    };
-}
-
 
 pub fn R(comptime Pkg: type) type {
     _ = Pkg;
