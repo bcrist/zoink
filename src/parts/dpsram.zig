@@ -8,7 +8,7 @@ pub fn CY7C0xx(
 ) type {
     std.debug.assert(addr_bits >= 12);
     std.debug.assert(byte_bits == 8 or byte_bits == 9);
-    if (Pkg == packages.PLCC_84) {
+    if (Pkg == packages.PLCC_84M) {
         std.debug.assert(byte_bits == 8);
         std.debug.assert(addr_bits <= 13);
     } else std.debug.assert(Pkg == packages.TQFP_100_14mm);

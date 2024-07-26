@@ -1,11 +1,15 @@
-// TODO alias namespaces - jedec, jeita/eiaj, SOT codes, etc.
-
 pub const jedec = @import("packages/jedec.zig");
+pub const rc = @import("packages/rc.zig");
 
-pub const TQFP_100_14mm = jedec.MS_026D(100, 14, 14, .thin);
+pub const SOT23 = jedec.TO_236H__MO_193G(3);
+pub const SOT23_5 = jedec.TO_236H__MO_193G(5);
+pub const SOT23_6 = jedec.TO_236H__MO_193G(6);
+pub const SOT23_8 = jedec.TO_236H__MO_193G(8);
 
-pub const TSOP_II_32 = jedec.MS_024H(32, 1270);
-pub const TSOP_II_44 = jedec.MS_024H(44, 800);
+pub const SOT143 = jedec.TO_253D;
+
+pub const SOT223 = jedec.TO_261AA;
+pub const SOT223_5 = jedec.TO_261AB;
 
 pub const SOJ_14 = jedec.MS_027A__MO_065A_077D_088A(14, 300);
 pub const SOJ_16 = jedec.MS_027A__MO_065A_077D_088A(16, 300);
@@ -30,163 +34,86 @@ pub const PLCC_22 = jedec.MS_016A(18); // 7x4
 pub const PLCC_28_9x5 = jedec.MS_016A(18); // 9x5
 pub const PLCC_32 = jedec.MS_016A(18); // 9x7
 
-pub const PLCC_20 = jedec.MO_047B(20);
-pub const PLCC_28_7x7 = jedec.MO_047B(28);
-pub const PLCC_44 = jedec.MO_047B(44);
-pub const PLCC_52 = jedec.MO_047B(52);
-pub const PLCC_68 = jedec.MO_047B(68);
-pub const PLCC_84 = jedec.MO_047B(84);
-pub const PLCC_100 = jedec.MO_047B(100);
-pub const PLCC_124 = jedec.MO_047B(124);
+pub const PLCC_20L = jedec.MO_047B(20, .south_westmost);
+pub const PLCC_28L = jedec.MO_047B(28, .south_westmost);
+pub const PLCC_44L = jedec.MO_047B(44, .south_westmost);
+pub const PLCC_52L = jedec.MO_047B(52, .south_westmost);
+pub const PLCC_68L = jedec.MO_047B(68, .south_westmost);
+pub const PLCC_84L = jedec.MO_047B(84, .south_westmost);
+pub const PLCC_100L = jedec.MO_047B(100, .south_westmost);
+pub const PLCC_124L = jedec.MO_047B(124, .south_westmost);
 
-pub fn SOIC(comptime pin_count: comptime_int) type {
-    _ = pin_count;
-    return struct {
-        pub const pkg: Package = .{
-            .default_footprint = &fp.SD(@This()).fp,
-        };
-    };
-}
-pub const SOIC_14 = SOIC(14);
-pub const SOIC_20 = SOIC(20);
+pub const PLCC_20M = jedec.MO_047B(20, .north_middle);
+pub const PLCC_28M = jedec.MO_047B(28, .north_middle);
+pub const PLCC_44M = jedec.MO_047B(44, .north_middle);
+pub const PLCC_52M = jedec.MO_047B(52, .north_middle);
+pub const PLCC_68M = jedec.MO_047B(68, .north_middle);
+pub const PLCC_84M = jedec.MO_047B(84, .north_middle);
+pub const PLCC_100M = jedec.MO_047B(100, .north_middle);
+pub const PLCC_124M = jedec.MO_047B(124, .north_middle);
 
-pub fn SSOP(comptime pin_count: comptime_int) type {
-    _ = pin_count;
-    return struct {
-        pub const pkg: Package = .{
-            .default_footprint = &fp.SD(@This()).fp,
-        };
-    };
-}
-pub const SSOP_14 = SSOP(14);
-pub const SSOP_20 = SSOP(20);
-pub const SSOP_48 = SSOP(48);
-pub const SSOP_56 = SSOP(56);
+pub const SOIC_8_150 = jedec.MS_012G_02(8);
+pub const SOIC_14_150 = jedec.MS_012G_02(14);
+pub const SOIC_16_150 = jedec.MS_012G_02(16);
+pub const SOIC_14_200 = jedec.MO_046B(14);
+pub const SOIC_16_200 = jedec.MO_046B(16);
+pub const SOIC_20_200 = jedec.MO_046B(20);
+pub const SOIC_8_300 = jedec.MS_013G(8);
+pub const SOIC_14_300 = jedec.MS_013G(14);
+pub const SOIC_16_300 = jedec.MS_013G(16);
+pub const SOIC_18_300 = jedec.MS_013G(18);
+pub const SOIC_20_300 = jedec.MS_013G(20);
+pub const SOIC_24_300 = jedec.MS_013G(24);
+pub const SOIC_28_300 = jedec.MS_013G(28);
+pub const SOIC_24_330 = jedec.MO_059B(24);
+pub const SOIC_28_330 = jedec.MO_059B(28);
+pub const SOIC_44_500 = jedec.MO_126B(44);
+pub const SOIC_48_500 = jedec.MO_126B(48);
 
-pub fn TSSOP(comptime pin_count: comptime_int) type {
-    _ = pin_count;
-    return struct {
-        pub const pkg: Package = .{
-            .default_footprint = &fp.SD(@This()).fp,
-        };
-    };
-}
-pub const TSSOP_14 = TSSOP(14);
-pub const TSSOP_20 = TSSOP(20);
-pub const TSSOP_48 = TSSOP(48);
-pub const TSSOP_56 = TSSOP(56);
+pub const TQFP_100_14mm = jedec.MS_026D(100, 14, 14, .thin);
 
-pub fn VQFN(comptime pin_count: comptime_int) type {
-    _ = pin_count;
-    return struct {
-        pub const pkg: Package = .{
-            .default_footprint = &fp.SQ(@This()).fp,
-        };
-    };
-}
-pub const VQFN_14 = VQFN(14);
-pub const VQFN_20 = VQFN(20);
+pub const TSOP_II_32 = jedec.MS_024H(32, 1270);
+pub const TSOP_II_44 = jedec.MS_024H(44, 800);
 
-pub fn TVSOP(comptime pin_count: comptime_int) type {
-    _ = pin_count;
-    return struct {
-        pub const pkg: Package = .{
-            .default_footprint = &fp.SD(@This()).fp,
-        };
-    };
-}
-pub const TVSOP_20 = TVSOP(20);
-pub const TVSOP_48 = TVSOP(48);
+pub const SSOP_8 = jedec.MO_150B(8);
+pub const SSOP_14 = jedec.MO_150B(14);
+pub const SSOP_16 = jedec.MO_150B(16);
+pub const SSOP_18 = jedec.MO_150B(18);
+pub const SSOP_20 = jedec.MO_150B(20);
+pub const SSOP_22 = jedec.MO_150B(22);
+pub const SSOP_24 = jedec.MO_150B(24);
+pub const SSOP_28_200 = jedec.MO_150B(28);
+pub const SSOP_30_200 = jedec.MO_150B(30);
+pub const SSOP_38_200 = jedec.MO_150B(38);
+pub const SSOP_28_300 = jedec.MO_118B(28);
+pub const SSOP_48 = jedec.MO_118B(48);
+pub const SSOP_56 = jedec.MO_118B(56);
+pub const SSOP_64 = jedec.MO_118B(64);
 
-/// 6 x 8 mm body
-/// 6 x 8 ball grid
-/// 0.75mm ball pitch
-/// Common package for parallel interface memories
-pub const FBGA_48 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.BGA_Full(@This()).fp,
-    };
+pub const TSSOP_14 = jedec.MO_153H(14, 650, .b);
+pub const TSSOP_20 = jedec.MO_153H(20, 650, .b);
+pub const TSSOP_48 = jedec.MO_153H(48, 500, .c);
+pub const TSSOP_56 = jedec.MO_153H(56, 500, .c);
 
-    pub const Pin_ID = enum (u8) {
-        A1 = 1,  A2 = 2,  A3 = 3,  A4 = 4,  A5 = 5,  A6 = 6,
-        B1 = 7,  B2 = 8,  B3 = 9,  B4 = 10, B5 = 11, B6 = 12,
-        C1 = 13, C2 = 14, C3 = 15, C4 = 16, C5 = 17, C6 = 18,
-        D1 = 19, D2 = 20, D3 = 21, D4 = 22, D5 = 23, D6 = 24,
-        E1 = 25, E2 = 26, E3 = 27, E4 = 28, E5 = 29, E6 = 30,
-        F1 = 31, F2 = 32, F3 = 33, F4 = 34, F5 = 35, F6 = 36,
-        G1 = 37, G2 = 38, G3 = 39, G4 = 40, G5 = 41, G6 = 42,
-        H1 = 43, H2 = 44, H3 = 45, H4 = 46, H5 = 47, H6 = 48,
+pub const TVSOP_14 = jedec.MO_194B(14);
+pub const TVSOP_16 = jedec.MO_194B(16);
+pub const TVSOP_20 = jedec.MO_194B(20);
+pub const TVSOP_24 = jedec.MO_194B(24);
+pub const TVSOP_48 = jedec.MO_194B(48);
+pub const TVSOP_56 = jedec.MO_194B(56);
+pub const TVSOP_80 = jedec.MO_194B(80);
+pub const TVSOP_100 = jedec.MO_194B(100);
 
-        pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
-        }
-        pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
-        }
-    };
-};
+pub const FBGA_48 = jedec.MO_207AD;
 
-pub const R1206 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.R(@This()).fp,
-    };
-};
+pub const R1206 = rc._1206(550);
+pub const R0805 = rc._0805(550);
+pub const R0603 = rc._0603(450);
+pub const R0402 = rc._0402(350);
+pub const R0201 = rc._0201(230);
 
-pub const R0805 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.R(@This()).fp,
-    };
-};
-
-pub const R0603 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.R(@This()).fp,
-    };
-};
-
-pub const R0402 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.R(@This()).fp,
-    };
-};
-
-pub const R0201 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.R(@This()).fp,
-    };
-};
-
-pub const C1206 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.C(@This()).fp,
-    };
-};
-
-pub const C0805 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.C(@This()).fp,
-    };
-};
-
-pub const C0603 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.C(@This()).fp,
-    };
-};
-
-pub const C0402 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.C(@This()).fp,
-    };
-};
-
-pub const C0201 = struct {
-    pub const pkg: Package = .{
-        .default_footprint = &fp.C(@This()).fp,
-    };
-};
-
-const fp = @import("footprints.zig").normal;
-const enums = @import("enums.zig");
-const Package = @import("Package.zig");
-const std = @import("std");
+pub const C1206 = rc._1206(1750);
+pub const C0805 = rc._0805(1350);
+pub const C0603 = rc._0603(950);
+pub const C0402 = rc._0402(550);
+pub const C0201 = rc._0201(330);
