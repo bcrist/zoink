@@ -1,17 +1,17 @@
-# Zoink!
+# _Zoink!_
 ### Programmer's Digital Design & Board Layout Tool
 
-Are you tired of painstakingly entering your designs in KiCAD's schematic editor before you can lay out the board?
-Have you ever wished that putting together a board design was less like photo editing and more like programming?
-Do you hate manually creating KiCAD symbols and footprints for every part you use, but just can't bring yourself to trust the default KiCAD component libraries?
-Are your wracked with disappointment when you send a board off to the fab only to notice that you forgot a decoupling cap somewhere?
-Do you wish KiCAD's ERC could check for logic level incompatibilities, bus contention, and behavioral correctness of your design?
-Are you addicted to writing Zig code?
+* Are you tired of painstakingly entering your designs in KiCAD's schematic editor before you can lay out the board?
+* Have you ever wished that putting together a board design was less like photo editing and more like programming?
+* Do you hate manually creating KiCAD symbols and footprints for every part you use, but just can't bring yourself to trust the default KiCAD component libraries?
+* Are your wracked with disappointment when you send a board off to the fab only to notice that you forgot a decoupling cap somewhere?
+* Do you wish KiCAD's ERC could check for logic level incompatibilities, bus contention, and behavioral correctness of your design?
+* Are you addicted to writing Zig code?
 
 If you answered "yes" to many of the above questions, you may be interested in _Zoink!_
 
 ## Usage
-First, create a new zig project and add Zoink! as a dependency with `zig fetch --save git+https://github.com/bcrist/zoink`.  Create a source file for your board and import `zoink`.
+First, create a new zig project and add _Zoink!_ as a dependency with `zig fetch --save git+https://github.com/bcrist/zoink`.  Create a source file for your board and import `zoink`.
 
 ### Netlist Configuration
 Create a function to configure your board's netlist like so:
