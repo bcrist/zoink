@@ -62,7 +62,7 @@ export fn frame() void {
     const g: f32 = @floatCast(@cos(t)*0.5+0.5);
 
     zgp.set_color(.{ .r = 0, .g = 0, .b = 0 });
-    zgp.draw_lines_strip(&.{
+    zgp.draw_line_strip(&.{
         .{ .x = 0.1, .y = 0 },
         .{ .x = 0.7, .y = 1 },
         .{ .x = 0.6, .y = -0.4 },
@@ -72,11 +72,11 @@ export fn frame() void {
     zgp.push_transform() catch unreachable;
     zgp.set_color(.{ .r = r, .g = g, .b = 0.3 });
     zgp.rotate_at(@floatCast(t), 0.0, 0.0);
-    zgp.draw_filled_rect(-0.5, -0.5, 1.0, 1.0) catch unreachable;
+    zgp.draw_rect(-0.5, -0.5, 1.0, 1.0) catch unreachable;
     zgp.pop_transform() catch unreachable;
 
     zgp.set_color(.{ .r = 0, .g = 0, .b = 0 });
-    zgp.draw_lines_strip(&.{
+    zgp.draw_line_strip(&.{
         .{ .x = 0, .y = 0 },
         .{ .x = 0.5, .y = 0.5 },
         .{ .x = 0.5, .y = -0.2 },
@@ -95,8 +95,8 @@ export fn frame() void {
     //=== UI CODE ENDS HERE
 
     sokol.gfx.beginPass(.{ .action = state.pass_action, .swapchain = sokol.glue.swapchain() });
-    zgp.flush() catch unreachable;
-    zgp.end() catch unreachable;
+    zgp.render() catch unreachable;
+    zgp.end();
     sokol.imgui.render();
     sokol.gfx.endPass();
     sokol.gfx.commit();

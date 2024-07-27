@@ -478,6 +478,13 @@ const Line = extern struct {
     b: Point,
 };
 
+const Quad = extern struct {
+    a: Point, // bottom left
+    b: Point, // bottom right
+    c: Point, // top right
+    d: Point, // top left
+};
+
 const Triangle = extern struct {
     a: Point,
     b: Point,
@@ -519,6 +526,8 @@ const Vertex = extern struct {
     color: Color_UB4,
 };
 
+const Index = u32;
+
 const Uniform = struct {
     size: u32 = 0,
     content: [uniform_content_slots]u32 = .{ 0 } ** uniform_content_slots,
@@ -554,14 +563,12 @@ const State = struct {
     uniform: Uniform,
     blend_mode: Blend_Mode,
     pipeline: sokol.gfx.Pipeline,
-    _base_vertex: u32,
-    _base_uniform: u32,
-    _base_command: u32,
 };
 
 // Structure that defines SGP setup parameters.
 const Desc = struct {
     allocator: std.mem.Allocator,
+    max_indices: u32 = default_max_indices,
     max_vertices: u32 = default_max_vertices,
     max_commands: u32 = default_max_commands,
     color_format: ?sokol.gfx.PixelFormat = null, // Color format for creating pipelines, defaults to the same as the Sokol GFX context.
@@ -593,11 +600,16 @@ pub fn setup(desc: Desc) !void {
     const env_defaults = sokol.gfx.queryDesc().environment.defaults;
 
     sgp.desc = desc;
+    sgp.desc.max_indices = desc.max_indices;
     sgp.desc.max_vertices = desc.max_vertices;
     sgp.desc.max_commands = desc.max_commands;
     sgp.desc.color_format = desc.color_format orelse env_defaults.color_format;
     sgp.desc.depth_format = desc.depth_format orelse env_defaults.depth_format;
     sgp.desc.sample_count = desc.sample_count orelse env_defaults.sample_count;
+
+    sgp.indices = try desc.allocator.alloc(Index, sgp.desc.max_indices);
+    errdefer sgp.desc.allocator.free(sgp.indices);
+    @memset(sgp.indices, 0);
 
     sgp.vertices = try desc.allocator.alloc(Vertex, sgp.desc.max_vertices);
     errdefer sgp.desc.allocator.free(sgp.vertices);
@@ -614,6 +626,16 @@ pub fn setup(desc: Desc) !void {
     sgp.commands = try desc.allocator.alloc(Command, sgp.desc.max_commands);
     errdefer sgp.desc.allocator.free(sgp.commands);
     @memset(sgp.commands, .none);
+
+    // create index buffer
+    sgp.index_buf = sokol.gfx.makeBuffer(.{
+        .size = sgp.indices.len * @sizeOf(Index),
+        .type = .INDEXBUFFER,
+        .usage = .STREAM,
+    });
+    errdefer if (sgp.index_buf.id != sokol.gfx.invalid_id) {
+        sokol.gfx.destroyBuffer(sgp.index_buf);
+    };
 
     // create vertex buffer
     sgp.vertex_buf = sokol.gfx.makeBuffer(.{
@@ -672,10 +694,6 @@ pub fn setup(desc: Desc) !void {
     if ((try lookup_pipeline(.POINTS, .blend)).id == sokol.gfx.invalid_id) return error.MakeCommonPipelineFailed;
     if ((try lookup_pipeline(.LINES, .none)).id == sokol.gfx.invalid_id) return error.MakeCommonPipelineFailed;
     if ((try lookup_pipeline(.LINES, .blend)).id == sokol.gfx.invalid_id) return error.MakeCommonPipelineFailed;
-    if ((try lookup_pipeline(.TRIANGLE_STRIP, .none)).id == sokol.gfx.invalid_id) return error.MakeCommonPipelineFailed;
-    if ((try lookup_pipeline(.TRIANGLE_STRIP, .blend)).id == sokol.gfx.invalid_id) return error.MakeCommonPipelineFailed;
-    if ((try lookup_pipeline(.LINE_STRIP, .none)).id == sokol.gfx.invalid_id) return error.MakeCommonPipelineFailed;
-    if ((try lookup_pipeline(.LINE_STRIP, .blend)).id == sokol.gfx.invalid_id) return error.MakeCommonPipelineFailed;
 }
 
 // Destroys the SGP context.
@@ -686,6 +704,7 @@ pub fn shutdown() void {
     std.debug.assert(sgp.init_cookie == init_cookie);
     std.debug.assert(sgp.cur_state == 0);
     
+    sgp.desc.allocator.free(sgp.indices);
     sgp.desc.allocator.free(sgp.vertices);
     sgp.desc.allocator.free(sgp.uniforms);
     sgp.desc.allocator.free(sgp.commands);
@@ -700,6 +719,9 @@ pub fn shutdown() void {
     }
     if (sgp.vertex_buf.id != sokol.gfx.invalid_id) {
         sokol.gfx.destroyBuffer(sgp.vertex_buf);
+    }
+    if (sgp.index_buf.id != sokol.gfx.invalid_id) {
+        sokol.gfx.destroyBuffer(sgp.index_buf);
     }
     if (sgp.white_img.id != sokol.gfx.invalid_id) {
         sokol.gfx.destroyImage(sgp.white_img);
@@ -716,7 +738,7 @@ pub fn is_valid() bool {
 }
 
 // Creates a custom shader pipeline to be used with SGP.
-pub fn make_pipeline(desc: *const Pipeline_Desc) error{MakePipelineFailed}!sokol.gfx.Pipeline {
+pub fn make_pipeline(desc: *const Pipeline_Desc) !sokol.gfx.Pipeline {
     return make_pipeline_internal(
         desc.shader,
         desc.primitive_type,
@@ -754,9 +776,10 @@ pub fn begin(width: i32, height: i32) !void {
     sgp.state.uniform = .{};
     sgp.state.uniform.size = 0;
     sgp.state.blend_mode = .none;
-    sgp.state._base_vertex = sgp.cur_vertex;
-    sgp.state._base_uniform = sgp.cur_uniform;
-    sgp.state._base_command = sgp.cur_command;
+    std.debug.assert(sgp.cur_index == 0);
+    std.debug.assert(sgp.cur_vertex == 0);
+    std.debug.assert(sgp.cur_uniform == 0);
+    std.debug.assert(sgp.cur_command == 0);
 
     for (&sgp.state.textures.images, &sgp.state.textures.samplers) |*img, *sampler| {
         img.* = .{};
@@ -767,27 +790,34 @@ pub fn begin(width: i32, height: i32) !void {
 }
 
 // Dispatch current Sokol GFX draw commands.
-pub fn flush() !void {
+pub fn render() !void {
     std.debug.assert(sgp.init_cookie == init_cookie);
     std.debug.assert(sgp.cur_state > 0);
 
     const end_command = sgp.cur_command;
     const end_vertex = sgp.cur_vertex;
+    const end_index = sgp.cur_index;
 
     // rewind indexes
-    sgp.cur_vertex = sgp.state._base_vertex;
-    sgp.cur_uniform = sgp.state._base_uniform;
-    sgp.cur_command = sgp.state._base_command;
+    sgp.cur_index = 0;
+    sgp.cur_vertex = 0;
+    sgp.cur_uniform = 0;
+    sgp.cur_command = 0;
 
     // nothing to be drawn
-    if (end_command <= sgp.state._base_command) return;
+    if (end_command <= 0) return;
+
+    // upload indices
+    const num_indices = end_index;
+    const index_range: sokol.gfx.Range = .{ .ptr = sgp.indices.ptr, .size = num_indices * @sizeOf(Index) };
+    const index_offset = sokol.gfx.appendBuffer(sgp.index_buf, index_range);
+    if (sokol.gfx.queryBufferOverflow(sgp.index_buf)) return error.IndexBufferOverflow;
 
     // upload vertices
-    const base_vertex = sgp.state._base_vertex;
-    const num_vertices = end_vertex - base_vertex;
-    const vertex_range: sokol.gfx.Range = .{ .ptr = &sgp.vertices[base_vertex], .size = num_vertices * @sizeOf(Vertex) };
-    const offset = sokol.gfx.appendBuffer(sgp.vertex_buf, vertex_range);
-    if (sokol.gfx.queryBufferOverflow(sgp.vertex_buf)) return error.VerticesOverflow;
+    const num_vertices = end_vertex;
+    const vertex_range: sokol.gfx.Range = .{ .ptr = sgp.vertices.ptr, .size = num_vertices * @sizeOf(Vertex) };
+    const vertex_offset = sokol.gfx.appendBuffer(sgp.vertex_buf, vertex_range);
+    if (sokol.gfx.queryBufferOverflow(sgp.vertex_buf)) return error.VertexBufferOverflow;
 
     var cur_pip_id: u32 = impossible_id;
     var cur_uniform_index: u32 = impossible_id;
@@ -795,11 +825,13 @@ pub fn flush() !void {
 
     // define the resource bindings
     var bind: sokol.gfx.Bindings = .{};
+    bind.index_buffer = sgp.index_buf;
+    bind.index_buffer_offset = index_offset;
     bind.vertex_buffers[0] = sgp.vertex_buf;
-    bind.vertex_buffer_offsets[0] = offset;
+    bind.vertex_buffer_offsets[0] = vertex_offset;
 
     // flush commands
-    for (sgp.commands[sgp.state._base_command .. end_command]) |cmd| {
+    for (sgp.commands[0..end_command]) |cmd| {
         switch (cmd) {
             .none => {},
             .viewport => |rect| {
@@ -809,7 +841,7 @@ pub fn flush() !void {
                 sokol.gfx.applyScissorRect(rect.x, rect.y, rect.w, rect.h, true);
             },
             .draw => |args| {
-                if (args.num_vertices == 0) continue;
+                if (args.num_indices == 0) continue;
                 var apply_bindings = false;
                 // pipeline
                 if (args.pip.id != cur_pip_id) {
@@ -851,23 +883,21 @@ pub fn flush() !void {
                     }
                 }
                 //  draw
-                sokol.gfx.draw(args.vertex_index - base_vertex, args.num_vertices, 1);
+                sokol.gfx.draw(args.first_index, args.num_indices, 1);
             },
         }
     }
 }
 
 // End current draw command queue, discarding it.
-pub fn end() !void {
+pub fn end() void {
     std.debug.assert(sgp.init_cookie == init_cookie);
-    if (sgp.cur_state <= 0) return error.StateStackUnderflow;
+    std.debug.assert(sgp.cur_state > 0);
 
     // restore old state
     sgp.cur_state -= 1;
     sgp.state = sgp.state_stack[sgp.cur_state];
 }
-
-
 
 // Set the coordinate space boundary in the current viewport.
 pub fn project(left: f32, right: f32, top: f32, bottom: f32) void {
@@ -1223,24 +1253,24 @@ pub fn clear() !void {
     std.debug.assert(sgp.init_cookie == init_cookie);
     std.debug.assert(sgp.cur_state > 0);
 
+    const first_index = sgp.cur_index;
+    const first_vertex = sgp.cur_vertex;
+
     const color = sgp.state.color;
-    const texcoord: Vec2 = .{ .x = 0.0, .y = 0.0 };
-    const quad: [4]Vec2 = .{
-        .{ .x = -1.0, .y = -1.0 }, // bottom left
-        .{ .x =  1.0, .y = -1.0 }, // bottom right
-        .{ .x =  1.0, .y =  1.0 }, // top right
-        .{ .x = -1.0, .y =  1.0 }, // top left
+    (try next_vertices_array(4)).* = .{
+        .{ .position = .{ .x = -1, .y = -1 }, .texcoord = .{ .x = 0, .y = 0 }, .color = color },
+        .{ .position = .{ .x =  1, .y = -1 }, .texcoord = .{ .x = 0, .y = 0 }, .color = color },
+        .{ .position = .{ .x =  1, .y =  1 }, .texcoord = .{ .x = 0, .y = 0 }, .color = color },
+        .{ .position = .{ .x = -1, .y =  1 }, .texcoord = .{ .x = 0, .y = 0 }, .color = color },
     };
-    
-    const num_vertices = 6;
-    const vertex_index = sgp.cur_vertex;
-    (try next_vertices(num_vertices))[0..6].* = .{
-        .{ .position = quad[0], .texcoord = texcoord, .color = color },
-        .{ .position = quad[1], .texcoord = texcoord, .color = color },
-        .{ .position = quad[2], .texcoord = texcoord, .color = color },
-        .{ .position = quad[3], .texcoord = texcoord, .color = color },
-        .{ .position = quad[0], .texcoord = texcoord, .color = color },
-        .{ .position = quad[2], .texcoord = texcoord, .color = color },
+
+    (try next_indices_array(6)).* = .{
+        first_vertex,
+        first_vertex + 1,
+        first_vertex + 2,
+        first_vertex + 3,
+        first_vertex + 0,
+        first_vertex + 2,
     };
 
     const region: Region = .{
@@ -1249,141 +1279,319 @@ pub fn clear() !void {
     };
 
     const pip = try lookup_pipeline(.TRIANGLES, .none);
-    try queue_draw(pip, region, vertex_index, num_vertices, .TRIANGLES);
+    try queue_draw(pip, region, first_index, 6, 4, .TRIANGLES);
 }
 
-// Low level drawing function, capable of drawing any primitive.
 pub fn draw(primitive_type: sokol.gfx.PrimitiveType, vertices: []const Vertex) !void {
     std.debug.assert(sgp.init_cookie == init_cookie);
     std.debug.assert(sgp.cur_state > 0);
     if (vertices.len == 0) return;
 
-    // setup vertices
-    const vertex_index = sgp.cur_vertex;
-    const v = try next_vertices(@intCast(vertices.len));
+    const first_vertex = sgp.cur_vertex;
+    const num_vertices: u32 = @intCast(vertices.len);
+    const vb = try next_vertices(num_vertices);
 
-    // fill vertices
-    const thickness: f32 = switch (primitive_type) {
-        .POINTS, .LINES, .LINE_STRIP => sgp.state.thickness,
-        else => 0.0,
-    };
-    const mvp = sgp.state.mvp; // copy to stack for more efficiency
+    const thickness = get_thickness(primitive_type);
+    const mvp = sgp.state.mvp;
     var region = Region.max;
-    for (v, vertices) |*out, vertex| {
+    for (vb, vertices) |*out, vertex| {
         const p = mat3_vec2_mul(mvp, vertex.position);
-        region.x1 = @min(region.x1, p.x - thickness);
-        region.y1 = @min(region.y1, p.y - thickness);
-        region.x2 = @max(region.x2, p.x + thickness);
-        region.y2 = @max(region.y2, p.y + thickness);
-        out.position = p;
-        out.texcoord = vertex.texcoord;
-        out.color = vertex.color;
+        region.expand(p, thickness);
+        out.* = .{ .position = p, .texcoord = vertex.texcoord, .color = vertex.color };
     }
 
-    // queue draw
+    try add_indices_and_draw(primitive_type, region, first_vertex, num_vertices);
+}
+
+fn add_indices_and_draw(primitive_type: sokol.gfx.PrimitiveType, region: Region, first_vertex: u32, num_vertices: usize) !void {
+    const first_index = sgp.cur_index;
+    var num_indices: u32 = undefined;
+    switch (primitive_type) {
+        .LINE_STRIP => {
+            // Line strips break batching pretty badly and since we're doing instanced rendering,
+            // they don't actually give much advantage anyway, so we just convert them into lines:
+            num_indices = @intCast((num_vertices - 1) * 2);
+            const ib = try next_indices(num_indices);
+
+            for (0 .. num_vertices - 1) |i| {
+                ib[i * 2 ..][0..2].* = .{
+                    @intCast(first_vertex + i),
+                    @intCast(first_vertex + i + 1),
+                };
+            }
+        },
+        .TRIANGLE_STRIP => {
+            // Triangle strips break batching pretty badly and since we're doing instanced rendering,
+            // they don't actually give much advantage anyway, so we just convert them into triangles:
+            num_indices = @intCast((num_vertices - 2) * 3);
+            const ib = try next_indices(num_indices);
+
+            var i: usize = 0;
+            while (i + 3 < num_vertices) : (i += 2) {
+                ib[i * 3 ..][0..6].* = .{
+                    @intCast(first_vertex + i),
+                    @intCast(first_vertex + i + 1),
+                    @intCast(first_vertex + i + 2),
+                    @intCast(first_vertex + i + 2),
+                    @intCast(first_vertex + i + 1),
+                    @intCast(first_vertex + i + 3),
+                };
+            }
+            if (i + 3 == num_vertices) {
+                ib[i * 3 ..][0..3].* = .{
+                    @intCast(first_vertex + i),
+                    @intCast(first_vertex + i + 1),
+                    @intCast(first_vertex + i + 2),
+                };
+            }
+        },
+        else => {
+            num_indices = @intCast(num_vertices);
+            const ib = try next_indices(num_indices);
+            for (first_vertex.., ib) |n, *out| out.* = @intCast(n);
+        },
+    }
     const pip = try lookup_pipeline(primitive_type, sgp.state.blend_mode);
-    try queue_draw(pip, region, vertex_index, @intCast(v.len), primitive_type);
+    try queue_draw(pip, region, first_index, num_indices, @intCast(num_vertices), primitive_type);
 }
 
-// Draws points in a batch.
+pub fn draw_solid(primitive_type: sokol.gfx.PrimitiveType, points: []const Point) !void {
+    std.debug.assert(sgp.init_cookie == init_cookie);
+    std.debug.assert(sgp.cur_state > 0);
+    if (points.len == 0) return;
+
+    const first_vertex = sgp.cur_vertex;
+    const num_vertices: u32 = @intCast(points.len);
+    const vb = try next_vertices(num_vertices);
+
+    const thickness = get_thickness(primitive_type);
+    const color = sgp.state.color;
+    const mvp = sgp.state.mvp;
+    var region = Region.max;
+    for (vb, points) |*out, point| {
+        const p = mat3_vec2_mul(mvp, point);
+        region.expand(p, thickness);
+        out.* = .{ .position = p, .texcoord = .{ .x = 0, .y = 0 }, .color = color };
+    }
+
+    try add_indices_and_draw(primitive_type, region, first_vertex, num_vertices);
+}
+
+pub fn draw_indexed(primitive_type: sokol.gfx.PrimitiveType, vertices: []const Vertex, local_indices: []const u16) !void {
+    std.debug.assert(sgp.init_cookie == init_cookie);
+    std.debug.assert(sgp.cur_state > 0);
+    if (vertices.len == 0) return;
+
+    const first_index = sgp.cur_index;
+    const first_vertex = sgp.cur_vertex;
+
+    const ib = try next_indices(@intCast(local_indices.len));
+    const vb = try next_vertices(@intCast(vertices.len));
+
+    for (ib, local_indices) |*out, local_index| {
+        out.* = first_vertex + local_index;
+    }
+
+    const thickness = get_thickness(primitive_type);
+    const mvp = sgp.state.mvp;
+    var region = Region.max;
+    for (vb, vertices) |*out, vertex| {
+        const p = mat3_vec2_mul(mvp, vertex.position);
+        region.expand(p, thickness);
+        out.* = .{ .position = p, .texcoord = vertex.texcoord, .color = vertex.color };
+    }
+
+    const pip = try lookup_pipeline(primitive_type, sgp.state.blend_mode);
+    try queue_draw(pip, region, first_index, @intCast(ib.len), @intCast(vb.len), primitive_type);
+}
+
+pub fn draw_solid_indexed(primitive_type: sokol.gfx.PrimitiveType, vertices: []const Vec2, local_indices: []const u16) !void {
+    std.debug.assert(sgp.init_cookie == init_cookie);
+    std.debug.assert(sgp.cur_state > 0);
+    if (vertices.len == 0) return;
+
+    const first_index = sgp.cur_index;
+    const first_vertex = sgp.cur_vertex;
+
+    const ib = try next_indices(@intCast(local_indices.len));
+    const vb = try next_vertices(@intCast(vertices.len));
+
+    for (ib, local_indices) |*out, local_index| {
+        out.* = first_vertex + local_index;
+    }
+
+    const thickness = get_thickness(primitive_type);
+    const color = sgp.state.color;
+    const mvp = sgp.state.mvp; // copy to stack for more efficiency
+    var region = Region.max;
+    for (vb, vertices) |*out, vertex| {
+        const p = mat3_vec2_mul(mvp, vertex);
+        region.expand(p, thickness);
+        out.* = .{ .position = p, .texcoord = .{ .x = 0, .y = 0 }, .color = color };
+    }
+
+    const pip = try lookup_pipeline(primitive_type, sgp.state.blend_mode);
+    try queue_draw(pip, region, first_index, @intCast(ib.len), @intCast(vb.len), primitive_type);
+}
+
 pub fn draw_points(points: []const Point) !void {
-    try draw_solid_pip(.POINTS, points);
+    try draw_solid(.POINTS, points);
 }
 
-// Draws a single point.
 pub fn draw_point(x: f32, y: f32) !void {
-    try draw_solid_pip(.POINTS, .{ .x = x, .y = y });
+    try draw_solid(.POINTS, .{ .x = x, .y = y });
 }
 
-// Draws lines in a batch.
 pub fn draw_lines(lines: []const Line) !void {
-    try draw_solid_pip(.LINES, @ptrCast(lines));
+    try draw_solid(.LINES, @ptrCast(lines));
 }
 
-// Draws a single line.
 pub fn draw_line(a: Point, b: Point) !void {
-    try draw_solid_pip(.LINES, &.{ a, b });
+    try draw_solid(.LINES, &.{ a, b });
 }
 
-// Draws a strip of lines.
 pub fn draw_line_strip(points: []const Point) !void {
-    try draw_solid_pip(.LINE_STRIP, points);
+    try draw_solid(.LINE_STRIP, points);
 }
 
-// Draws triangles in a batch.
-pub fn draw_filled_triangles(triangles: []const Triangle) !void {
-    try draw_solid_pip(.TRIANGLES, @ptrCast(triangles));
+pub fn draw_triangles(triangles: []const Triangle) !void {
+    try draw_solid(.TRIANGLES, @ptrCast(triangles));
 }
 
-// Draws a single triangle.
-pub fn draw_filled_triangle(a: Point, b: Point, c: Point) !void {
-    try draw_solid_pip(.TRIANGLES, .{ a, b, c });
+pub fn draw_triangle(a: Point, b: Point, c: Point) !void {
+    try draw_solid(.TRIANGLES, .{ a, b, c });
 }
 
-// Draws strip of triangles.
-pub fn draw_filled_triangle_strip(points: []const Point) !void {
-    try draw_solid_pip(.TRIANGLE_STRIP, points);
+pub fn draw_triangle_strip(points: []const Point) !void {
+    try draw_solid(.TRIANGLE_STRIP, points);
 }
 
-// Draws a batch of rectangles.
-pub fn draw_filled_rects(rects: []const FRect) !void {
+pub fn draw_triangle_fan(points: []const Point) !void {
+    std.debug.assert(sgp.init_cookie == init_cookie);
+    std.debug.assert(sgp.cur_state > 0);
+    if (points.len < 3) return;
+
+    const first_vertex = sgp.cur_vertex;
+    const num_vertices: u32 = @intCast(points.len);
+    const vb = try next_vertices(num_vertices);
+
+    const color = sgp.state.color;
+    const mvp = sgp.state.mvp;
+    var region = Region.max;
+    for (vb, points) |*out, point| {
+        const p = mat3_vec2_mul(mvp, point);
+        region.expand(p, 0);
+        out.* = .{ .position = p, .texcoord = .{ .x = 0, .y = 0 }, .color = color };
+    }
+
+    const first_index = sgp.cur_index;
+    const num_indices: u32 = @intCast((num_vertices - 2) * 3);
+    const ib = try next_indices(num_indices);
+
+    for (0 .. num_vertices - 2) |i| {
+        ib[i * 3 ..][0..3].* = .{
+            first_vertex,
+            first_vertex + i + 1,
+            first_vertex + i + 2,
+        };
+    }
+
+    const pip = try lookup_pipeline(.TRIANGLES, sgp.state.blend_mode);
+    try queue_draw(pip, region, first_index, num_indices, num_vertices, .TRIANGLES);
+}
+
+pub fn draw_quads(quads: []const Quad) !void {
+    std.debug.assert(sgp.init_cookie == init_cookie);
+    std.debug.assert(sgp.cur_state > 0);
+    if (quads.len == 0) return;
+
+    const first_vertex = sgp.cur_vertex;
+    const num_vertices: u32 = @intCast(quads.len * 4);
+    const vb = try next_vertices(num_vertices);
+
+    const color = sgp.state.color;
+    const mvp = sgp.state.mvp;
+    for (0.., quads) |i, quad| {
+        (vb[i * 4 ..][0..4]).* = .{
+            .{ .position = mat3_vec2_mul(mvp, quad.a), .texcoord = .{ .x = 0.0, .y = 1.0 }, .color = color },
+            .{ .position = mat3_vec2_mul(mvp, quad.b), .texcoord = .{ .x = 1.0, .y = 1.0 }, .color = color },
+            .{ .position = mat3_vec2_mul(mvp, quad.c), .texcoord = .{ .x = 1.0, .y = 0.0 }, .color = color },
+            .{ .position = mat3_vec2_mul(mvp, quad.d), .texcoord = .{ .x = 0.0, .y = 0.0 }, .color = color },
+        };
+    }
+
+    var region = Region.max;
+    for (vb) |v| region.expand(v.position, 0);
+
+    const first_index = sgp.cur_index;
+    const num_indices: u32 = @intCast(quads.len * 6);
+    const ib = try next_indices(num_indices);
+
+    for (0..quads.len) |i| {
+        const base = first_vertex + i * 4;
+        (ib[i * 6 ..][0..6]).* = .{
+            base,
+            base + 1,
+            base + 2,
+            base + 3,
+            base,
+            base + 2,
+        };
+    }
+
+    const pip = try lookup_pipeline(.TRIANGLES, sgp.state.blend_mode);
+    try queue_draw(pip, region, first_index, num_indices, num_vertices, .TRIANGLES);
+}
+
+pub fn draw_quad(a: Point, b: Point, c: Point, d: Point) !void {
+    try draw_quads(&.{ .{ .a = a, .b = b, .c = c, .d = d } });
+}
+
+pub fn draw_rects(rects: []const FRect) !void {
     std.debug.assert(sgp.init_cookie == init_cookie);
     std.debug.assert(sgp.cur_state > 0);
     if (rects.len == 0) return;
 
-    // setup vertices
-    const num_vertices: u32 = @intCast(rects.len * 6);
-    const vertex_index = sgp.cur_vertex;
-    const v = try next_vertices(num_vertices);
+    const first_vertex = sgp.cur_vertex;
+    const num_vertices: u32 = @intCast(rects.len * 4);
+    const vb = try next_vertices(num_vertices);
 
-    // compute vertices
-    //const sgp_rect* rect = rects;
     const color = sgp.state.color;
-    const mvp = sgp.state.mvp; // copy to stack for more efficiency
-    var region = Region.max;
+    const mvp = sgp.state.mvp;
     for (0.., rects) |i, rect| {
-        var quad: [4]Vec2 = .{
-            .{ .x = rect.x,          .y = rect.y + rect.h }, // bottom left
-            .{ .x = rect.x + rect.w, .y = rect.y + rect.h }, // bottom right
-            .{ .x = rect.x + rect.w, .y = rect.y }, // top right
-            .{ .x = rect.x,          .y = rect.y }, // top left
-        };
-        transform_vec2(mvp, &quad, &quad);
-
-        for (quad) |vec| {
-            region.x1 = @min(region.x1, vec.x);
-            region.y1 = @min(region.y1, vec.y);
-            region.x2 = @max(region.x2, vec.x);
-            region.y2 = @max(region.y2, vec.y);
-        }
-
-        const vtexquad: [4]Vec2 = .{
-            .{ .x = 0.0, .y = 1.0 }, // bottom left
-            .{ .x = 1.0, .y = 1.0 }, // bottom right
-            .{ .x = 1.0, .y = 0.0 }, // top right
-            .{ .x = 0.0, .y = 0.0 }, // top left
-        };
-
-
-        // make a quad composed of 2 triangles
-        (v[i * 6 ..][0..6]).* = .{
-            .{ .position = quad[0], .texcoord = vtexquad[0], .color = color, },
-            .{ .position = quad[1], .texcoord = vtexquad[1], .color = color, },
-            .{ .position = quad[2], .texcoord = vtexquad[2], .color = color, },
-            .{ .position = quad[3], .texcoord = vtexquad[3], .color = color, },
-            .{ .position = quad[0], .texcoord = vtexquad[0], .color = color, },
-            .{ .position = quad[2], .texcoord = vtexquad[2], .color = color, },
+        (vb[i * 4 ..][0..4]).* = .{
+            .{ .position = mat3_vec2_mul(mvp, .{ .x = rect.x,          .y = rect.y + rect.h }), .texcoord = .{ .x = 0.0, .y = 1.0 }, .color = color },
+            .{ .position = mat3_vec2_mul(mvp, .{ .x = rect.x + rect.w, .y = rect.y + rect.h }), .texcoord = .{ .x = 1.0, .y = 1.0 }, .color = color },
+            .{ .position = mat3_vec2_mul(mvp, .{ .x = rect.x + rect.w, .y = rect.y }),          .texcoord = .{ .x = 1.0, .y = 0.0 }, .color = color },
+            .{ .position = mat3_vec2_mul(mvp, .{ .x = rect.x,          .y = rect.y }),          .texcoord = .{ .x = 0.0, .y = 0.0 }, .color = color },
         };
     }
 
-    // queue draw
+    var region = Region.max;
+    for (vb) |v| region.expand(v.position, 0);
+
+    const first_index = sgp.cur_index;
+    const num_indices: u32 = @intCast(rects.len * 6);
+    const ib = try next_indices(num_indices);
+
+    for (0..rects.len) |i| {
+        const base: u32 = @intCast(first_vertex + i * 4);
+        (ib[i * 6 ..][0..6]).* = .{
+            base,
+            base + 1,
+            base + 2,
+            base + 3,
+            base,
+            base + 2,
+        };
+    }
+
     const pip = try lookup_pipeline(.TRIANGLES, sgp.state.blend_mode);
-    try queue_draw(pip, region, vertex_index, num_vertices, .TRIANGLES);
+    try queue_draw(pip, region, first_index, num_indices, num_vertices, .TRIANGLES);
 }
 
-// Draws a single rectangle.
-pub fn draw_filled_rect(x: f32, y: f32, w: f32, h: f32) !void {
-    try draw_filled_rects(&.{ .{
+pub fn draw_rect(x: f32, y: f32, w: f32, h: f32) !void {
+    try draw_rects(&.{ .{
         .x = x, .y = y,
         .w = w, .h = h,
     }});
@@ -1399,83 +1607,68 @@ pub fn draw_textured_rects(channel: i32, rects: []const Textured_Rect) !void {
     const image = sgp.state.textures.images[channel];
     if (image.id == sokol.gfx.invalid_id) return error.InvalidImage;
 
-    // setup vertices
-    const num_vertices: u32 = @intCast(rects.len * 6);
-    const vertex_index = sgp.cur_vertex;
-    const vertices = try next_vertices(num_vertices);
+    const first_vertex = sgp.cur_vertex;
+    const num_vertices: u32 = @intCast(rects.len * 4);
+    const vb = try next_vertices(num_vertices);
 
-    // compute vertices
-    const mvp = sgp.state.mvp; // copy to stack for more efficiency
     const color = sgp.state.color;
-    var region = Region.max;
+    const mvp = sgp.state.mvp;
     for (0.., rects) |i, rect| {
-        var quad: [4]Vec2 = .{
-            .{ rect.dst.x,              rect.dst.y + rect.dst.h }, // bottom left
-            .{ rect.dst.x + rect.dst.w, rect.dst.y + rect.dst.h }, // bottom right
-            .{ rect.dst.x + rect.dst.w, rect.dst.y }, // top right
-            .{ rect.dst.x,              rect.dst.y }, // top left
+        (vb[i * 4 ..][0..4]).* = .{
+            .{ .position = mat3_vec2_mul(mvp, .{ .x = rect.dst.x,              .y = rect.dst.y + rect.dst.h }), .texcoord = .{ .x = rect.src.x,              .y = rect.src.y + rect.src.h }, .color = color },
+            .{ .position = mat3_vec2_mul(mvp, .{ .x = rect.dst.x + rect.dst.w, .y = rect.dst.y + rect.dst.h }), .texcoord = .{ .x = rect.src.x + rect.src.w, .y = rect.src.y + rect.src.h }, .color = color },
+            .{ .position = mat3_vec2_mul(mvp, .{ .x = rect.dst.x + rect.dst.w, .y = rect.dst.y }),              .texcoord = .{ .x = rect.src.x + rect.src.w, .y = rect.src.y },              .color = color },
+            .{ .position = mat3_vec2_mul(mvp, .{ .x = rect.dst.x,              .y = rect.dst.y }),              .texcoord = .{ .x = rect.src.x,              .y = rect.src.y },              .color = color },
         };
-        transform_vec2(mvp, &quad, &quad);
+    }
 
-        for (quad) |vec| {
-            region.x1 = @min(region.x1, vec.x);
-            region.y1 = @min(region.y1, vec.y);
-            region.x2 = @max(region.x2, vec.x);
-            region.y2 = @max(region.y2, vec.y);
-        }
+    var region = Region.max;
+    for (vb) |v| region.expand(v.position, 0);
 
-        const tl: f32 = rect.src.x;
-        const tt: f32 = rect.src.y;
-        const tr: f32 = rect.src.x + rect.src.w;
-        const tb: f32 = rect.src.y + rect.src.h;
-        const vtexquad: [4]Vec2 = .{
-            .{ .x = tl, .y = tb }, // bottom left
-            .{ .x = tr, .y = tb }, // bottom right
-            .{ .x = tr, .y = tt }, // top right
-            .{ .x = tl, .y = tt }, // top left
-        };
+    const first_index = sgp.cur_index;
+    const num_indices: u32 = @intCast(rects.len * 6);
+    const ib = try next_indices(num_indices);
 
-        (vertices[i * 6 ..][0..6]).* = .{
-            .{ .position = quad[0], .texcoord = vtexquad[0], .color = color },
-            .{ .position = quad[1], .texcoord = vtexquad[1], .color = color },
-            .{ .position = quad[2], .texcoord = vtexquad[2], .color = color },
-            .{ .position = quad[3], .texcoord = vtexquad[3], .color = color },
-            .{ .position = quad[0], .texcoord = vtexquad[0], .color = color },
-            .{ .position = quad[2], .texcoord = vtexquad[2], .color = color },
+    for (0..rects.len) |i| {
+        const base = first_vertex + i * 4;
+        (ib[i * 6 ..][0..6]).* = .{
+            base,
+            base + 1,
+            base + 2,
+            base + 3,
+            base,
+            base + 2,
         };
     }
 
     // queue draw
     const pip = try lookup_pipeline(.TRIANGLES, sgp.state.blend_mode);
-    try queue_draw(pip, region, vertex_index, num_vertices, .TRIANGLES);
+    try queue_draw(pip, region, first_index, num_indices, num_vertices, .TRIANGLES);
 }
 
 // Draws a single textured rectangle from a source region.
 pub fn draw_textured_rect(channel: i32, dest: FRect, src: FRect) void {
-    std.debug.assert(sgp.init_cookie == init_cookie);
-    std.debug.assert(sgp.cur_state > 0);
     draw_textured_rects(channel, &.{ .{
         .dest = dest,
         .src = src,
     }});
 }
 
-// Returns the current draw state.
 pub fn query_state() *State {
     return sgp.state;
 }
 
-// Returns description of the current SGP context.
 pub fn query_desc() Desc {
     return sgp.desc;
 }
 
 const impossible_id = 0xffffffff;
 
-const init_cookie = 0xCAFED0D;
+const init_cookie = 0xACAFEDAD;
+const default_max_indices = 32768;
 const default_max_vertices = 65536;
-const default_max_commands = 16384;
-const max_move_vertices = 96;
+const default_max_commands = 8192;
+const max_move_indices = 144;
 const max_stack_depth = 64;
 
 const Region = struct {
@@ -1490,6 +1683,13 @@ const Region = struct {
         .x2 = -std.math.floatMax(f32),
         .y2 = -std.math.floatMax(f32),
     };
+
+    pub fn expand(self: *Region, p: Point, thickness: f32) void {
+        self.x1 = @min(self.x1, p.x - thickness);
+        self.y1 = @min(self.y1, p.y - thickness);
+        self.x2 = @max(self.x2, p.x + thickness);
+        self.y2 = @max(self.y2, p.y + thickness);
+    }
 };
 
 const Draw_Args = struct {
@@ -1497,8 +1697,8 @@ const Draw_Args = struct {
     textures: Textures_Uniform,
     region: Region,
     uniform_index: u32,
-    vertex_index: u32,
-    num_vertices: u32,
+    first_index: u32,
+    num_indices: u32,
 };
 
 const Command = union (enum) {
@@ -1514,15 +1714,18 @@ const Context = struct {
 
     // resources
     shader: sokol.gfx.Shader,
+    index_buf: sokol.gfx.Buffer,
     vertex_buf: sokol.gfx.Buffer,
     white_img: sokol.gfx.Image,
     nearest_smp: sokol.gfx.Sampler,
     pipelines: [@typeInfo(Blend_Mode).Enum.fields.len * @intFromEnum(sokol.gfx.PrimitiveType.NUM)]sokol.gfx.Pipeline,
 
     // command queue
+    cur_index: u32,
     cur_vertex: u32,
     cur_uniform: u32,
     cur_command: u32,
+    indices: []Index,
     vertices: []Vertex,
     uniforms: []Uniform,
     commands: []Command,
@@ -2251,6 +2454,7 @@ fn make_pipeline_internal(shader: sokol.gfx.Shader, primitive_type: sokol.gfx.Pr
             .pixel_format = depth_format,
         },
         .primitive_type = primitive_type,
+        .index_type = .UINT32,
     };
     
     pip_desc.layout.buffers[0].stride = @sizeOf(Vertex);
@@ -2271,7 +2475,7 @@ fn make_pipeline_internal(shader: sokol.gfx.Shader, primitive_type: sokol.gfx.Pr
     return pip;
 }
 
-fn lookup_pipeline(primitive_type: sokol.gfx.PrimitiveType, blend_mode: Blend_Mode) error{MakePipelineFailed}!sokol.gfx.Pipeline {
+fn lookup_pipeline(primitive_type: sokol.gfx.PrimitiveType, blend_mode: Blend_Mode) !sokol.gfx.Pipeline {
     const primitive_type_index: usize = @intCast(@intFromEnum(primitive_type));
     const pip_index: u32 = @intCast((primitive_type_index * @typeInfo(Blend_Mode).Enum.fields.len) + @intFromEnum(blend_mode));
     
@@ -2381,9 +2585,30 @@ inline fn mul_proj_transform(proj: Mat2x3, transform: Mat2x3) Mat2x3 {
     }};
 }
 
+fn next_indices(count: u32) ![]Index {
+    const index = sgp.cur_index;
+    if (index + count > sgp.indices.len) return error.IndexBufferFull;
+    sgp.cur_index += count;
+    return sgp.indices[index..][0..count];
+}
+
+fn next_indices_array(comptime count: u32) !*[count]Index {
+    const index = sgp.cur_index;
+    if (index + count > sgp.indices.len) return error.IndexBufferFull;
+    sgp.cur_index += count;
+    return sgp.indices[index..][0..count];
+}
+
 fn next_vertices(count: u32) ![]Vertex {
-    if (sgp.cur_vertex + count > sgp.vertices.len) return error.VerticesFull;
     const vertex_index = sgp.cur_vertex;
+    if (vertex_index + count > sgp.vertices.len) return error.VertexBufferFull;
+    sgp.cur_vertex += count;
+    return sgp.vertices[vertex_index..][0..count];
+}
+
+fn next_vertices_array(comptime count: u32) !*[count]Vertex {
+    const vertex_index = sgp.cur_vertex;
+    if (vertex_index + count > sgp.vertices.len) return error.VertexBufferFull;
     sgp.cur_vertex += count;
     return sgp.vertices[vertex_index..][0..count];
 }
@@ -2400,7 +2625,7 @@ fn next_uniform() !*Uniform {
 }
 
 fn prev_command(offset: u32) ?*Command {
-    if ((sgp.cur_command - sgp.state._base_command) >= offset) {
+    if (sgp.cur_command >= offset) {
         return &sgp.commands[sgp.cur_command - offset];
     } else {
         return null;
@@ -2421,19 +2646,25 @@ fn prev_or_next_command(tag: std.meta.Tag(Command)) !*Command {
     return try next_command();
 }
 
+fn get_thickness(primitive_type: sokol.gfx.PrimitiveType) f32 {
+    return switch (primitive_type) {
+        .POINTS, .LINES, .LINE_STRIP => sgp.state.thickness,
+        else => 0.0,
+    };
+}
 
 inline fn region_overlaps(a: Region , b: Region) bool {
     return !(a.x2 <= b.x1 or b.x2 <= a.x1 or a.y2 <= b.y1 or b.y2 <= a.y1);
 }
 
-fn merge_batch_command(pip: sokol.gfx.Pipeline, textures: Textures_Uniform, uniform: ?*Uniform, region: Region, vertex_index: u32, num_vertices: u32) bool {
+fn merge_batch_command(pip: sokol.gfx.Pipeline, textures: Textures_Uniform, uniform: ?*Uniform, region: Region, first_index: u32, num_indices: u32) bool {//vertex_index: u32, num_vertices: u32) bool {
     if (batch_optimizer_depth == 0) return false;
 
     var maybe_prev_cmd: ?*Command = null;
     var inter_cmds_buf: [batch_optimizer_depth]*Command = undefined;
     var inter_cmds: []*Command = inter_cmds_buf[0..0];
 
-    // find a command that is a good candidate to batch
+    // Find a command that is a good candidate to batch
     var lookup_depth: u32 = batch_optimizer_depth;
     var depth: u32 = 0;
     while (depth < lookup_depth) : (depth += 1) {
@@ -2464,8 +2695,8 @@ fn merge_batch_command(pip: sokol.gfx.Pipeline, textures: Textures_Uniform, unif
     }
     const prev_cmd = maybe_prev_cmd orelse return false;
 
-    // allow batching only if the region of the current or previous draw
-    // is not touched by intermediate commands
+    // Allow batching only if the region of the current or previous draw is not touched by intermediate commands
+    // Without this, we might mess up Z-ordering since we're not using the depth buffer
     var overlaps_next = false;
     var overlaps_prev = false;
     var prev_region = prev_cmd.draw.region;
@@ -2487,23 +2718,44 @@ fn merge_batch_command(pip: sokol.gfx.Pipeline, textures: Textures_Uniform, unif
 
     if (!overlaps_next) { // batch in the previous draw command
         if (inter_cmds.len > 0) {
-            // not enough vertices space, can't do this batch
-            if (sgp.cur_vertex + num_vertices > sgp.vertices.len) return false;
+            const prev_end_index: u32 = prev_cmd.draw.first_index + prev_cmd.draw.num_indices;
+            const num_indices_after_prev_end: u32 = sgp.cur_index - prev_end_index;
 
-            const prev_end_vertex: u32 = prev_cmd.draw.vertex_index + prev_cmd.draw.num_vertices;
-            const prev_num_vertices: u32 = sgp.cur_vertex - prev_end_vertex;
+            if (num_indices_after_prev_end > max_move_indices) return false;
 
-            // avoid moving too much memory, to not downgrade performance
-            if (prev_num_vertices > max_move_vertices) return false;
-
-            // rearrange vertices memory for the batch
-            std.mem.copyBackwards(Vertex, sgp.vertices[prev_end_vertex + num_vertices ..], sgp.vertices[prev_end_vertex..][0..prev_num_vertices]);
-            @memcpy(sgp.vertices[prev_end_vertex..].ptr, sgp.vertices[vertex_index + num_vertices ..][0..num_vertices]);
-
-            // offset vertices of intermediate draw commands
-            for (inter_cmds) |cmd| {
-                cmd.draw.vertex_index += num_vertices;
+            if (sgp.cur_index + num_indices <= sgp.indices.len) {
+                // We could just use std.mem.rotate all the time, but if we have extra space, this should usually
+                // require fewer total copies and probably will be easier on the branch predictor/prefetcher:
+                std.mem.copyBackwards(Index, sgp.indices[prev_end_index + num_indices ..], sgp.indices[prev_end_index..][0..num_indices_after_prev_end]);
+                @memcpy(sgp.indices[prev_end_index..].ptr, sgp.indices[first_index + num_indices ..][0..num_indices]);
+            } else {
+                std.mem.rotate(Index, sgp.indices[prev_end_index..sgp.cur_index], num_indices_after_prev_end - num_indices);
             }
+
+            for (inter_cmds) |cmd| {
+                cmd.draw.first_index += num_indices;
+            }
+        }
+
+        // update draw region and indices
+        prev_region.x1 = @min(prev_region.x1, region.x1);
+        prev_region.y1 = @min(prev_region.y1, region.y1);
+        prev_region.x2 = @max(prev_region.x2, region.x2);
+        prev_region.y2 = @max(prev_region.y2, region.y2);
+        prev_cmd.draw.num_indices += num_indices;
+        prev_cmd.draw.region = prev_region;
+    } else { // batch in the next draw command
+        std.debug.assert(inter_cmds.len > 0);
+        const prev_cmd_first_index = prev_cmd.draw.first_index;
+        if (first_index - prev_cmd_first_index > max_move_indices) return false;
+
+        const cmd = next_command() catch return false;
+
+        const prev_cmd_num_indices = prev_cmd.draw.num_indices;
+        std.mem.rotate(Index, sgp.indices[prev_cmd_first_index..first_index], prev_cmd_num_indices);
+
+        for (inter_cmds) |inter_cmd| {
+            inter_cmd.draw.first_index -= prev_cmd_num_indices;
         }
 
         // update draw region and vertices
@@ -2511,34 +2763,9 @@ fn merge_batch_command(pip: sokol.gfx.Pipeline, textures: Textures_Uniform, unif
         prev_region.y1 = @min(prev_region.y1, region.y1);
         prev_region.x2 = @max(prev_region.x2, region.x2);
         prev_region.y2 = @max(prev_region.y2, region.y2);
-        prev_cmd.draw.num_vertices += num_vertices;
-        prev_cmd.draw.region = prev_region;
-    } else { // batch in the next draw command
-        std.debug.assert(inter_cmds.len > 0);
-
-        // append new draw command
-        const cmd = next_command() catch return false;
-
-        const prev_num_vertices: u32 = prev_cmd.draw.num_vertices;
-
-        // not enough vertices space, can't do this batch
-        if (sgp.cur_vertex + prev_num_vertices > sgp.vertices.len) return false;
-
-        // avoid moving too much memory, to not downgrade performance
-        if (num_vertices > max_move_vertices) return false;
-
-        // rearrange vertices memory for the batch
-        std.mem.copyBackwards(Vertex, sgp.vertices[vertex_index + prev_num_vertices ..], sgp.vertices[vertex_index..][0..num_vertices]);
-        @memcpy(sgp.vertices[vertex_index..].ptr, sgp.vertices[prev_cmd.draw.vertex_index..][0..prev_num_vertices]);
-
-        // update draw region and vertices
-        prev_region.x1 = @min(prev_region.x1, region.x1);
-        prev_region.y1 = @min(prev_region.y1, region.y1);
-        prev_region.x2 = @max(prev_region.x2, region.x2);
-        prev_region.y2 = @max(prev_region.y2, region.y2);
-        sgp.cur_vertex += prev_num_vertices;
         
-        const final_num_vertices = prev_num_vertices + num_vertices;
+        const final_first_index = first_index - prev_cmd_num_indices;
+        const final_num_indices = prev_cmd.draw.num_indices + num_indices;
 
         // configure the draw command
         cmd.* = .{ .draw = .{
@@ -2546,8 +2773,8 @@ fn merge_batch_command(pip: sokol.gfx.Pipeline, textures: Textures_Uniform, unif
             .textures = textures,
             .region = prev_region,
             .uniform_index = prev_cmd.draw.uniform_index,
-            .vertex_index = vertex_index,
-            .num_vertices = final_num_vertices,
+            .first_index = final_first_index,
+            .num_indices = final_num_indices,
         }};
 
         // force skipping the previous draw command
@@ -2556,7 +2783,7 @@ fn merge_batch_command(pip: sokol.gfx.Pipeline, textures: Textures_Uniform, unif
     return true;
 }
 
-fn queue_draw(pip: sokol.gfx.Pipeline, region: Region, vertex_index: u32, num_vertices: u32, primitive_type: sokol.gfx.PrimitiveType) !void {
+fn queue_draw(pip: sokol.gfx.Pipeline, region: Region, first_index: u32, num_indices: u32, num_private_vertices: u32, primitive_type: sokol.gfx.PrimitiveType) !void {
     // override pipeline
     var maybe_uniform: ?*Uniform = null;
     var final_pip = pip;
@@ -2565,22 +2792,25 @@ fn queue_draw(pip: sokol.gfx.Pipeline, region: Region, vertex_index: u32, num_ve
         maybe_uniform = &sgp.state.uniform;
     }
 
-    // invalid pipeline
-    if (final_pip.id == sokol.gfx.invalid_id) {
-        sgp.cur_vertex -= num_vertices; // rollback allocated vertices
-        return error.InvalidPipeline;
+    errdefer {
+        if (first_index + num_indices == sgp.cur_index) sgp.cur_index = first_index;
+        sgp.cur_vertex -= num_private_vertices;
     }
+
+    // invalid pipeline
+    if (final_pip.id == sokol.gfx.invalid_id) return error.InvalidPipeline;
 
     // region is out of screen bounds
     if (region.x1 > 1.0 or region.y1 > 1.0 or region.x2 < -1.0 or region.y2 < -1.0) {
-        sgp.cur_vertex -= num_vertices; // rollback allocated vertices
+        if (first_index + num_indices == sgp.cur_index) sgp.cur_index = first_index;
+        sgp.cur_vertex -= num_private_vertices;
         return;
     }
 
     // try to merge on previous command to draw in a batch
     switch (primitive_type) {
         .TRIANGLE_STRIP, .LINE_STRIP => {},
-        else => if (merge_batch_command(final_pip, sgp.state.textures, maybe_uniform, region, vertex_index, num_vertices)) return,
+        else => if (merge_batch_command(final_pip, sgp.state.textures, maybe_uniform, region, first_index, num_indices)) return,
     }
 
     // setup uniform, try to reuse previous uniform when possible
@@ -2591,28 +2821,20 @@ fn queue_draw(pip: sokol.gfx.Pipeline, region: Region, vertex_index: u32, num_ve
             reuse_uniform = std.mem.eql(u8, uniform.bytes(), prev.bytes());
         }
         if (!reuse_uniform) {
-            // append new uniform
-            const new_uniform = next_uniform() catch |err| {
-                sgp.cur_vertex -= num_vertices; // rollback allocated vertices
-                return err;
-            };
+            const new_uniform = try next_uniform();
             new_uniform.* = sgp.state.uniform;
         }
         uniform_index = sgp.cur_uniform - 1;
     }
 
-    // append new draw command
-    const cmd = next_command() catch |err| {
-        sgp.cur_vertex -= num_vertices; // rollback allocated vertices
-        return err;
-    };
+    const cmd = try next_command();
     cmd.* = .{ .draw = .{
         .pip = final_pip,
         .textures = sgp.state.textures,
         .region = region,
         .uniform_index = uniform_index,
-        .vertex_index = vertex_index,
-        .num_vertices = num_vertices,
+        .first_index = first_index,
+        .num_indices = num_indices,
     }};
 }
 
@@ -2629,16 +2851,20 @@ fn transform_vec2(matrix: Mat2x3, dst: []Vec2, src: []const Vec2) void {
     }
 }
 
-fn draw_solid_pip(primitive_type: sokol.gfx.PrimitiveType, vertices: []const Vec2) !void {
+fn draw_solid_pip(primitive_type: sokol.gfx.PrimitiveType, vertices: []const Vec2, local_indices: []const u16) !void {
     std.debug.assert(sgp.init_cookie == init_cookie);
     std.debug.assert(sgp.cur_state > 0);
     if (vertices.len == 0) return;
 
-    // setup vertices
-    const vertex_index = sgp.cur_vertex;
-    const v = try next_vertices(@intCast(vertices.len));
+    const first_index = sgp.cur_index;
+    const first_vertex = sgp.cur_vertex;
+    const ib = try next_indices(@intCast(local_indices.len));
+    const vb = try next_vertices(@intCast(vertices.len));
 
-    // fill vertices
+    for (ib, local_indices) |*out, local_index| {
+        out.* = first_vertex + local_index;
+    }
+
     const thickness: f32 = switch (primitive_type) {
         .POINTS, .LINES, .LINE_STRIP => sgp.state.thickness,
         else => 0.0,
@@ -2646,21 +2872,14 @@ fn draw_solid_pip(primitive_type: sokol.gfx.PrimitiveType, vertices: []const Vec
     const color = sgp.state.color;
     const mvp = sgp.state.mvp; // copy to stack for more efficiency
     var region = Region.max;
-    for (v, vertices) |*out, vertex| {
+    for (vb, vertices) |*out, vertex| {
         const p = mat3_vec2_mul(mvp, vertex);
-        region.x1 = @min(region.x1, p.x - thickness);
-        region.y1 = @min(region.y1, p.y - thickness);
-        region.x2 = @max(region.x2, p.x + thickness);
-        region.y2 = @max(region.y2, p.y + thickness);
-        out.position = p;
-        out.texcoord.x = 0.0;
-        out.texcoord.y = 0.0;
-        out.color = color;
+        region.expand(p, thickness);
+        out.* = .{ .position = p, .texcoord = .{ .x = 0, .y = 0 }, .color = color };
     }
 
-    // queue draw
     const pip = try lookup_pipeline(primitive_type, sgp.state.blend_mode);
-    try queue_draw(pip, region, vertex_index, @intCast(v.len), primitive_type);
+    try queue_draw(pip, region, first_index, @intCast(ib.len), @intCast(vb.len), primitive_type);
 }
 
 const sokol = @import("sokol");
