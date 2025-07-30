@@ -1,10 +1,11 @@
-pub fn _1206(comptime max_z_um: comptime_int) type {
+pub fn _1206(comptime max_z_um: comptime_int, comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
             .default_footprint = &fp.SMD(data, .normal).fp,
         };
 
         pub const data: fp.SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = 1600, .tolerance_um = 150 },
                 .height = .{ .nominal_um = 3200, .tolerance_um = 150 },
@@ -23,13 +24,14 @@ pub fn _1206(comptime max_z_um: comptime_int) type {
     };
 }
 
-pub fn _0805(comptime max_z_um: comptime_int) type {
+pub fn _0805(comptime max_z_um: comptime_int, package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
             .default_footprint = &fp.SMD(data, .normal).fp,
         };
 
         pub const data: fp.SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = 1250, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 2000, .tolerance_um = 100 },
@@ -48,13 +50,14 @@ pub fn _0805(comptime max_z_um: comptime_int) type {
     };
 }
 
-pub fn _0603(comptime max_z_um: comptime_int) type {
+pub fn _0603(comptime max_z_um: comptime_int, comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
             .default_footprint = &fp.SMD(data, .normal).fp,
         };
 
         pub const data: fp.SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = 800, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 1600, .tolerance_um = 100 },
@@ -73,13 +76,14 @@ pub fn _0603(comptime max_z_um: comptime_int) type {
     };
 }
 
-pub fn _0402(comptime max_z_um: comptime_int) type {
+pub fn _0402(comptime max_z_um: comptime_int, comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
             .default_footprint = &fp.SMD(data, .normal).fp,
         };
 
         pub const data: fp.SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = 500, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 1000, .tolerance_um = 50 },
@@ -98,13 +102,14 @@ pub fn _0402(comptime max_z_um: comptime_int) type {
     };
 }
 
-pub fn _0201(comptime max_z_um: comptime_int) type {
+pub fn _0201(comptime max_z_um: comptime_int, comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
             .default_footprint = &fp.SMD(data, .normal).fp,
         };
         
         pub const data: fp.SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = 300, .tolerance_um = 30 },
                 .height = .{ .nominal_um = 600, .tolerance_um = 30 },

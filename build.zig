@@ -6,31 +6,48 @@ var all_tests_step: *std.Build.Step = undefined;
 
 pub fn build(b: *std.Build) void {
     builder = b;
-    target = b.host;
+    target = b.standardTargetOptions(.{});
     optimize = b.standardOptimizeOption(.{});
     all_tests_step = b.step("test", "run all tests");
 
+    // const sokol = b.dependency("sokol", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
+    
+    // const dear_zig_bindings = b.dependency("dear_zig_bindings", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    //     .naming = .snake,
+    //     .validate_packed_structs = true,
+    // });
+
+    // const dear_zig_bindings_sokol = b.dependency("dear_zig_bindings_sokol", .{});
+    
+    // const sx = b.dependency("sx", .{});
+
+    // dep.sokol.artifact("sokol_clib").addIncludePath(dep.cimgui.namedWriteFiles("cimgui").getDirectory());
+
     zoink = b.createModule(.{
         .root_source_file = b.path("src/zoink.zig"),
+        .imports = &.{
+            .{ .name = "sx", .module = b.dependency("sx", .{}).module("sx") },
+            .{ .name = "lc4k", .module = b.dependency("lc4k", .{}).module("lc4k") },
+        },
     });
-
-    const dep = .{
-        .sokol = b.dependency("sokol", .{ .target = target, .optimize = optimize, .with_sokol_imgui = true }),
-        .cimgui = b.dependency("cimgui", .{ .target = target, .optimize = optimize }),
-    };
-    dep.sokol.artifact("sokol_clib").addIncludePath(dep.cimgui.namedWriteFiles("cimgui").getDirectory());
-
     
-    const preview = b.addExecutable(.{
-        .name = "zoink_preview",
-        .root_source_file = b.path("tools/preview.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    preview.root_module.addImport("sokol", dep.sokol.module("sokol"));
-    preview.root_module.addImport("imgui", dep.cimgui.module("cimgui"));
-    b.installArtifact(preview);
-    b.step("preview", "Run preview tool").dependOn(&b.addRunArtifact(preview).step);
+    // const preview = b.addExecutable(.{
+    //     .name = "zoink_preview",
+    //     .root_source_file = b.path("tools/preview.zig"),
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
+    // preview.root_module.addImport("zoink", zoink);
+    // preview.root_module.addImport("sokol", sokol.module("sokol"));
+    // preview.root_module.addImport("ig", dear_zig_bindings.module("ig"));
+    // preview.root_module.addImport("sokol_imgui", dear_zig_bindings_sokol.module("sokol_imgui"));
+    // b.installArtifact(preview);
+    // b.step("preview", "Run preview tool").dependOn(&b.addRunArtifact(preview).step);
     
     add_test("main");
     add_test("simple");

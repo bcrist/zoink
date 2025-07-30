@@ -13,9 +13,9 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
         remap: [4]u2 = .{ 0, 1, 2, 3 },
 
         const Quad_Gate2_Impl = struct {
-            a: [4]Net_ID = .{ .unset } ** 4,
-            b: [4]Net_ID = .{ .unset } ** 4,
-            y: [4]Net_ID = .{ .unset } ** 4,
+            a: [4]Net_ID = @splat(.unset),
+            b: [4]Net_ID = @splat(.unset),
+            y: [4]Net_ID = @splat(.unset),
         };
 
         const Gate2_Impl = struct {
@@ -31,7 +31,7 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
             }
             for (0.., mapped_logical_gates) |logical_gate, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
+                    log.err("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
                     return error.InvalidRemap;
                 }
             }
@@ -136,8 +136,8 @@ fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
         remap: [6]u3 = .{ 0, 1, 2, 3, 4, 5 },
 
         const Hex_Buf_Impl = struct {
-            a: [6]Net_ID = .{ .unset } ** 6,
-            y: [6]Net_ID = .{ .unset } ** 6,
+            a: [6]Net_ID = @splat(.unset),
+            y: [6]Net_ID = @splat(.unset),
         };
 
         const Buf_Impl = struct {
@@ -152,7 +152,7 @@ fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
             }
             for (0.., mapped_logical_gates) |logical_gate, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
+                    log.err("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
                     return error.InvalidRemap;
                 }
             }
@@ -311,8 +311,8 @@ fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, compt
         remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
-            a: [4]Net_ID = .{ .unset } ** 4,
-            y: [4]Net_ID = .{ .unset } ** 4,
+            a: [4]Net_ID = @splat(.unset),
+            y: [4]Net_ID = @splat(.unset),
             output_enable_low: Net_ID = .unset,
             remap: [4]u2 = .{ 0, 1, 2, 3 },
 
@@ -332,7 +332,7 @@ fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, compt
             }
             for (0.., mapped_units) |logical_unit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
+                    log.err("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
                     return error.InvalidRemap;
                 }
             }
@@ -344,7 +344,7 @@ fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, compt
                 }
                 for (0.., mapped_bits) |logical_bit, mapped| {
                     if (!mapped) {
-                        std.debug.print("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
+                        log.err("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
                         return error.InvalidRemap;
                     }
                 }
@@ -424,8 +424,8 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
         pwr: power.Single(pwr, Decoupler) = .{},
 
         pub const Unit_Active_Low_OE = struct {
-            a: [4]Net_ID = .{ .unset } ** 4,
-            y: [4]Net_ID = .{ .unset } ** 4,
+            a: [4]Net_ID = @splat(.unset),
+            y: [4]Net_ID = @splat(.unset),
             output_enable_low: Net_ID = .unset,
             remap: [4]u2 = .{ 0, 1, 2, 3 },
 
@@ -437,8 +437,8 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             }
         };
         pub const Unit_Active_High_OE = struct {
-            a: [4]Net_ID = .{ .unset } ** 4,
-            y: [4]Net_ID = .{ .unset } ** 4,
+            a: [4]Net_ID = @splat(.unset),
+            y: [4]Net_ID = @splat(.unset),
             output_enable: Net_ID = .unset,
             remap: [4]u2 = .{ 0, 1, 2, 3 },
 
@@ -458,7 +458,7 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 }
                 for (0.., mapped_bits) |logical_bit, mapped| {
                     if (!mapped) {
-                        std.debug.print("{s} unit 0: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                        log.err("{s} unit 0: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                         return error.InvalidRemap;
                     }
                 }
@@ -470,7 +470,7 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 }
                 for (0.., mapped_bits) |logical_bit, mapped| {
                     if (!mapped) {
-                        std.debug.print("{s} unit 1: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                        log.err("{s} unit 1: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                         return error.InvalidRemap;
                     }
                 }
@@ -548,8 +548,8 @@ pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             .prefix = .U,
         },
 
-        a: [8]Net_ID = .{ .unset } ** 8,
-        b: [8]Net_ID = .{ .unset } ** 8,
+        a: [8]Net_ID = @splat(.unset),
+        b: [8]Net_ID = @splat(.unset),
         output_enable_low: Net_ID = .unset,
         a_to_b: Net_ID = .unset, // B to A when low
         pwr: power.Single(pwr, Decoupler) = .{},
@@ -562,7 +562,7 @@ pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             }
             for (0.., mapped_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -636,9 +636,9 @@ pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             .prefix = .U,
         },
 
-        a: [8]Net_ID = .{ .unset } ** 8,
-        y: [8]Net_ID = .{ .unset } ** 8,
-        output_enable_low: [2]Net_ID = .{ .unset } ** 2,
+        a: [8]Net_ID = @splat(.unset),
+        y: [8]Net_ID = @splat(.unset),
+        output_enable_low: [2]Net_ID = @splat(.unset),
         pwr: power.Single(pwr, Decoupler) = .{},
         remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
 
@@ -649,7 +649,7 @@ pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             }
             for (0.., mapped_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -714,8 +714,8 @@ pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             .prefix = .U,
         },
 
-        d: [8]Net_ID = .{ .unset } ** 8,
-        q: [8]Net_ID = .{ .unset } ** 8,
+        d: [8]Net_ID = @splat(.unset),
+        q: [8]Net_ID = @splat(.unset),
         transparent: Net_ID = .unset,
         output_enable_low: Net_ID = .unset,
         pwr: power.Single(pwr, Decoupler) = .{},
@@ -728,7 +728,7 @@ pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             }
             for (0.., mapped_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -805,8 +805,8 @@ pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             .prefix = .U,
         },
 
-        d: [8]Net_ID = .{ .unset } ** 8,
-        q: [8]Net_ID = .{ .unset } ** 8,
+        d: [8]Net_ID = @splat(.unset),
+        q: [8]Net_ID = @splat(.unset),
         clk: Net_ID = .unset,
         output_enable_low: Net_ID = .unset,
         pwr: power.Single(pwr, Decoupler) = .{},
@@ -819,7 +819,7 @@ pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             }
             for (0.., mapped_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -897,13 +897,13 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             .prefix = .U,
         },
 
-        u: [4]Unit = .{ .{} } ** 4,
+        u: [4]Unit = @splat(.{}),
         pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
         remap: [4]u2 = .{ 0, 1, 2, 3 },
 
         pub const Unit = struct {
-            a: [4]Net_ID = .{ .unset } ** 4,
-            y: [4]Net_ID = .{ .unset } ** 4,
+            a: [4]Net_ID = @splat(.unset),
+            y: [4]Net_ID = @splat(.unset),
             output_enable_low: Net_ID = .unset,
             remap: [4]u2 = .{ 0, 1, 2, 3 },
 
@@ -923,7 +923,7 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             }
             for (0.., mapped_units) |logical_unit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
+                    log.err("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
                     return error.InvalidRemap;
                 }
             }
@@ -935,7 +935,7 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 }
                 for (0.., mapped_bits) |logical_bit, mapped| {
                     if (!mapped) {
-                        std.debug.print("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
+                        log.err("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
                         return error.InvalidRemap;
                     }
                 }
@@ -1053,13 +1053,13 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             .prefix = .U,
         },
 
-        u: [2]Unit = .{ .{} } ** 2,
+        u: [2]Unit = @splat(.{}),
         pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
         remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
-            a: [8]Net_ID = .{ .unset } ** 8,
-            b: [8]Net_ID = .{ .unset } ** 8,
+            a: [8]Net_ID = @splat(.unset),
+            b: [8]Net_ID = @splat(.unset),
             output_enable_low: Net_ID = .unset,
             a_to_b: Net_ID = .unset, // B to A when low
             remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
@@ -1080,7 +1080,7 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             }
             for (0.., mapped_units) |logical_unit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
+                    log.err("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
                     return error.InvalidRemap;
                 }
             }
@@ -1092,7 +1092,7 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 }
                 for (0.., mapped_bits) |logical_bit, mapped| {
                     if (!mapped) {
-                        std.debug.print("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
+                        log.err("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
                         return error.InvalidRemap;
                     }
                 }
@@ -1241,13 +1241,13 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
         remap: [12]u4 = .{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 },
 
         pub const Port_A = struct {
-            data: [12]Net_ID = .{ .unset } ** 12,
+            data: [12]Net_ID = @splat(.unset),
             output_enable_low: Net_ID = .unset,
             enable_bx: Net_ID = .unset, // when low, output comes from by instead
         };
 
         pub const Port_B = struct {
-            data: [12]Net_ID = .{ .unset } ** 12,
+            data: [12]Net_ID = @splat(.unset),
             output_enable_low: Net_ID = .unset,
             latch_input_data: Net_ID = .unset, // latch data from B side; transparent when high
             latch_output_data: Net_ID = .unset, // latch data from A side; transparent when high
@@ -1260,7 +1260,7 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             }
             for (0.., mapped_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -1452,13 +1452,13 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             .prefix = .U,
         },
 
-        u: [2]Unit = .{ .{} } ** 2,
+        u: [2]Unit = @splat(.{}),
         pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
         remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
-            a: [8]Net_ID = .{ .unset } ** 8,
-            b: [8]Net_ID = .{ .unset } ** 8,
+            a: [8]Net_ID = @splat(.unset),
+            b: [8]Net_ID = @splat(.unset),
             a_to_b: struct {
                 output_enable: Net_ID = .unset,
                 output_register: Net_ID = .unset, // when low, output data will come from register input instead
@@ -1487,7 +1487,7 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             }
             for (0.., mapped_units) |logical_unit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
+                    log.err("{s}: No physical unit assigned to logical unit {}", .{ @typeName(@This()), logical_unit });
                     return error.InvalidRemap;
                 }
             }
@@ -1499,7 +1499,7 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 }
                 for (0.., mapped_bits) |logical_bit, mapped| {
                     if (!mapped) {
-                        std.debug.print("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
+                        log.err("{s} unit {}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), unit_idx, logical_bit });
                         return error.InvalidRemap;
                     }
                 }
@@ -1690,8 +1690,8 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             .prefix = .U,
         },
 
-        d: [20]Net_ID = .{ .unset } ** 20,
-        q: [20]Net_ID = .{ .unset } ** 20,
+        d: [20]Net_ID = @splat(.unset),
+        q: [20]Net_ID = @splat(.unset),
         clk: Net_ID = .unset,
         enable_clk_low: Net_ID = .unset,
         output_enable_low: Net_ID = .unset,
@@ -1705,7 +1705,7 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             }
             for (0.., mapped_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -1834,6 +1834,8 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
         }
     };
 }
+
+const log = std.log.scoped(.zoink);
 
 const Pin_ID = enums.Pin_ID;
 const Net_ID = enums.Net_ID;

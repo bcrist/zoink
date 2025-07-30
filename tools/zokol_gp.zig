@@ -469,6 +469,8 @@ const Textured_Rect = struct {
 const Vec2 = extern struct {
     x: f32,
     y: f32,
+
+    pub const zeroes: Vec2 = .{ .x = 0, .y = 0 };
 };
 
 const Point = Vec2;
@@ -500,14 +502,14 @@ const Mat2x3 = struct {
     }};
 };
 
-const Color = struct {
+pub const Color = struct {
     r: f32,
     g: f32,
     b: f32,
     a: f32 = 1.0,
 };
 
-const Color_UB4 = extern struct {
+pub const Color_UB4 = extern struct {
     r: u8,
     g: u8,
     b: u8,
@@ -520,7 +522,7 @@ const Color_UB4 = extern struct {
     };
 };
 
-const Vertex = extern struct {
+pub const Vertex = extern struct {
     position: Vec2,
     texcoord: Vec2,
     color: Color_UB4,
@@ -539,8 +541,8 @@ const Uniform = struct {
 
 const Textures_Uniform = struct {
     count: u32 = 0,
-    images: [texture_slots]sokol.gfx.Image = .{ .{} } ** texture_slots,
-    samplers: [texture_slots]sokol.gfx.Sampler = .{ .{} } ** texture_slots,
+    images: [texture_slots]sokol.gfx.Image = @splat(.{}),
+    samplers: [texture_slots]sokol.gfx.Sampler = @splat(.{}),
 
     pub fn active_images(self: *const Textures_Uniform) []const sokol.gfx.Image {
         return self.images[0..self.count];
@@ -630,8 +632,10 @@ pub fn setup(desc: Desc) !void {
     // create index buffer
     sgp.index_buf = sokol.gfx.makeBuffer(.{
         .size = sgp.indices.len * @sizeOf(Index),
-        .type = .INDEXBUFFER,
-        .usage = .STREAM,
+        .usage = .{
+            .stream_update = true,
+            .index_buffer = true,
+        },
     });
     errdefer if (sgp.index_buf.id != sokol.gfx.invalid_id) {
         sokol.gfx.destroyBuffer(sgp.index_buf);
@@ -640,8 +644,10 @@ pub fn setup(desc: Desc) !void {
     // create vertex buffer
     sgp.vertex_buf = sokol.gfx.makeBuffer(.{
         .size = sgp.vertices.len * @sizeOf(Vertex),
-        .type = .VERTEXBUFFER,
-        .usage = .STREAM,
+        .usage = .{
+            .vertex_buffer = true,
+            .stream_update = true,
+        },
     });
     errdefer if (sgp.vertex_buf.id != sokol.gfx.invalid_id) {
         sokol.gfx.destroyBuffer(sgp.vertex_buf);
@@ -864,8 +870,8 @@ pub fn render() !void {
                     if (cur_imgs_id[j] != img_id) {
                         // when an image binding change we need to re-apply bindings
                         cur_imgs_id[j] = img_id;
-                        bind.fs.images[j].id = img_id;
-                        bind.fs.samplers[j].id = smp_id;
+                        bind.images[j].id = img_id;
+                        bind.samplers[j].id = smp_id;
                         apply_bindings = true;
                     }
                 }
@@ -878,8 +884,7 @@ pub fn render() !void {
                     const uniform = &sgp.uniforms[cur_uniform_index];
                     if (uniform.size > 0) {
                         const uniform_range: sokol.gfx.Range = .{ .ptr = &uniform.content, .size = uniform.size };
-                        sokol.gfx.applyUniforms(.VS, 0, uniform_range);
-                        sokol.gfx.applyUniforms(.FS, 0, uniform_range);
+                        sokol.gfx.applyUniforms(0, uniform_range);
                     }
                 }
                 //  draw
@@ -1081,6 +1086,35 @@ pub fn set_color(color: Color) void {
         .a = @intFromFloat(std.math.clamp(color.a * 255.0, 0.0, 255.0)),
     };
 }
+
+pub fn set_color_unorm(color: Color_UB4) void {
+    std.debug.assert(sgp.init_cookie == init_cookie);
+    std.debug.assert(sgp.cur_state > 0);
+    sgp.state.color = color;
+}
+
+pub fn set_color_unorm_rgb(r: u8, g: u8, b: u8) void {
+    std.debug.assert(sgp.init_cookie == init_cookie);
+    std.debug.assert(sgp.cur_state > 0);
+    sgp.state.color = .{
+        .r = r,
+        .g = g,
+        .b = b,
+        .a = 255,
+    };
+}
+
+pub fn set_color_unorm_rgba(r: u8, g: u8, b: u8, a: u8) void {
+    std.debug.assert(sgp.init_cookie == init_cookie);
+    std.debug.assert(sgp.cur_state > 0);
+    sgp.state.color = .{
+        .r = r,
+        .g = g,
+        .b = b,
+        .a = a,
+    };
+}
+
 pub fn set_color_rgb(r: f32, g: f32, b: f32) void {
     set_color(.{
         .r = r,
@@ -1443,7 +1477,8 @@ pub fn draw_point(x: f32, y: f32) !void {
 }
 
 pub fn draw_lines(lines: []const Line) !void {
-    try draw_solid(.LINES, @ptrCast(lines));
+    const ptr: [*]const Point = @ptrCast(lines.ptr);
+    try draw_solid(.LINES, ptr[0 .. lines.len * 2]);
 }
 
 pub fn draw_line(a: Point, b: Point) !void {
@@ -1455,11 +1490,12 @@ pub fn draw_line_strip(points: []const Point) !void {
 }
 
 pub fn draw_triangles(triangles: []const Triangle) !void {
-    try draw_solid(.TRIANGLES, @ptrCast(triangles));
+    const ptr: [*]const Point = @ptrCast(triangles.ptr);
+    try draw_solid(.TRIANGLES, ptr[0 .. triangles.len * 3]);
 }
 
 pub fn draw_triangle(a: Point, b: Point, c: Point) !void {
-    try draw_solid(.TRIANGLES, .{ a, b, c });
+    try draw_solid(.TRIANGLES, &.{ a, b, c });
 }
 
 pub fn draw_triangle_strip(points: []const Point) !void {
@@ -1597,6 +1633,56 @@ pub fn draw_rect(x: f32, y: f32, w: f32, h: f32) !void {
     }});
 }
 
+pub fn draw_bordered_rect(x: f32, y: f32, w: f32, h: f32, bw: f32, bh: f32, border_color: Color_UB4) !void {
+    const x0 = x - bw;
+    const x1 = x;
+    const x2 = x + w;
+    const x3 = x + w + bw;
+
+    const y0 = y - bh;
+    const y1 = y;
+    const y2 = y + h;
+    const y3 = y + h + bh;
+
+    const v = [_]Vertex {
+        .{ .position = .{ .x = x0, .y = y0 }, .texcoord = Vec2.zeroes, .color = border_color },
+        .{ .position = .{ .x = x3, .y = y0 }, .texcoord = Vec2.zeroes, .color = border_color },
+        .{ .position = .{ .x = x2, .y = y1 }, .texcoord = Vec2.zeroes, .color = border_color },
+        .{ .position = .{ .x = x1, .y = y1 }, .texcoord = Vec2.zeroes, .color = border_color },
+
+        .{ .position = .{ .x = x1, .y = y2 }, .texcoord = Vec2.zeroes, .color = border_color },
+        .{ .position = .{ .x = x0, .y = y3 }, .texcoord = Vec2.zeroes, .color = border_color },
+
+        .{ .position = .{ .x = x3, .y = y3 }, .texcoord = Vec2.zeroes, .color = border_color },
+        .{ .position = .{ .x = x2, .y = y2 }, .texcoord = Vec2.zeroes, .color = border_color },
+
+
+        .{ .position = .{ .x = x1, .y = y1 }, .texcoord = Vec2.zeroes, .color = sgp.state.color },
+        .{ .position = .{ .x = x2, .y = y1 }, .texcoord = Vec2.zeroes, .color = sgp.state.color },
+        .{ .position = .{ .x = x2, .y = y2 }, .texcoord = Vec2.zeroes, .color = sgp.state.color },
+        .{ .position = .{ .x = x1, .y = y2 }, .texcoord = Vec2.zeroes, .color = sgp.state.color },
+    };
+
+    const i =  [_]u16 {
+        0, 1, 2,
+        0, 2, 3,
+
+        0, 3, 4,
+        0, 4, 5,
+
+        5, 4, 6,
+        4, 6, 7,
+
+        7, 6, 2,
+        6, 2, 1,
+
+        8, 9, 10,
+        8, 10, 11,
+    };
+
+    try draw_indexed(.TRIANGLES, &v, &i);
+}
+
 // Draws a batch textured rectangle, each from a source region.
 pub fn draw_textured_rects(channel: i32, rects: []const Textured_Rect) !void {
     std.debug.assert(sgp.init_cookie == init_cookie);
@@ -1647,11 +1733,92 @@ pub fn draw_textured_rects(channel: i32, rects: []const Textured_Rect) !void {
 }
 
 // Draws a single textured rectangle from a source region.
-pub fn draw_textured_rect(channel: i32, dest: FRect, src: FRect) void {
-    draw_textured_rects(channel, &.{ .{
+pub fn draw_textured_rect(channel: i32, dest: FRect, src: FRect) !void {
+    try draw_textured_rects(channel, &.{ .{
         .dest = dest,
         .src = src,
     }});
+}
+
+const Draw_Grid_Options = struct {
+    max_points: usize = 8192,
+    axis_lines: bool = false,
+};
+
+pub fn draw_grid(dx: f32, dy: f32, comptime options: Draw_Grid_Options) !bool {
+    const mvp = sgp.state.mvp.v;
+    if (mvp[0][1] == 0 and mvp[1][0] == 0) {
+        const xl = (-1 - mvp[0][2]) / mvp[0][0];
+        const xr = (1 - mvp[0][2]) / mvp[0][0];
+        const minx = @min(xl, xr);
+        const maxx = @max(xl, xr);
+        var x: i32 = @intFromFloat(@divFloor(minx, dx));
+        if (@mod(minx, dx) != 0) x += 1;
+        const x0 = x;
+        const x1: i32 = @intFromFloat(@divFloor(maxx, dx) + 1);
+        var xc: usize = @intCast(x1 - x);
+
+        const yb = (-1 - mvp[1][2]) / mvp[1][1];
+        const yt = (1 - mvp[1][2]) / mvp[1][1];
+        const miny = @min(yb, yt);
+        const maxy = @max(yb, yt);
+        var y: i32 = @intFromFloat(@divFloor(miny, dy));
+        if (@mod(miny, dy) != 0) y += 1;
+        const y0 = y;
+        const y1: i32 = @intFromFloat(@divFloor(maxy, dy) + 1);
+        var yc: usize = @intCast(y1 - y);
+        
+        if (options.axis_lines) {
+            if (x <= 0 and x1 > 0) xc -= 1;
+            if (y <= 0 and y1 > 0) yc -= 1;
+
+            const x0f: f32 = @floatFromInt(x0 - 1);
+            const x1f: f32 = @floatFromInt(x1);
+            const y0f: f32 = @floatFromInt(y0 - 1);
+            const y1f: f32 = @floatFromInt(y1);
+            try draw_lines(&.{
+                .{
+                    .a = .{ .x = x0f * dx, .y = 0 },
+                    .b = .{ .x = x1f * dx, .y = 0 },
+                },
+                .{
+                    .a = .{ .x = 0, .y = y0f * dy },
+                    .b = .{ .x = 0, .y = y1f * dy },
+                },
+            });
+        }
+
+        if (xc * yc > options.max_points) return false;
+
+        var pts: [options.max_points]Point = undefined;
+
+        var i: usize = 0;
+        while (y < y1) {
+            defer {
+                y += 1;
+                x = x0;
+            }
+
+            if (options.axis_lines and y == 0) continue;
+            var yf: f32 = @floatFromInt(y);
+            yf *= dy;
+            while (x < x1) : (x += 1) {
+                if (options.axis_lines and x == 0) continue;
+                var xf: f32 = @floatFromInt(x);
+                xf *= dx;
+                pts[i] = .{ .x = xf, .y = yf };
+                i += 1;
+            }
+        }
+        
+        if (i > 0) try draw_points(pts[0..i]);
+
+        return true;
+    } else {
+        // rotated views not currently supported
+        // TODO implement this by flood fill
+        return false;
+    }
 }
 
 pub fn query_state() *State {
@@ -1718,7 +1885,7 @@ const Context = struct {
     vertex_buf: sokol.gfx.Buffer,
     white_img: sokol.gfx.Image,
     nearest_smp: sokol.gfx.Sampler,
-    pipelines: [@typeInfo(Blend_Mode).Enum.fields.len * @intFromEnum(sokol.gfx.PrimitiveType.NUM)]sokol.gfx.Pipeline,
+    pipelines: [@typeInfo(Blend_Mode).@"enum".fields.len * @intFromEnum(sokol.gfx.PrimitiveType.NUM)]sokol.gfx.Pipeline,
 
     // command queue
     cur_index: u32,
@@ -2477,7 +2644,7 @@ fn make_pipeline_internal(shader: sokol.gfx.Shader, primitive_type: sokol.gfx.Pr
 
 fn lookup_pipeline(primitive_type: sokol.gfx.PrimitiveType, blend_mode: Blend_Mode) !sokol.gfx.Pipeline {
     const primitive_type_index: usize = @intCast(@intFromEnum(primitive_type));
-    const pip_index: u32 = @intCast((primitive_type_index * @typeInfo(Blend_Mode).Enum.fields.len) + @intFromEnum(blend_mode));
+    const pip_index: u32 = @intCast((primitive_type_index * @typeInfo(Blend_Mode).@"enum".fields.len) + @intFromEnum(blend_mode));
     
     if (sgp.pipelines[pip_index].id != sokol.gfx.invalid_id) {
         return sgp.pipelines[pip_index];
@@ -2491,27 +2658,27 @@ fn lookup_pipeline(primitive_type: sokol.gfx.PrimitiveType, blend_mode: Blend_Mo
 fn make_common_shader() sokol.gfx.Shader {
     const backend = sokol.gfx.queryBackend();
     var desc: sokol.gfx.ShaderDesc = .{};
-    desc.fs.images[0].used = true;
-    desc.fs.images[0].multisampled = false;
-    desc.fs.images[0].image_type = ._2D;
-    desc.fs.images[0].sample_type = .FLOAT;
-    desc.fs.samplers[0].used = true;
-    desc.fs.samplers[0].sampler_type = .FILTERING;
-    desc.fs.image_sampler_pairs[0].used = true;
-    desc.fs.image_sampler_pairs[0].image_slot = 0;
-    desc.fs.image_sampler_pairs[0].sampler_slot = 0;
+    desc.images[0].used = true;
+    desc.images[0].multisampled = false;
+    desc.images[0].image_type = ._2D;
+    desc.images[0].sample_type = .FLOAT;
+    desc.samplers[0].used = true;
+    desc.samplers[0].sampler_type = .FILTERING;
+    desc.image_sampler_pairs[0].used = true;
+    desc.image_sampler_pairs[0].image_slot = 0;
+    desc.image_sampler_pairs[0].sampler_slot = 0;
 
     // GLCORE / GLES3 only
     desc.attrs[vs_attr_color].name = "coord";
     desc.attrs[vs_attr_color].name = "color";
-    desc.fs.image_sampler_pairs[0].glsl_name = "iTexChannel0_iSmpChannel0";
+    desc.image_sampler_pairs[0].glsl_name = "iTexChannel0_iSmpChannel0";
 
     // D3D11 only
     desc.attrs[vs_attr_coord].sem_name = "TEXCOORD";
     desc.attrs[vs_attr_coord].sem_index = 0;
     desc.attrs[vs_attr_color].sem_name = "TEXCOORD";
     desc.attrs[vs_attr_color].sem_index = 1;
-    desc.vs.d3d11_target = "vs_4_0";
+    desc.d3d11_target = "vs_4_0";
     desc.fs.d3d11_target = "ps_4_0";
 
     // entry

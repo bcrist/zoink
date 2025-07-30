@@ -176,8 +176,8 @@ pub fn Async_8b(
         },
 
         pwr: Power = .{},
-        data: [8]Net_ID = .{ .unset } ** 8,
-        addr: [addr_bits]Net_ID = .{ .unset } ** addr_bits,
+        data: [8]Net_ID = @splat(.unset),
+        addr: [addr_bits]Net_ID = @splat(.unset),
         chip_enable_low: Net_ID = .unset,
         write_enable_low: Net_ID = .unset,
         output_enable_low: Net_ID = .unset,
@@ -191,7 +191,7 @@ pub fn Async_8b(
             }
             for (0.., mapped_data_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -201,7 +201,7 @@ pub fn Async_8b(
             }
             for (0.., mapped_addr_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical addr bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical addr bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -261,9 +261,9 @@ pub fn Async_16b(
         },
 
         pwr: Power = .{},
-        lower_data: [8]Net_ID = .{ .unset } ** 8,
-        upper_data: [8]Net_ID = .{ .unset } ** 8,
-        addr: [addr_bits]Net_ID = .{ .unset } ** addr_bits,
+        lower_data: [8]Net_ID = @splat(.unset),
+        upper_data: [8]Net_ID = @splat(.unset),
+        addr: [addr_bits]Net_ID = @splat(.unset),
         chip_enable_low: Net_ID = .unset,
         lower_byte_enable_low: Net_ID = .unset,
         upper_byte_enable_low: Net_ID = .unset,
@@ -280,7 +280,7 @@ pub fn Async_16b(
             }
             for (0.., mapped_lower_data_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical lower_data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical lower_data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -290,7 +290,7 @@ pub fn Async_16b(
             }
             for (0.., mapped_upper_data_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical upper_data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical upper_data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -301,7 +301,7 @@ pub fn Async_16b(
             }
             for (0.., mapped_addr_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical addr bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical addr bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -366,6 +366,8 @@ pub fn Async_16b(
         }
     };
 }
+
+const log = std.log.scoped(.zoink);
 
 const Pin_ID = enums.Pin_ID;
 const Net_ID = enums.Net_ID;

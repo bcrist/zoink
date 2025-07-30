@@ -3,7 +3,7 @@ pub const MS_026D_Variant = enum {
     low_profile, // up to 1.4mm thick
 };
 /// TQFP/LQFP
-pub fn MS_026D(comptime lead_count: comptime_int, comptime width_mm: comptime_int, comptime height_mm: comptime_int, comptime variant: MS_026D_Variant) type {
+pub fn MS_026D(comptime lead_count: comptime_int, comptime width_mm: comptime_int, comptime height_mm: comptime_int, comptime variant: MS_026D_Variant, comptime package_name: []const u8) type {
     comptime var pins_first_side = lead_count / 4;
 
     if (width_mm == 20) {
@@ -98,6 +98,7 @@ pub fn MS_026D(comptime lead_count: comptime_int, comptime width_mm: comptime_in
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = width_mm * 1000, .tolerance_um = 50 },
                 .height = .{ .nominal_um = height_mm * 1000, .tolerance_um = 50 },
@@ -132,7 +133,7 @@ pub fn MS_026D(comptime lead_count: comptime_int, comptime width_mm: comptime_in
 }
 
 /// TSOP II (400mil)
-pub fn MS_024H(comptime lead_count: comptime_int, comptime pitch_um: comptime_int) type {
+pub fn MS_024H(comptime lead_count: comptime_int, comptime pitch_um: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (pitch_um) {
         1270 => switch (lead_count) {
             28 => 18410,
@@ -162,6 +163,7 @@ pub fn MS_024H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
             54 => 11200,
             else => unreachable,
         },
+        else => unreachable,
     };
     return struct {
         pub const pkg: Package = .{
@@ -169,13 +171,14 @@ pub fn MS_024H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 10160, .tolerance_um = 50 },
             },
             .overall = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 250 },
-                .height = .{ .nominal_um = 11760 * 1000, .tolerance_um = 250 },
+                .height = .{ .nominal_um = 11760, .tolerance_um = 250 },
             },
             .max_z = .{ .nominal_um = 1200, .tolerance_um = 0 },
             .total_pins = lead_count,
@@ -204,7 +207,7 @@ pub fn MS_024H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
 }
 
 /// SOJ (300mil, 400mil)
-pub fn MS_027A__MO_065A_077D_088A(comptime lead_count: comptime_int, comptime body_size_mils: comptime_int) type {
+pub fn MS_027A__MO_065A_077D_088A(comptime lead_count: comptime_int, comptime body_size_mils: comptime_int, comptime package_name: []const u8) type {
     std.debug.assert(lead_count % 2 == 0);
     const body_width = (lead_count + 1) * 635;
     const body_height = switch (body_size_mils) {
@@ -218,6 +221,7 @@ pub fn MS_027A__MO_065A_077D_088A(comptime lead_count: comptime_int, comptime bo
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 127 },
                 .height = .{ .nominal_um = body_height, .tolerance_um = 127 },
@@ -238,11 +242,11 @@ pub fn MS_027A__MO_065A_077D_088A(comptime lead_count: comptime_int, comptime bo
 
 /// PLCC (rectangular)
 /// N.B. does not support the smallest "AA" variation of PLCC-18; MS_016A(18) corresponds to the "AB" variation.
-pub fn MS_016A(comptime lead_count: comptime_int) type {
+pub fn MS_016A(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const pins_on_first_side = switch (lead_count) {
-        18 => 5,
-        22 => 7,
-        28, 32 => 9,
+        18, 22 => 4,
+        28 => 5,
+        32 => 7,
         else => unreachable,
     };
     const overall_width = switch (lead_count) {
@@ -262,6 +266,7 @@ pub fn MS_016A(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = overall_width - 1070, .tolerance_um = 127 },
                 .height = .{ .nominal_um = overall_height - 1070, .tolerance_um = 127 },
@@ -272,17 +277,17 @@ pub fn MS_016A(comptime lead_count: comptime_int) type {
             },
             .max_z = .{ .nominal_um = 3550, .tolerance_um = 0 },
             .total_pins = lead_count,
-            .pin1 = .north_middle,
+            .pin1 = .west_middle,
             .pins_on_first_side = pins_on_first_side,
             .pin_pitch = .{ .nominal_um = 1270, .tolerance_um = 0 },
             .pin_width = .{ .nominal_um = 480, .tolerance_um = 80 },
-            .pin_seating = .{ .nominal_um = 2032, .tolerance_um = 80 },
+            .pin_seating = .{ .nominal_um = 1600, .tolerance_um = 80 },
         };
     };
 }
 
 /// PLCC (square)
-pub fn MO_047B(comptime lead_count: comptime_int, comptime pin1: footprints.Pin1) type {
+pub fn MO_047B(comptime lead_count: comptime_int, comptime pin1: footprints.Pin1, comptime package_name: []const u8) type {
     const overall_dim = switch (lead_count) {
         20 => 9905,
         28 => 12445,
@@ -305,6 +310,7 @@ pub fn MO_047B(comptime lead_count: comptime_int, comptime pin1: footprints.Pin1
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_dim, .tolerance_um = 127 },
                 .height = .{ .nominal_um = body_dim, .tolerance_um = 127 },
@@ -317,6 +323,7 @@ pub fn MO_047B(comptime lead_count: comptime_int, comptime pin1: footprints.Pin1
                 .nominal_um = switch (lead_count) {
                     20, 28, 44 => 4570,
                     52, 68, 84, 100, 124 => 5080,
+                    else => unreachable,
                 },
                 .tolerance_um = 0,
             },
@@ -325,13 +332,13 @@ pub fn MO_047B(comptime lead_count: comptime_int, comptime pin1: footprints.Pin1
             .pins_on_first_side = lead_count / 4,
             .pin_pitch = .{ .nominal_um = 1270, .tolerance_um = 0 },
             .pin_width = .{ .nominal_um = 480, .tolerance_um = 80 },
-            .pin_seating = .{ .nominal_um = 2032, .tolerance_um = 80 },
+            .pin_seating = .{ .nominal_um = 1600, .tolerance_um = 80 },
         };
     };
 }
 
 /// SOIC (150mil)
-pub fn MS_012G_02(comptime lead_count: comptime_int) type {
+pub fn MS_012G_02(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
         8 => 4900,
         14 => 8650,
@@ -344,6 +351,7 @@ pub fn MS_012G_02(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 3900, .tolerance_um = 50 },
@@ -363,7 +371,7 @@ pub fn MS_012G_02(comptime lead_count: comptime_int) type {
 }
 
 /// SOIC (200mil)
-pub fn MO_046B(comptime lead_count: comptime_int) type {
+pub fn MO_046B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
         14, 16 => 10300,
         20 => 12800,
@@ -375,6 +383,7 @@ pub fn MO_046B(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 200 },
                 .height = .{ .nominal_um = 5100, .tolerance_um = 200 },
@@ -394,7 +403,7 @@ pub fn MO_046B(comptime lead_count: comptime_int) type {
 }
 
 /// SOIC (300mil)
-pub fn MS_013G(comptime lead_count: comptime_int) type {
+pub fn MS_013G(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
         8 => 5850,
         14 => 9000,
@@ -411,6 +420,7 @@ pub fn MS_013G(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 7500, .tolerance_um = 50 },
@@ -430,7 +440,7 @@ pub fn MS_013G(comptime lead_count: comptime_int) type {
 }
 
 /// SOIC (330mil)
-pub fn MO_059B(comptime lead_count: comptime_int) type {
+pub fn MO_059B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
         24 => 15650,
         28 => 18100,
@@ -442,6 +452,7 @@ pub fn MO_059B(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 450 },
                 .height = .{ .nominal_um = 8454, .tolerance_um = 450 },
@@ -461,7 +472,7 @@ pub fn MO_059B(comptime lead_count: comptime_int) type {
 }
 
 /// SOIC (500mil)
-pub fn MO_126B(comptime lead_count: comptime_int) type {
+pub fn MO_126B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
         44 => 28200,
         48 => 30500,
@@ -473,6 +484,7 @@ pub fn MO_126B(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 200 },
                 .height = .{ .nominal_um = 12600, .tolerance_um = 200 },
@@ -492,7 +504,7 @@ pub fn MO_126B(comptime lead_count: comptime_int) type {
 }
 
 /// SSOP (200mil)
-pub fn MO_150B(comptime lead_count: comptime_int) type {
+pub fn MO_150B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
         8 => 3000,
         14, 16 => 6200,
@@ -508,6 +520,7 @@ pub fn MO_150B(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 300 },
                 .height = .{ .nominal_um = 5300, .tolerance_um = 300 },
@@ -527,12 +540,13 @@ pub fn MO_150B(comptime lead_count: comptime_int) type {
 }
 
 /// SSOP (300mil)
-pub fn MO_118B(comptime lead_count: comptime_int) type {
+pub fn MO_118B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
         28 => 10300,
         48 => 16000,
         56 => 18500,
         64 => 21000,
+        else => unreachable,
     };
     return struct {
         pub const pkg: Package = .{
@@ -540,6 +554,7 @@ pub fn MO_118B(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 300 },
                 .height = .{ .nominal_um = 7500, .tolerance_um = 300 },
@@ -566,7 +581,7 @@ pub const MO_153_Body_Size = enum {
     d, // 8mm
 };
 /// TSSOP
-pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_int, comptime body: MO_153_Body_Size) type {
+pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_int, comptime body: MO_153_Body_Size, comptime package_name: []const u8) type {
     const pin_width = switch (pitch_um) {
         400 => 180,
         500 => 220,
@@ -675,6 +690,7 @@ pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 100 },
                 .height = .{ .nominal_um = body_height, .tolerance_um = 100 },
@@ -694,7 +710,7 @@ pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
 }
 
 /// TVSOP
-pub fn MO_194B(comptime lead_count: comptime_int) type {
+pub fn MO_194B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_height = switch (lead_count) {
         14, 16, 20, 24, 48, 56 => 4400,
         80, 100 => 6100,
@@ -715,6 +731,7 @@ pub fn MO_194B(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 100 },
                 .height = .{ .nominal_um = body_height, .tolerance_um = 100 },
@@ -734,7 +751,7 @@ pub fn MO_194B(comptime lead_count: comptime_int) type {
 }
 
 /// SOT-23-3/5/6/8
-pub fn TO_236H__MO_193G(comptime lead_count: comptime_int) type {
+pub fn TO_236H__MO_193G(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const pins = switch (lead_count) {
         3, 5, 6 => 6,
         8 => 8,
@@ -747,12 +764,12 @@ pub fn TO_236H__MO_193G(comptime lead_count: comptime_int) type {
         else => unreachable,
     };
     const pitch = switch (lead_count) {
-        5, 6 => 950,
+        3, 5, 6 => 950,
         8 => 650,
         else => unreachable,
     };
     const pin_width = switch (lead_count) {
-        5, 6 => 400,
+        3, 5, 6 => 400,
         8 => 300,
         else => unreachable,
     };
@@ -763,6 +780,7 @@ pub fn TO_236H__MO_193G(comptime lead_count: comptime_int) type {
         };
 
         pub const data: SMD_Data = .{
+            .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = 2900, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 1600, .tolerance_um = 100 },
@@ -782,13 +800,13 @@ pub fn TO_236H__MO_193G(comptime lead_count: comptime_int) type {
     };
 }
 
-/// SOT-143-4
 pub const TO_253D = struct {
     pub const pkg: Package = .{
         .default_footprint = &fp.SOT(data, .normal).fp,
     };
 
     pub const data: SOT_Data = .{
+        .package_name = "SOT143-4",
         .body = .{
             .width  = .{ .nominal_um = 2920, .tolerance_um = 120 },
             .height = .{ .nominal_um = 1300, .tolerance_um = 100 },
@@ -827,13 +845,13 @@ pub const TO_253D = struct {
     };
 };
 
-/// SOT-223-4
 pub const TO_261AA = struct {
     pub const pkg: Package = .{
         .default_footprint = &fp.SOT(data, .normal).fp,
     };
 
     pub const data: SOT_Data = .{
+        .package_name = "SOT223-4",
         .body = .{
             .width  = .{ .nominal_um = 6500, .tolerance_um = 200 },
             .height = .{ .nominal_um = 3500, .tolerance_um = 200 },
@@ -872,13 +890,13 @@ pub const TO_261AA = struct {
     };
 };
 
-/// SOT-223-5
 pub const TO_261AB = struct {
     pub const pkg: Package = .{
         .default_footprint = &fp.SOT(data, .normal).fp,
     };
 
     pub const data: SOT_Data = .{
+        .package_name = "SOT223-5",
         .body = .{
             .width  = .{ .nominal_um = 6500, .tolerance_um = 200 },
             .height = .{ .nominal_um = 3500, .tolerance_um = 200 },
@@ -932,11 +950,13 @@ pub const MO_207AD = struct {
     };
 
     pub const data: BGA_Data = .{
+        .package_name = "FBGA-48",
         .body = .{
             .width  = .{ .nominal_um = 6000, .tolerance_um = 100 },
             .height = .{ .nominal_um = 8000, .tolerance_um = 100 },
         },
-        .ball_diameter = .{ .nominal_um = 220, .tolerance_um = 50 },
+        .max_z = .{ .nominal_um = 1150, .tolerance_um = 200 },
+        .ball_diameter = .{ .nominal_um = 350, .tolerance_um = 50 },
         .rows = 8,
         .cols = 6,
         .row_pitch = .{ .nominal_um = 750, .tolerance_um = 0 },

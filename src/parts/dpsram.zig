@@ -27,9 +27,9 @@ pub fn CY7C0xx(
         remap_addr: [addr_bits]u5 = Part.identity_remap(u5, addr_bits),
 
         pub const Port = struct {
-            lower_data: [byte_bits]Net_ID = .{ .unset } ** byte_bits,
-            upper_data: [byte_bits]Net_ID = .{ .unset } ** byte_bits,
-            addr: [addr_bits]Net_ID = .{ .unset } ** addr_bits,
+            lower_data: [byte_bits]Net_ID = @splat(.unset),
+            upper_data: [byte_bits]Net_ID = @splat(.unset),
+            addr: [addr_bits]Net_ID = @splat(.unset),
 
             chip_enable: if (addr_bits >= 15) Net_ID else void = if (addr_bits >= 15) .unset else {},
             chip_enable_low: Net_ID = .unset,
@@ -57,7 +57,7 @@ pub fn CY7C0xx(
             }
             for (0.., mapped_lower_data_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical lower_data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical lower_data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -67,7 +67,7 @@ pub fn CY7C0xx(
             }
             for (0.., mapped_upper_data_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical upper_data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical upper_data bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -78,7 +78,7 @@ pub fn CY7C0xx(
             }
             for (0.., mapped_addr_bits) |logical_bit, mapped| {
                 if (!mapped) {
-                    std.debug.print("{s}: No physical addr bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    log.err("{s}: No physical addr bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
                     return error.InvalidRemap;
                 }
             }
@@ -784,6 +784,8 @@ pub fn CY7C0xx(
         }
     };
 }
+
+const log = std.log.scoped(.zoink);
 
 const Pin_ID = enums.Pin_ID;
 const Net_ID = enums.Net_ID;

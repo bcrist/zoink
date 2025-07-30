@@ -34,7 +34,7 @@ test {
     defer b.deinit();
     try configure(&b);
     try b.finish_configuration(std.testing.allocator);
-    var v = try zoink.Validator.init(&b);
+    var v = try zoink.Validator.init(&b, .{});
     defer v.deinit();
 
     const LA = b.get_bus("LA");

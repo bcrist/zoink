@@ -25,10 +25,10 @@ pub const VTable = struct {
         comptime var Validator_State = void;
         comptime var Validator_State_Pointer = void;
         comptime var validator_state_alignment = 1;
-        if (has_validate and @typeInfo(@TypeOf(P.validate)).Fn.params.len == 4) {
-            Validator_State_Pointer = @typeInfo(@TypeOf(P.validate)).Fn.params[2].type.?;
-            const param_info = @typeInfo(Validator_State_Pointer).Pointer;
-            std.debug.assert(param_info.size == .One);
+        if (has_validate and @typeInfo(@TypeOf(P.validate)).@"fn".params.len == 4) {
+            Validator_State_Pointer = @typeInfo(@TypeOf(P.validate)).@"fn".params[2].type.?;
+            const param_info = @typeInfo(Validator_State_Pointer).pointer;
+            std.debug.assert(param_info.size == .one);
             Validator_State = param_info.child;
             validator_state_alignment = param_info.alignment;
         }
@@ -36,7 +36,7 @@ pub const VTable = struct {
         const impl = struct {
             pub fn check_config(base: *Part.Base, b: *Board) !void {
                 const part: *P = @fieldParentPtr("base", base);
-                const func_info: std.builtin.Type.Fn = @typeInfo(@TypeOf(P.check_config)).Fn;
+                const func_info: std.builtin.Type.Fn = @typeInfo(@TypeOf(P.check_config)).@"fn";
                 if (func_info.params.len == 2) {
                     try part.check_config(b);
                 } else {
@@ -47,19 +47,23 @@ pub const VTable = struct {
             pub fn finalize_power_nets(base: *Part.Base, b: *Board) !void {
                 const part: *P = @fieldParentPtr("base", base);
 
-                if (@hasField(P, "pwr")) {
-                    const Pwr = std.meta.FieldType(P, .pwr);
-                    const pwr = &@field(part.*, "pwr");
-                    const fields = @typeInfo(std.meta.FieldType(P, .pwr)).Struct.fields;
-                    inline for (fields) |info| if (comptime std.meta.stringToEnum(Net_ID, info.name)) |net| {
-                        if (info.type == Net_ID) {
-                            maybe_set_power_net_or_generate_decoupler(Pwr, net, &@field(pwr, info.name), b);
-                        } else {
-                            for (&@field(pwr, info.name)) |*net_ptr| {
-                                maybe_set_power_net_or_generate_decoupler(Pwr, net, net_ptr, b);
+                inline for (@typeInfo(P).@"struct".fields) |field| {
+                    if (comptime std.mem.startsWith(u8, field.name, "pwr")) {
+                        const Pwr = field.type;
+                        const pwr = &@field(part.*, field.name);
+
+                        inline for (@typeInfo(Pwr).@"struct".fields) |info| {
+                            if (comptime std.meta.stringToEnum(Net_ID, info.name)) |net| {
+                                if (info.type == Net_ID) {
+                                    maybe_set_power_net_or_generate_decoupler(Pwr, net, &@field(pwr, info.name), b);
+                                } else {
+                                    for (&@field(pwr, info.name)) |*net_ptr| {
+                                        maybe_set_power_net_or_generate_decoupler(Pwr, net, net_ptr, b);
+                                    }
+                                }
                             }
                         }
-                    };
+                    }
                 }
 
                 try check_for_unset_nets(P, part.*, base, "");
@@ -69,26 +73,31 @@ pub const VTable = struct {
                 if (T == Part.Base or T == void) return;
                 if (T == Net_ID) {
                     if (value == .unset) {
-                        std.debug.print("{s}{s} has not been assigned\n", .{ base.name, prefix });
+                        log.err("{s}{s} has not been assigned\n", .{ base.name, prefix });
                         return error.UnassignedSignal;
                     }
                     return;
                 }
 
                 switch (@typeInfo(T)) {
-                    .Int => return,
-                    .Float => return,
-                    .Struct => |struct_info| inline for (struct_info.fields) |field_info| {
+                    .int, .float => {},
+                    .@"struct" => |struct_info| inline for (struct_info.fields) |field_info| {
                         try check_for_unset_nets(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
                     },
-                    .Union => |union_info| inline for (union_info.fields) |field_info| {
+                    .@"union" => |union_info| inline for (union_info.fields) |field_info| {
                         if (value == @field(union_info.tag_type.?, field_info.name)) {
                             try check_for_unset_nets(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
                         }
                     },
-                    else => for (value) |item| {
-                        try check_for_unset_nets(@TypeOf(item), item, base, prefix ++ "[]");
+                    .pointer => |info| if (info.size == .slice) {
+                        for (value) |item| {
+                            try check_for_unset_nets(@TypeOf(item), item, base, prefix ++ "[?]");
+                        }
                     },
+                    .array => |info| inline for (0..info.len) |i| {
+                        try check_for_unset_nets(@TypeOf(value[i]), value[i], base, std.fmt.comptimePrint("{s}[{}]", .{ prefix, i }));
+                    },
+                    else => {},
                 }
             }
 
@@ -137,6 +146,8 @@ pub fn identity_remap(comptime T: type, comptime n: usize) [n]T {
     }
     return remap;
 }
+
+const log = std.log.scoped(.zoink);
 
 const Net_ID = enums.Net_ID;
 const enums = @import("enums.zig");

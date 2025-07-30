@@ -163,32 +163,32 @@ pub fn Multi(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int,
 
 pub fn Multi_24V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p24v: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p24v: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
     };
 }
 
 pub fn Multi_19V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p19v: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p19v: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
     };
 }
 
 pub fn Multi_15V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p15v: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p15v: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
     };
 }
 
 pub fn Multi_12V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p12v: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p12v: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p12v;
     };
@@ -196,8 +196,8 @@ pub fn Multi_12V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_
 
 pub fn Multi_9V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p9v: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p9v: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p9v;
     };
@@ -205,8 +205,8 @@ pub fn Multi_9V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_i
 
 pub fn Multi_6V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p6v: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p6v: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p6v;
     };
@@ -214,8 +214,8 @@ pub fn Multi_6V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_i
 
 pub fn Multi_5V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p5v: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p5v: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p5v;
     };
@@ -223,8 +223,8 @@ pub fn Multi_5V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_i
 
 pub fn Multi_3V3(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p3v3: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p3v3: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p3v3;
     };
@@ -232,8 +232,8 @@ pub fn Multi_3V3(comptime vcc_count: comptime_int, comptime gnd_count: comptime_
 
 pub fn Multi_3V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p3v: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p3v: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p3v;
     };
@@ -241,8 +241,8 @@ pub fn Multi_3V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_i
 
 pub fn Multi_2V5(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p2v5: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p2v5: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p2v5;
     };
@@ -250,8 +250,8 @@ pub fn Multi_2V5(comptime vcc_count: comptime_int, comptime gnd_count: comptime_
 
 pub fn Multi_1V8(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p1v8: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p1v8: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p1v8;
     };
@@ -259,8 +259,8 @@ pub fn Multi_1V8(comptime vcc_count: comptime_int, comptime gnd_count: comptime_
 
 pub fn Multi_1V5(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p1v5: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p1v5: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p1v5;
     };
@@ -268,8 +268,8 @@ pub fn Multi_1V5(comptime vcc_count: comptime_int, comptime gnd_count: comptime_
 
 pub fn Multi_1V2(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p1v2: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p1v2: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p1v2;
     };
@@ -277,8 +277,8 @@ pub fn Multi_1V2(comptime vcc_count: comptime_int, comptime gnd_count: comptime_
 
 pub fn Multi_1V(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
     return struct {
-        gnd: [gnd_count]Net_ID = .{ .unset } ** gnd_count,
-        p1v: [vcc_count]Net_ID = .{ .unset } ** vcc_count,
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p1v: [vcc_count]Net_ID = @splat(.unset),
         pub const Decouple = Decoupler;
         pub const V = Voltage.p1v;
     };

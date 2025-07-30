@@ -5,6 +5,7 @@ net_v: []Voltage,
 parts: std.MultiArrayList(Part_Validator),
 part_state: std.ArrayListUnmanaged(u8),
 max_iterations: usize,
+hash_part_state: bool,
 
 pub const Net_State = struct {
     v: Voltage = .gnd,
@@ -25,7 +26,12 @@ pub const Update_Mode = enum {
 
 const Validator = @This();
 
-pub fn init(b: *const Board) !Validator {
+const Init_Options = struct {
+    max_iterations: usize = 1000,
+    hash_part_state: bool = true,
+};
+
+pub fn init(b: *const Board, options: Init_Options) !Validator {
     var initial_nets: std.MultiArrayList(Net_State) = .{};
     var nets: std.MultiArrayList(Net_State) = .{};
     errdefer initial_nets.deinit(std.testing.allocator);
@@ -73,7 +79,9 @@ pub fn init(b: *const Board) !Validator {
         .net_v = nets.items(.v),
         .parts = parts,
         .part_state = part_state,
-        .max_iterations = 1000,
+        .max_iterations = options.max_iterations,
+        .hash_part_state = options.hash_part_state,
+
     }; 
 }
 
@@ -161,7 +169,7 @@ pub fn drive_net(self: *Validator, net: Net_ID, v: Voltage, s: Drive_Strength) !
     const combined_s = Drive_Strength.init(raw_s);
 
     if (combined_s == .contending) {
-        std.debug.print("Contention on net: {s}\n", .{ self.b.net_name(net) });
+        log.err("Contention on net: {s}\n", .{ self.b.net_name(net) });
         return error.InvalidNetState;
     }
 
@@ -269,9 +277,7 @@ pub fn update(self: *Validator) !void {
             break;
         }
         hash = new_hash;
-    } else {
-        return error.Unstable;
-    }
+    } else return error.Unstable;
 }
 
 fn step(self: *Validator, mode: Update_Mode) !u64 {
@@ -280,70 +286,77 @@ fn step(self: *Validator, mode: Update_Mode) !u64 {
     }
 
     var hash = std.hash.Wyhash.init(0);
+
+    if (self.hash_part_state) {
+        hash.update(self.part_state.items);
+    }
+
     for (self.nets.items(.v)) |v| {
         hash.update(std.mem.asBytes(&v));
     }
+
     for (self.nets.items(.s)) |s| {
         hash.update(std.mem.asBytes(&s));
     }
+
     return hash.final();
 }
 
 pub fn expect_hiz(self: *const Validator, what: anytype) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_hiz(what),
+        .@"enum" => try self.expect_net_hiz(what),
         else => try self.expect_bus_hiz(what),
     }
 }
 
 pub fn expect_not_hiz(self: *const Validator, what: anytype) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_not_hiz(what),
+        .@"enum" => try self.expect_net_not_hiz(what),
         else => try self.expect_bus_not_hiz(what),
     }
 }
 
 pub fn expect_strong(self: *const Validator, what: anytype) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_strong(what),
+        .@"enum" => try self.expect_net_strong(what),
         else => try self.expect_bus_strong(what),
     }
 }
 
 pub fn expect_weak(self: *const Validator, what: anytype) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_weak(what),
+        .@"enum" => try self.expect_net_weak(what),
         else => try self.expect_bus_weak(what),
     }
 }
 
 pub fn expect_above(self: *const Validator, what: anytype, v: Voltage) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_above(what, v),
+        .@"enum" => try self.expect_net_above(what, v),
         else => try self.expect_bus_above(what, v),
     }
 }
 
 pub fn expect_below(self: *const Validator, what: anytype, v: Voltage) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_below(what, v),
+        .@"enum" => try self.expect_net_below(what, v),
         else => try self.expect_bus_below(what, v),
     }
 }
 
 pub fn expect_approx(self: *const Validator, what: anytype, v: Voltage, epsilon: f32) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_approx(what, v, epsilon),
+        .@"enum" => try self.expect_net_approx(what, v, epsilon),
         else => try self.expect_bus_approx(what, v, epsilon),
     }
 }
 
 pub fn expect_high(self: *const Validator, what: anytype, comptime levels: type) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_high(what, levels),
+        .@"enum" => try self.expect_net_high(what, levels),
         else => self.expect_bus_high(what, levels) catch {
             self.b.print_bus_name(what, std.io.getStdErr().writer()) catch {};
-            std.debug.print(" is {X}\n", .{ self.read_bus(what, levels) });
+            log.info(" is {X}\n", .{ self.read_bus(what, levels) });
             return error.InvalidNetState;
         },
     }
@@ -351,10 +364,10 @@ pub fn expect_high(self: *const Validator, what: anytype, comptime levels: type)
 
 pub fn expect_low(self: *const Validator, what: anytype, comptime levels: type) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_low(what, levels),
+        .@"enum" => try self.expect_net_low(what, levels),
         else => self.expect_bus_low(what, levels) catch {
             self.b.print_bus_name(what, std.io.getStdErr().writer()) catch {};
-            std.debug.print(" is {X}\n", .{ self.read_bus(what, levels) });
+            log.info(" is {X}\n", .{ self.read_bus(what, levels) });
             return error.InvalidNetState;
         },
     }
@@ -362,10 +375,10 @@ pub fn expect_low(self: *const Validator, what: anytype, comptime levels: type) 
 
 pub fn expect_valid(self: *const Validator, what: anytype, comptime levels: type) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_valid(what, levels),
+        .@"enum" => try self.expect_net_valid(what, levels),
         else => self.expect_bus_valid(what, levels) catch {
             self.b.print_bus_name(what, std.io.getStdErr().writer()) catch {};
-            std.debug.print(" is {X}\n", .{ self.read_bus(what, levels) });
+            log.info(" is {X}\n", .{ self.read_bus(what, levels) });
             return error.InvalidNetState;
         },
     }
@@ -373,10 +386,10 @@ pub fn expect_valid(self: *const Validator, what: anytype, comptime levels: type
 
 pub fn expect_valid_or_nc(self: *const Validator, what: anytype, comptime levels: type) !void {
     switch (@typeInfo(@TypeOf(what))) {
-        .Enum => try self.expect_net_valid_or_nc(what, levels),
+        .@"enum" => try self.expect_net_valid_or_nc(what, levels),
         else => self.expect_bus_valid_or_nc(what, levels) catch {
             self.b.print_bus_name(what, std.io.getStdErr().writer()) catch {};
-            std.debug.print(" is {X}\n", .{ self.read_bus(what, levels) });
+            log.info(" is {X}\n", .{ self.read_bus(what, levels) });
             return error.InvalidNetState;
         },
     }
@@ -384,9 +397,9 @@ pub fn expect_valid_or_nc(self: *const Validator, what: anytype, comptime levels
 
 pub fn expect_bus(self: *const Validator, bus: anytype, expected: usize, comptime levels: type) !void {
     self.expect_bus_state(bus, expected, levels) catch {
-        std.debug.print("Expected bus ", .{});
+        log.err("Expected bus ", .{});
         self.b.print_bus_name(bus, std.io.getStdErr().writer()) catch {};
-        std.debug.print(" == {X}; found {X}\n", .{ expected, self.read_bus(bus, levels) });
+        log.info(" == {X}; found {X}\n", .{ expected, self.read_bus(bus, levels) });
         return error.InvalidNetState;
     };
 }
@@ -472,7 +485,7 @@ fn expect_bus_valid(self: *const Validator, bus: anytype, comptime levels: type)
 fn expect_net_hiz(self: *const Validator, net: Net_ID) !void {
     const s = self.read_net_strength(net);
     if (s != .hiz) {
-        std.debug.print("Expected {s} to be Hi-Z; found {} @ {}\n", .{ self.b.net_name(net), self.read_net(net), s });
+        log.err("Expected {s} to be Hi-Z; found {} @ {}\n", .{ self.b.net_name(net), self.read_net(net), s });
         return error.InvalidNetState;
     }
 }
@@ -480,11 +493,11 @@ fn expect_net_hiz(self: *const Validator, net: Net_ID) !void {
 fn expect_net_not_hiz(self: *const Validator, net: Net_ID) !void {
     const s = self.read_net_strength(net);
     if (s == .hiz) {
-        std.debug.print("Unexpected Hi-Z net: {s}\n", .{ self.b.net_name(net) });
+        log.err("Unexpected Hi-Z net: {s}\n", .{ self.b.net_name(net) });
         return error.InvalidNetState;
     }
     if (s == .contending) {
-        std.debug.print("Contention on net: {s}\n", .{ self.b.net_name(net) });
+        log.err("Contention on net: {s}\n", .{ self.b.net_name(net) });
         return error.InvalidNetState;
     }
 }
@@ -492,11 +505,11 @@ fn expect_net_not_hiz(self: *const Validator, net: Net_ID) !void {
 fn expect_net_strong(self: *const Validator, net: Net_ID) !void {
     const s = self.read_net_strength(net);
     if (s == .contending) {
-        std.debug.print("Contention on net: {s}\n", .{ self.b.net_name(net) });
+        log.err("Contention on net: {s}\n", .{ self.b.net_name(net) });
         return error.InvalidNetState;
     }
     if (@intFromEnum(s) < @intFromEnum(Drive_Strength.strong)) {
-        std.debug.print("Expected {s} to be strongly driven; found {} @ {}\n", .{ self.b.net_name(net), self.read_net(net), s });
+        log.err("Expected {s} to be strongly driven; found {} @ {}\n", .{ self.b.net_name(net), self.read_net(net), s });
         return error.InvalidNetState;
     }
 }
@@ -504,7 +517,7 @@ fn expect_net_strong(self: *const Validator, net: Net_ID) !void {
 fn expect_net_weak(self: *const Validator, net: Net_ID) !void {
     const s = self.read_net_strength(net);
     if (s == .hiz or @intFromEnum(s) >= @intFromEnum(Drive_Strength.strong)) {
-        std.debug.print("Expected {s} to be weakly driven; found {} @ {}\n", .{ self.b.net_name(net), self.read_net(net), s });
+        log.err("Expected {s} to be weakly driven; found {} @ {}\n", .{ self.b.net_name(net), self.read_net(net), s });
         return error.InvalidNetState;
     }
 }
@@ -512,7 +525,7 @@ fn expect_net_weak(self: *const Validator, net: Net_ID) !void {
 fn expect_net_above(self: *const Validator, net: Net_ID, v: Voltage) !void {
     const found_v = self.read_net(net);
     if (found_v.raw() < v.raw()) {
-        std.debug.print("Expected {s} >= {}; found {} @ {}\n", .{ self.b.net_name(net), v, found_v, self.read_net_strength(net) });
+        log.err("Expected {s} >= {}; found {} @ {}\n", .{ self.b.net_name(net), v, found_v, self.read_net_strength(net) });
         return error.InvalidNetState;
     }
 }
@@ -520,7 +533,7 @@ fn expect_net_above(self: *const Validator, net: Net_ID, v: Voltage) !void {
 fn expect_net_below(self: *const Validator, net: Net_ID, v: Voltage) !void {
     const found_v = self.read_net(net);
     if (found_v.raw() > v.raw()) {
-        std.debug.print("Expected {s} <= {}; found {} @ {}\n", .{ self.b.net_name(net), v, found_v, self.read_net_strength(net) });
+        log.err("Expected {s} <= {}; found {} @ {}\n", .{ self.b.net_name(net), v, found_v, self.read_net_strength(net) });
         return error.InvalidNetState;
     }
 }
@@ -528,7 +541,7 @@ fn expect_net_below(self: *const Validator, net: Net_ID, v: Voltage) !void {
 fn expect_net_approx(self: *const Validator, net: Net_ID, v: Voltage, epsilon: f32) !void {
     const found_v = self.read_net(net);
     if (!std.math.approxEqAbs(f32, v.as_float(), found_v.as_float(), epsilon)) {
-        std.debug.print("Expected {s} ~= {} +/- {d}; found {} @ {}\n", .{ self.b.net_name(net), v, epsilon, found_v, self.read_net_strength(net) });
+        log.err("Expected {s} ~= {} +/- {d}; found {} @ {}\n", .{ self.b.net_name(net), v, epsilon, found_v, self.read_net_strength(net) });
         return error.InvalidNetState;
     }
 }
@@ -555,7 +568,7 @@ fn expect_net_valid(self: *const Validator, net: Net_ID, comptime levels: type) 
     if (found_v.raw() <= levels.Vil.raw()) return;
     if (found_v.raw() >= levels.Vih.raw() and found_v.raw() <= levels.Vclamp.raw()) return;
 
-    std.debug.print("Expected {s} <= {} or between {} and {}; found {} @ {}\n", .{
+    log.err("Expected {s} <= {} or between {} and {}; found {} @ {}\n", .{
         self.b.net_name(net),
         levels.Vil,
         levels.Vih,
@@ -565,6 +578,8 @@ fn expect_net_valid(self: *const Validator, net: Net_ID, comptime levels: type) 
     });
     return error.InvalidNetState;
 }
+
+const log = std.log.scoped(.zoink);
 
 const Net_ID = enums.Net_ID;
 const Voltage = enums.Voltage;
