@@ -36,6 +36,7 @@ pub const VTable = struct {
         const impl = struct {
             pub fn check_config(base: *Part.Base, b: *Board) !void {
                 const part: *P = @fieldParentPtr("base", base);
+                errdefer dump_pins(P, part.*, b, base, "");
                 const func_info: std.builtin.Type.Fn = @typeInfo(@TypeOf(P.check_config)).@"fn";
                 if (func_info.params.len == 2) {
                     try part.check_config(b);
@@ -44,7 +45,43 @@ pub const VTable = struct {
                 }
             }
 
+            fn dump_pins(comptime T: type, value: T, b: *Board, base: *Part.Base, comptime prefix: []const u8) void {
+                if (T == Part.Base or T == void) return;
+                if (T == Net_ID) {
+                    std.log.err("{s}{s} = {s}", .{ base.name, prefix, b.net_name(value) });
+                    return;
+                }
+
+                switch (@typeInfo(T)) {
+                    .int, .float => {},
+                    .@"struct" => |struct_info| inline for (struct_info.fields) |field_info| {
+                        dump_pins(field_info.type, @field(value, field_info.name), b, base, prefix ++ "." ++ field_info.name);
+                    },
+                    .@"union" => |union_info| inline for (union_info.fields) |field_info| {
+                        if (value == @field(union_info.tag_type.?, field_info.name)) {
+                            dump_pins(field_info.type, @field(value, field_info.name), b, base, prefix ++ "." ++ field_info.name);
+                        }
+                    },
+                    .pointer => |info| if (info.size == .slice) {
+                        for (value) |item| {
+                            dump_pins(@TypeOf(item), item, b, base, prefix ++ "[?]");
+                        }
+                    },
+                    .optional => |info| {
+                        if (value) |v| {
+                            dump_pins(info.child, v, b, base, prefix);
+                        }
+                    },
+                    .array => |info| inline for (0..info.len) |i| {
+                        dump_pins(info.child, value[i], b, base, std.fmt.comptimePrint("{s}[{}]", .{ prefix, i }));
+                    },
+                    else => {},
+                }
+            }
+
             pub fn finalize_power_nets(base: *Part.Base, b: *Board) !void {
+                @setEvalBranchQuota(10000);
+
                 const part: *P = @fieldParentPtr("base", base);
 
                 inline for (@typeInfo(P).@"struct".fields) |field| {
@@ -93,6 +130,9 @@ pub const VTable = struct {
                         for (value) |item| {
                             try check_for_unset_nets(@TypeOf(item), item, base, prefix ++ "[?]");
                         }
+                    },
+                    .optional => |info| if (value) |v| {
+                        try check_for_unset_nets(info.child, v, base, prefix);
                     },
                     .array => |info| inline for (0..info.len) |i| {
                         try check_for_unset_nets(@TypeOf(value[i]), value[i], base, std.fmt.comptimePrint("{s}[{}]", .{ prefix, i }));

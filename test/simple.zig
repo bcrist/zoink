@@ -29,6 +29,25 @@ pub fn configure(b: *Board) !void {
     U3.write_enable_low = b.net("~WE");
     U3.output_enable_low = b.net("~OE");
 
+    const R1 = b.part(zoink.parts.R0402);
+    R1.a = .gnd;
+    R1.b = b.net("N1");
+    R1.value = 1000;
+
+    const R2 = b.part(zoink.parts.R0402);
+    R2.a = b.net("N1");
+    R2.b = b.net("N2");
+    R2.value = 1000;
+
+    const R3 = b.part(zoink.parts.R0402);
+    R3.a = b.net("N2");
+    R3.b = b.net("N3");
+    R3.value = 1000;
+
+    const R4 = b.part(zoink.parts.R0402);
+    R4.a = b.net("N3");
+    R4.b = .p5v;
+    R4.value = 1000;
 }
 
 test {
@@ -38,7 +57,7 @@ test {
     defer b.deinit();
     try configure(&b);
     try b.finish_configuration(std.testing.allocator);
-    var v = try zoink.Validator.init(&b, .{});
+    var v = try zoink.Validator.init(std.testing.allocator, &b, .{});
     defer v.deinit();
 
     const A = b.get_bus("A");
@@ -60,16 +79,20 @@ test {
     try v.set(WE, .gnd);
     try v.set(OE, .gnd);
     try v.update();
-    try v.expect_bus(Result, 3, LVCMOS_5VT);
+    try v.expect_state(Result, 3, LVCMOS_5VT);
 
     try v.set_bus(A, 3, LVCMOS_5VT);
     try v.set_bus(B, 4, LVCMOS_5VT);
     try v.set_bus(C, 4, LVCMOS_5VT);
     try v.set(WE, .p3v3);
-    try v.set_bus_hiz(D);
+    try v.unset_bus(D);
     try v.update();
-    try v.expect_bus(Result, 4, LVCMOS_5VT);
-    try v.expect_bus(D, 0xBCDE, LVCMOS);
+    try v.expect_state(Result, 4, LVCMOS_5VT);
+    try v.expect_state(D, 0xBCDE, LVCMOS);
+
+    try v.expect_approx(b.get_net("N2"), .from_float(2.5), 0.1);
+    try v.expect_approx(b.get_net("N3"), .from_float(3.75), 0.1);
+    try v.expect_approx(b.get_net("N1"), .from_float(1.25), 0.1);
 }
 
 const SN74LVC08ADB = zoink.parts.SN74LVC08ADB;

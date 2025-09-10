@@ -610,13 +610,27 @@ pub fn CY7C0xx(
                 
                     try finalize_semaphores(self.left, v, &state.left_semaphores);
                     try finalize_semaphores(self.right, v, &state.right_semaphores);
+
+                    const left_ce = read_port_ce(self.left, v);
+                    const right_ce = read_port_ce(self.right, v);
+
+                    _ = try read_port(mode, self.left, v, left_ce, &state.mem, state.left_semaphores);
+                    _ = try read_port(mode, self.right, v, right_ce, &state.mem, state.right_semaphores);
+
+                    if (v.read_logic(self.master, levels)) {
+                        try v.expect_output_valid(self.left.busy_low, !state.left_busy, levels);
+                        try v.expect_output_valid(self.right.busy_low, !state.right_busy, levels);
+                    }
+
+                    try v.expect_output_valid(self.left.interrupt_low, !state.left_interrupt, levels);
+                    try v.expect_output_valid(self.right.interrupt_low, !state.right_interrupt, levels);
                 },
                 .nets_only => {
                     const left_ce = read_port_ce(self.left, v);
                     const right_ce = read_port_ce(self.right, v);
 
-                    const maybe_left_addr = try read_port(self.left, v, left_ce, &state.mem, state.left_semaphores);
-                    const maybe_right_addr = try read_port(self.right, v, right_ce, &state.mem, state.right_semaphores);
+                    const maybe_left_addr = try read_port(mode, self.left, v, left_ce, &state.mem, state.left_semaphores);
+                    const maybe_right_addr = try read_port(mode, self.right, v, right_ce, &state.mem, state.right_semaphores);
 
                     if (v.read_logic(self.master, levels)) {
                         state.left_busy = false;
@@ -647,7 +661,7 @@ pub fn CY7C0xx(
             return v.read_logic(port.chip_enable_low, levels) == false and (@TypeOf(port.chip_enable) == void or v.read_logic(port.chip_enable, levels) == true);
         }
 
-        fn read_port(port: Port, v: *Validator, ce: bool, mem: *const [1 << addr_bits]Validator_State.Word, semaphores: [8]Validator_State.Semaphore_State) !?usize {
+        fn read_port(mode: Validator.Update_Mode, port: Port, v: *Validator, ce: bool, mem: *const [1 << addr_bits]Validator_State.Word, semaphores: [8]Validator_State.Semaphore_State) !?usize {
             var addr: ?usize = null;
             if (ce
                 and v.read_logic(port.output_enable_low, levels) == false
@@ -657,10 +671,16 @@ pub fn CY7C0xx(
                 const word = mem[addr.?];
 
                 if (v.read_logic(port.lower_byte_enable_low, levels) == false) {
-                    try v.drive_bus(port.lower_data, word.lower, levels);
+                    switch (mode) {
+                        .commit => try v.expect_output_valid(port.lower_data, word.lower, levels),
+                        else => try v.drive_bus(port.lower_data, word.lower, levels),
+                    }
                 }
                 if (v.read_logic(port.upper_byte_enable_low, levels) == false) {
-                    try v.drive_bus(port.upper_data, word.upper, levels);
+                    switch (mode) {
+                        .commit => try v.expect_output_valid(port.upper_data, word.upper, levels),
+                        else => try v.drive_bus(port.upper_data, word.upper, levels),
+                    }
                 }
             } else if (v.read_logic(port.chip_enable_low, levels) == true
                 and v.read_logic(port.semaphore_enable_low, levels) == false
@@ -671,10 +691,18 @@ pub fn CY7C0xx(
                 const sem = semaphores[sem_addr];
 
                 if (v.read_logic(port.lower_byte_enable_low, levels) == false) {
-                    try v.drive_bus(port.lower_data, if (sem == .owned) 0 else 0x1FF, levels);
+                    const value: u16 = if (sem == .owned) 0 else 0x1FF;
+                    switch (mode) {
+                        .commit => try v.expect_output_valid(port.lower_data, value, levels),
+                        else => try v.drive_bus(port.lower_data, value, levels),
+                    }
                 }
                 if (v.read_logic(port.upper_byte_enable_low, levels) == false) {
-                    try v.drive_bus(port.upper_data, if (sem == .owned) 0 else 0x1FF, levels);
+                    const value: u16 = if (sem == .owned) 0 else 0x1FF;
+                    switch (mode) {
+                        .commit => try v.expect_output_valid(port.upper_data, value, levels),
+                        else => try v.drive_bus(port.upper_data, value, levels),
+                    }
                 }
             }
 

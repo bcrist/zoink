@@ -124,11 +124,19 @@ pub const SN74ALVCH16245DL   = _74.x16245(.p3v3, C0402_Decoupler, LVCMOS, pkg.SS
 pub const SN74ALVCH16245DGG  = _74.x16245(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_48, true);
 pub const SN74ALVCH16245DGV  = _74.x16245(.p3v3, C0402_Decoupler, LVCMOS, pkg.TVSOP_48, true);
 
+pub const SN74CBTLV16212DL   = _74.CBT16212(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56);
+pub const SN74CBTLV16212G    = _74.CBT16212(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56);
+pub const SN74CBTLV16212V    = _74.CBT16212(.p3v3, C0402_Decoupler, LVCMOS, pkg.TVSOP_56);
+
+pub const SN74CBT16212CDL   = _74.CBT16212(.p5v0, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_56);
+pub const SN74CBT16212CDGG  = _74.CBT16212(.p5v0, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_56);
+pub const SN74CBT16212CDGV  = _74.CBT16212(.p5v0, C0402_Decoupler, LVCMOS_5VT, pkg.TVSOP_56);
+
 pub const SN74ABT16260DL    = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, false);
 pub const SN74ABTH16260DL   = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, true);
 pub const SN74ALVCH16260DL  = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
 pub const SN74ALVCH16260DGG = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
-// 162260 is functionally identical to 16260, but has built-in series terminations on the B ports:
+// 162260 is functionally identical to 16260, but has built-in series terminations on the B ports (not simulated)
 pub const SN74ABT162260DL    = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, false);
 pub const SN74ABTH162260DL   = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, true);
 pub const SN74ALVCH162260DL  = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);

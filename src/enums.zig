@@ -87,13 +87,29 @@ pub const Voltage = enum (u8) {
         return raw_float / 20.0;
     }
 
+    pub fn from_net(net: Net_ID) Voltage {
+        return switch (net) {
+            .gnd => .gnd,
+            .p1v => .p1v,
+            .p1v2 => .p1v2,
+            .p1v5 => .p1v5,
+            .p1v8 => .p1v8,
+            .p2v5 => .p2v5,
+            .p3v => .p3v,
+            .p3v3 => .p3v3,
+            .p5v => .p5v,
+            .p6v => .p6v,
+            .p9v => .p9v,
+            .p12v => .p12v,
+            else => unreachable,
+        };
+    }
+
     pub fn raw(self: Voltage) u8 {
         return @intFromEnum(self);
     }
 
-    pub fn format(self: Voltage, fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
+    pub fn format(self: Voltage, writer: *std.io.Writer) !void {
         if (self == .saturated) {
             try writer.writeAll("OL V");
         } else {
@@ -102,91 +118,98 @@ pub const Voltage = enum (u8) {
     }
 
     pub const TTL = struct {
+        pub const Vcc = from_float(5.0);
+        pub const Vcco = from_float(4.3);
+
         pub const Vil = from_float(0.7);
-        pub const Vth = from_float(1.4);
+        pub const Vth = from_float(1.45);
         pub const Vih = from_float(2.2);
         pub const Vclamp = from_float(5.3);
 
         pub const Vol = from_float(0.4);
+        pub const Zol: f32 = 10.0;
 
-        // Voh is often only guaranteed to be 2.4V for TTL devices,
-        // but using that might hide errors when a TTL signal is
-        // fed into a (non-5V tolerant) LVTTL/LVCMOS input, so we're
-        // using 3.8V instead:
-        pub const Voh = from_float(3.8);
+        pub const Voh = from_float(2.4);
+        pub const Zoh: f32 = 100.0;
+
+        pub const Rpull: f32 = 20_000.0;
     };
 
     /// TTL with 3.3V Vcc and input clamping
     pub const LVTTL = struct {
+        pub const Vcc = from_float(3.3);
+        pub const Vcco = from_float(2.9);
+
         pub const Vil = from_float(0.7);
-        pub const Vth = from_float(1.4);
+        pub const Vth = from_float(1.45);
         pub const Vih = from_float(2.2);
         pub const Vclamp = from_float(3.6);
 
         pub const Vol = from_float(0.4);
+        pub const Zol: f32 = 5.0;
+
         pub const Voh = from_float(2.4);
+        pub const Zoh: f32 = 20.0;
+
+        pub const Rpull: f32 = 20_000.0;
     };
     
     /// LVTTL with 5V tolerant input clamping
     pub const LVTTL_5VT = struct {
+        pub const Vcc = from_float(3.3);
+        pub const Vcco = from_float(2.9);
+
         pub const Vil = from_float(0.7);
-        pub const Vth = from_float(1.4);
+        pub const Vth = from_float(1.45);
         pub const Vih = from_float(2.2);
         pub const Vclamp = from_float(5.3);
 
         pub const Vol = from_float(0.4);
+        pub const Zol: f32 = 5.0;
+
         pub const Voh = from_float(2.4);
+        pub const Zoh: f32 = 20.0;
+
+        pub const Rpull: f32 = 20_000.0;
     };
 
-    pub const LVCMOS18 = CMOS_V(.p1v8, .p1v8);
-    pub const LVCMOS18_3V3T = CMOS_V(.p1v8, .p3v3);
+    pub const LVCMOS18 = CMOS_V(.p1v8, .{});
+    pub const LVCMOS18_3V3T = CMOS_V(.p1v8, .{ .clamp = .p3v3 });
 
-    pub const LVCMOS25 = CMOS_V(.p2v5, .p2v5);
-    pub const LVCMOS25_3V3T = CMOS_V(.p2v5, .p3v3);
-    pub const LVCMOS25_5VT = CMOS_V(.p2v5, .p5v);
+    pub const LVCMOS25 = CMOS_V(.p2v5, .{});
+    pub const LVCMOS25_3V3T = CMOS_V(.p2v5, .{ .clamp = .p3v3 });
+    pub const LVCMOS25_5VT = CMOS_V(.p2v5, .{ .clamp = .p5v });
 
-    pub const LVCMOS = CMOS_V(.p3v3, .p3v3);
-    pub const LVCMOS_5VT = CMOS_V(.p3v3, .p5v);
+    pub const LVCMOS = CMOS_V(.p3v3, .{});
+    pub const LVCMOS_5VT = CMOS_V(.p3v3, .{ .clamp = .p5v });
     
-    pub const CMOS = CMOS_V(.p5v, .p5v);
+    pub const CMOS = CMOS_V(.p5v, .{});
 
-    pub fn CMOS_V(vcc: Voltage, vclamp: Voltage) type {
+    pub const CMOS_V_Options = struct {
+        clamp: ?Voltage = null,
+        series_term_impedance: f32 = 5.0,
+        pull_resistance: f32 = 50_000.0,
+    };
+
+    pub fn CMOS_V(vcc: Voltage, options: CMOS_V_Options) type {
         const vcc_float = vcc.as_float();
         return struct {
+            pub const Vcc = vcc;
+            pub const Vcco = vcc;
+            
             pub const Vil = from_float(0.3 * vcc_float);
             pub const Vth = from_float(0.5 * vcc_float);
             pub const Vih = from_float(0.7 * vcc_float);
-            pub const Vclamp = from_float(vclamp.as_float() + 0.3);
+            pub const Vclamp = from_float((options.clamp orelse vcc).as_float() + 0.3);
 
             pub const Vol = from_float(0.15 * vcc_float);
+            pub const Zol = options.series_term_impedance;
+
             pub const Voh = from_float(0.85 * vcc_float);
+            pub const Zoh = options.series_term_impedance;
+
+            pub const Rpull: f32 = options.pull_resistance;
         };
-    }
-};
-
-pub const Drive_Strength = enum (u8) {
-    hiz = 0,
-    weak = 1,
-    strong = 128,
-    contending = 255,
-    _,
-
-    pub fn init(raw_int: u8) Drive_Strength {
-        return @enumFromInt(raw_int);
-    }
-
-    pub fn raw(self: Drive_Strength) u8 {
-        return @intFromEnum(self);
-    }
-
-    pub fn format(self: Drive_Strength, fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
-        switch (self) {
-            .hiz => try writer.writeAll("Hi-Z"),
-            .contending => try writer.writeAll("Contention"),
-            else => try writer.print("{d}", .{ self.raw() }),
-        }
     }
 };
 

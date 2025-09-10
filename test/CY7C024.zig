@@ -34,7 +34,7 @@ test {
     defer b.deinit();
     try configure(&b);
     try b.finish_configuration(std.testing.allocator);
-    var v = try zoink.Validator.init(&b, .{});
+    var v = try zoink.Validator.init(std.testing.allocator, &b, .{});
     defer v.deinit();
 
     const LA = b.get_bus("LA");
@@ -65,17 +65,17 @@ test {
 
     try v.set_bus(LA, 0x0, LVCMOS);
     try v.set(LWE, .p3v3);
-    try v.set_bus_hiz(LD);
+    try v.unset_bus(LD);
     try v.update();
-    try v.expect_bus(LD, 0xAAAA, LVCMOS);
+    try v.expect_state(LD, 0xAAAA, LVCMOS);
 
     try v.set_bus(LA, 0xFF, LVCMOS);
     try v.update();
-    try v.expect_bus(LD, 0x3333, LVCMOS);
+    try v.expect_state(LD, 0x3333, LVCMOS);
 
     try v.set_bus(LA, 0x123, LVCMOS);
     try v.update();
-    try v.expect_bus(LD, 0xBCDE, LVCMOS);
+    try v.expect_state(LD, 0xBCDE, LVCMOS);
 }
 
 const CY7C024V = zoink.parts.CY7C024V;

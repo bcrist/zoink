@@ -49,7 +49,7 @@ pub fn LC4k(
             .prefix = .U,
         },
 
-        config: *const Chip_Config,
+        config: ?*const Chip_Config = null,
 
         pwr: Power = .{},
         pwr_bank0: Power_Bank0 = .{},
@@ -67,31 +67,67 @@ pub fn LC4k(
 
         pub const input_levels = struct {
             pub const low_threshold = struct {
+                pub const Vcc = Voltage.from_net(vcc);
+                pub const Vcco = Vcc;
+
                 pub const Vil = Voltage.from_float(0.35 * 1.8);
                 pub const Vth = Voltage.from_float(0.5 * 1.8);
                 pub const Vih = Voltage.from_float(0.65 * 1.8);
                 pub const Vclamp = Voltage.from_float(3.6);
+
+                pub const Rpull: f32 = 50_000.0;
             };
             pub const high_threshold = struct {
+                pub const Vcc = Voltage.from_net(vcc);
+                pub const Vcco = Vcc;
+
                 pub const Vil = Voltage.from_float(0.7);
                 pub const Vth = Voltage.from_float(1.35);
                 pub const Vih = Voltage.from_float(2.0);
                 pub const Vclamp = Voltage.from_float(5.5);
+
+                pub const Rpull: f32 = 50_000.0;
             };
         };
 
         pub const output_levels = struct {
             pub const bank0 = struct {
+                pub const Vcc = Voltage.from_net(vcco0);
+                pub const Vcco = Vcc;
+
+                pub const Vclamp: Voltage = switch (vcco0) {
+                    .p3v, .p3v3 => .from_float(5.5),
+                    else => .from_float(3.6),
+                };
+
                 pub const Vol = Voltage.from_float(@max(0.1 * vcco0_f, 0.4));
+                pub const Zol: f32 = 5.0;
+
                 pub const Voh = Voltage.from_float(@min(0.9 * vcco0_f, vcco0_f - 0.4));
+                pub const Zoh: f32 = 5.0;
+
+                pub const Rpull: f32 = 50_000.0;
             };
             pub const bank1 = struct {
+                pub const Vcc = Voltage.from_net(vcco1);
+                pub const Vcco = Vcc;
+
+                pub const Vclamp: Voltage = switch (vcco1) {
+                    .p3v, .p3v3 => .from_float(5.5),
+                    else => .from_float(3.6),
+                };
+
                 pub const Vol = Voltage.from_float(@max(0.1 * vcco1_f, 0.4));
+                pub const Zol: f32 = 5.0;
+
                 pub const Voh = Voltage.from_float(@min(0.9 * vcco1_f, vcco1_f - 0.4));
+                pub const Zoh: f32 = 5.0;
+
+                pub const Rpull: f32 = 50_000.0;
             };
         };
 
-        pub fn set_net_by_pin(self: @This(), p: lc4k.Pin(Signal), net: Net_ID) void {
+        pub fn set_net_by_pin(self: *@This(), p: lc4k.Pin(Signal), net: Net_ID) void {
             switch (p.func()) {
                 .io, .io_oe0, .io_oe1 => |mc_index| {
                     self.io[p.info.glb.?][mc_index] = net;
@@ -112,37 +148,57 @@ pub fn LC4k(
             }
         }
 
-        pub fn set_net(self: @This(), signal: Signal, net: Net_ID) void {
+        pub fn set_net(self: *@This(), signal: Signal, net: Net_ID) void {
             self.set_net_by_pin(signal.pin(), net);
         }
 
-        pub fn set_bus_by_pins(self: @This(), pins: []const lc4k.Pin(Signal), nets: []const Net_ID) void {
+        pub fn set_bus_by_pins(self: *@This(), pins: []const lc4k.Pin(Signal), nets: []const Net_ID) void {
             for (pins, nets) |p, net| {
                 self.set_net_by_pin(p, net);
             }
         }
 
-        pub fn set_bus(self: @This(), signals: []const Signal, nets: []const Net_ID) void {
+        pub fn set_bus(self: *@This(), signals: []const Signal, nets: []const Net_ID) void {
             for (signals, nets) |signal, net| {
                 self.set_net_by_pin(signal.pin(), net);
             }
         }
 
-        pub fn check_config(self: @This()) !void {
+        pub fn check_config(self: *@This()) !void {
             for (0..Device.num_glbs) |glb| {
                 for (0..16) |mc| {
-                    const fb = Signal.mc_fb(.init(glb, mc));
-                    if (fb.maybe_pin() == null) {
-                        switch (self.io[glb][mc]) {
-                            .unset => self.io[glb][mc] = .no_connect,
-                            .no_connect => {},
-                            else => {
-                                log.err("Net {s} is a no-connect on the {s} package", .{ @tagName(fb), @tagName(Device.package) });
-                                return error.UnassignedSignal;
-                            },
-                        }
+                    const pad = Signal.maybe_mc_pad(.init(glb, mc));
+                    const force_no_connect = pad == null or pad.?.maybe_pin() == null;
+                    switch (self.io[glb][mc]) {
+                        .no_connect => {},
+                        .unset => if (force_no_connect or self.maintenance(self.config.?.glb[glb].mc[mc].input) != .float) {
+                            self.io[glb][mc] = .no_connect;
+                        },
+                        else => if (force_no_connect) {
+                            log.err("Net {s} is a no-connect on the {s} package", .{ @tagName(Signal.mc_fb(.init(glb, mc))), @tagName(Device.package) });
+                            return error.UnassignedSignal;
+                        },
                     }
                 }
+            }
+
+            for (0.., self.in) |i, net| {
+                if (net == .unset and self.maintenance(self.config.?.input[i]) != .float) {
+                    self.in[i] = .no_connect;
+                }
+            }
+
+            for (0.., self.clk) |i, net| {
+                if (net == .unset and self.maintenance(self.config.?.clock[i]) != .float) {
+                    self.clk[i] = .no_connect;
+                }
+            }
+
+            if (self.jtag.tck == .unset and self.jtag.tms == .unset and self.jtag.tdi == .unset and self.jtag.tdo == .unset) {
+                self.jtag.tck = .no_connect;
+                self.jtag.tms = .no_connect;
+                self.jtag.tdi = .no_connect;
+                self.jtag.tdo = .no_connect;
             }
         }
 
@@ -211,69 +267,71 @@ pub fn LC4k(
         pub fn validate(self: @This(), v: *Validator, state: *Simulator.State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
-                    state.* = self.config.simulator(null);
+                    state.* = self.config.?.simulator(null).state;
                 },
                 .commit, .nets_only => {
+                    const config = self.config.?;
+
                     var sim: Simulator = .{
-                        .chip = self,
+                        .chip = config,
                         .state = state.*,
                     };
 
+                    for (0.., self.clk, Device.clock_pins) |i, net, clock_pin| {
+                        try self.read_into_sim(config.clock[i], v, &sim, clock_pin.pad(), net);
+                    }
+                    for (0.., self.in, Device.input_pins) |i, net, input_pin| {
+                        try self.read_into_sim(config.input[i], v, &sim, input_pin.pad(), net);
+                    }
+                    for (0..Device.num_glbs) |glb| {
+                        for (0.., self.io[glb]) |mc, net| {
+                            if (Signal.maybe_mc_pad(.init(glb, mc))) |pad| {
+                                try self.read_into_sim(config.glb[glb].mc[mc].input, v, &sim, pad, net);
+                            }
+                        }
+                    }
+
+                    try sim.simulate(.{});
+
                     if (mode == .commit) {
                         for (0.., self.clk) |i, net| {
-                            try self.check_threshold(self.config.clock[i], net);
+                            try self.check_threshold(config.clock[i], v, net);
                         }
                         for (0.., self.in) |i, net| {
-                            try self.check_threshold(self.config.input[i], net);
+                            try self.check_threshold(config.input[i], v, net);
                         }
                         for (0..Device.num_glbs) |glb| {
-                            for (0..16) |mc| {
-                                try self.check_threshold(self.config.glb[glb].mc[mc].input, v, self.io[glb][mc]);
+                            for (0.., self.io[glb]) |mc, net| {
+                                try self.check_threshold(config.glb[glb].mc[mc].input, v, net);
+                                if (Signal.maybe_mc_pad(.init(glb, mc))) |pad| {
+                                    try self.maybe_check_output(config.glb[glb].mc[mc].output, v, &sim, pad, net);
+                                }
                             }
                         }
-                    }
 
-                    for (0.., self.clk, Device.clock_pins) |i, net, clock_pin| {
-                        try self.read_into_sim(self.config.clock[i], v, &sim, clock_pin.pad(), net);
-                    }
-                    for (0.., self.in, Device.input_pins) |i, net, input_pin| {
-                        try self.read_into_sim(self.config.input[i], v, &sim, input_pin.pad(), net);
-                    }
-                    for (0..Device.num_glbs) |glb| {
-                        for (0.., self.io[glb]) |mc, net| {
-                            if (Signal.maybe_mc_pad(.init(glb, mc))) |pad| {
-                                try self.read_into_sim(self.config.glb[glb].mc[mc].input, v, &sim, pad, net);
-                            }
-                        }
-                    }
-
-                    try sim.simulate(.{
-                        .max_iterations = if (v.hash_part_state) 10 else 100,
-                    });
-
-                    for (0.., self.clk, Device.clock_pins) |i, net, clock_pin| {
-                        try self.drive_maintenance(self.config.clock[i], v, &sim, clock_pin.pad(), net);
-                    }
-                    for (0.., self.in, Device.input_pins) |i, net, input_pin| {
-                        try self.drive_maintenance(self.config.input[i], v, &sim, input_pin.pad(), net);
-                    }
-                    for (0..Device.num_glbs) |glb| {
-                        for (0.., self.io[glb]) |mc, net| {
-                            if (Signal.maybe_mc_pad(.init(glb, mc))) |pad| {
-                                try self.drive_maintenance(self.config.glb[glb].mc[mc].input, v, &sim, pad, net);
-                                try self.maybe_drive_output(self.config.glb[glb].mc[mc].output, v, &sim, pad, net);
-                            }
-                        }
-                    }
-
-                    if (mode == .commit) {
                         state.* = sim.state;
+                    } else {
+                        for (0.., self.clk, Device.clock_pins) |i, net, clock_pin| {
+                            try self.drive_maintenance(config.clock[i], v, &sim, clock_pin.pad(), net);
+                        }
+                        for (0.., self.in, Device.input_pins) |i, net, input_pin| {
+                            try self.drive_maintenance(config.input[i], v, &sim, input_pin.pad(), net);
+                        }
+                        for (0..Device.num_glbs) |glb| {
+                            for (0.., self.io[glb]) |mc, net| {
+                                if (Signal.maybe_mc_pad(.init(glb, mc))) |pad| {
+                                    try self.drive_maintenance(config.glb[glb].mc[mc].input, v, &sim, pad, net);
+                                    try self.maybe_drive_output(config.glb[glb].mc[mc].output, v, &sim, pad, net);
+                                }
+                            }
+                        }
                     }
                 },
             }
         }
 
         fn check_threshold(self: @This(), input_config: anytype, v: *Validator, net: Net_ID) !void {
+            if (net == .no_connect) return;
             switch (self.threshold(input_config)) {
                 .low => try v.expect_valid(net, input_levels.low_threshold),
                 .high => try v.expect_valid(net, input_levels.high_threshold),
@@ -281,7 +339,7 @@ pub fn LC4k(
         }
 
         fn threshold(self: @This(), input_config: anytype) lc4k.Input_Threshold {
-            return input_config.threshold orelse self.config.default_input_threshold;
+            return input_config.threshold orelse self.config.?.default_input_threshold;
         }
 
         fn read_into_sim(self: @This(), input_config: anytype, v: *Validator, sim: *Simulator, pad: Signal, net: Net_ID) !void {
@@ -295,7 +353,7 @@ pub fn LC4k(
             if (@hasField(@TypeOf(input_config), "bus_maintenance")) {
                 if (input_config.bus_maintenance) |m| return m;
             }
-            return self.config.default_bus_maintenance;
+            return self.config.?.default_bus_maintenance;
         }
 
         fn drive_maintenance(self: @This(), input_config: anytype, v: *Validator, sim: *Simulator, pad: Signal, net: Net_ID) !void {
@@ -319,7 +377,7 @@ pub fn LC4k(
         }
 
         fn drive_type(self: @This(), output_config: anytype) lc4k.Drive_Type {
-            return output_config.drive_type orelse self.config.default_drive_type;
+            return output_config.drive_type orelse self.config.?.default_drive_type;
         }
 
         fn maybe_drive_output(self: @This(), output_config: anytype, v: *Validator, sim: *Simulator, pad: Signal, net: Net_ID) !void {
@@ -333,6 +391,22 @@ pub fn LC4k(
                     switch (p.info.bank.?) {
                         0 => try v.drive_logic(net, state, output_levels.bank0),
                         1 => try v.drive_logic(net, state, output_levels.bank1),
+                    }
+                }
+            }
+        }
+
+        fn maybe_check_output(self: @This(), output_config: anytype, v: *Validator, sim: *Simulator, pad: Signal, net: Net_ID) !void {
+            if (pad.maybe_pin()) |p| {
+                if (sim.state.oe.contains(pad)) {
+                    const state = sim.state.data.contains(pad);
+                    switch (self.drive_type(output_config)) {
+                        .open_drain => if (state) return,
+                        .push_pull => {},
+                    }
+                    switch (p.info.bank.?) {
+                        0 => try v.expect_output_valid(net, state, output_levels.bank0),
+                        1 => try v.expect_output_valid(net, state, output_levels.bank1),
                     }
                 }
             }

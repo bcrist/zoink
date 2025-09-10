@@ -234,14 +234,14 @@ test Grid_Region {
 }
 
 fn expect_grid_eql(comptime Width: usize, comptime Height: usize, grid: [Height][Width]bool, expected: []const u8) !void {
-    var temp = std.ArrayList(u8).init(std.testing.allocator);
-    defer temp.deinit();
+    var temp: std.ArrayList(u8) = .empty;
+    defer temp.deinit(std.testing.allocator);
 
     for (grid) |row| {
         for (row) |ball| {
-            try temp.append(if (ball) 'o' else '.');
+            try temp.append(std.testing.allocator, if (ball) 'o' else '.');
         }
-        try temp.append('\n');
+        try temp.append(std.testing.allocator, '\n');
     }
 
     try std.testing.expectEqualStrings(expected, temp.items);

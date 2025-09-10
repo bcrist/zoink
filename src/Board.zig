@@ -26,7 +26,7 @@ pub fn net_name(self: *const Board, net_id: Net_ID) []const u8 {
     return self.net_names.items[idx];
 }
 
-pub fn print_bus_name(self: *const Board, nets: anytype, writer: anytype) !void {
+pub fn print_bus_name(self: *const Board, nets: anytype, writer: *std.io.Writer) !void {
     if (nets.len == 0) return;
 
     var base_name = self.net_name(nets[0]);

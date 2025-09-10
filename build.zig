@@ -2,6 +2,7 @@ var builder: *std.Build = undefined;
 var target: std.Build.ResolvedTarget = undefined;
 var optimize: std.builtin.OptimizeMode = undefined;
 var zoink: *std.Build.Module = undefined;
+var lc4k: *std.Build.Module = undefined;
 var all_tests_step: *std.Build.Step = undefined;
 
 pub fn build(b: *std.Build) void {
@@ -9,6 +10,7 @@ pub fn build(b: *std.Build) void {
     target = b.standardTargetOptions(.{});
     optimize = b.standardOptimizeOption(.{});
     all_tests_step = b.step("test", "run all tests");
+    lc4k = b.dependency("lc4k", .{}).module("lc4k");
 
     // const sokol = b.dependency("sokol", .{
     //     .target = target,
@@ -28,11 +30,11 @@ pub fn build(b: *std.Build) void {
 
     // dep.sokol.artifact("sokol_clib").addIncludePath(dep.cimgui.namedWriteFiles("cimgui").getDirectory());
 
-    zoink = b.createModule(.{
+    zoink = b.addModule("zoink", .{
         .root_source_file = b.path("src/zoink.zig"),
         .imports = &.{
             .{ .name = "sx", .module = b.dependency("sx", .{}).module("sx") },
-            .{ .name = "lc4k", .module = b.dependency("lc4k", .{}).module("lc4k") },
+            .{ .name = "lc4k", .module = lc4k },
         },
     });
     
@@ -59,16 +61,25 @@ pub fn build(b: *std.Build) void {
     add_test("74x16260");
     add_test("74x16652");
     add_test("74x16721");
+    add_test("LC4032ZE");
+    add_test("74CBTLV16212");
 }
 
 fn add_test(comptime name: []const u8) void {
     const test_exe = builder.addTest(.{
         .name = name,
-        .root_source_file = builder.path("test/" ++ name ++ ".zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = builder.createModule(.{
+            .root_source_file = builder.path("test/" ++ name ++ ".zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zoink", .module = zoink },
+                .{ .name = "lc4k", .module = lc4k },
+
+            },
+        }),
     });
-    test_exe.root_module.addImport("zoink", zoink);
+    builder.installArtifact(test_exe);
     all_tests_step.dependOn(&builder.addRunArtifact(test_exe).step);
 }
 

@@ -19,7 +19,7 @@ test {
     defer b.deinit();
     try configure(&b);
     try b.finish_configuration(std.testing.allocator);
-    var v = try zoink.Validator.init(&b, .{});
+    var v = try zoink.Validator.init(std.testing.allocator, &b, .{});
     defer v.deinit();
 
     const A = b.bus("A", 16);
@@ -28,22 +28,28 @@ test {
     const DIR = b.bus("DIR", 2);
 
     try v.reset();
+    
+    try v.set_with_impedance(B, .p1v5, 10_000);
 
     try v.set_bus(A, 0xFEDC, LVCMOS);
     try v.set_bus(OE, 0x3, LVCMOS);
     try v.set_bus(DIR, 0x3, LVCMOS);
     try v.update();
-    try v.expect_weak(B);
+    try v.expect_approx(B, .p1v5, 0.25);
 
     try v.set_bus(OE, 0x0, LVCMOS);
     try v.update();
-    try v.expect_bus(B, 0xFEDC, LVCMOS);
+    try v.expect_state(B, 0xFEDC, LVCMOS);
 
-    try v.set_bus_hiz(A);
+    try v.set_with_impedance(A, .p1v5, 1_000);
     try v.set_bus(B, 0xFFFF, LVCMOS);
     try v.set_bus(DIR, 0x0, LVCMOS);
     try v.update();
-    try v.expect_bus(A, 0xFFFF, LVCMOS);
+    try v.expect_state(A, 0xFFFF, LVCMOS);
+
+    try v.set_bus(OE, 0x3, LVCMOS);
+    try v.update();
+    try v.expect_approx(A, .p1v5, 0.25);
 }
 
 const SN74ALVCH16245DGG = zoink.parts.SN74ALVCH16245DGG;

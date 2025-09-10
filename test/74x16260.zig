@@ -23,7 +23,7 @@ test {
     defer b.deinit();
     try configure(&b);
     try b.finish_configuration(std.testing.allocator);
-    var v = try zoink.Validator.init(&b, .{});
+    var v = try zoink.Validator.init(std.testing.allocator, &b, .{});
     defer v.deinit();
 
     const A = b.get_bus("A");
@@ -39,16 +39,16 @@ test {
     try v.set(SEL, .gnd);
     try v.set(OE, .gnd);
     try v.update();
-    try v.expect_bus(A, 0x777, LVCMOS);
+    try v.expect_state(A, 0x777, LVCMOS);
 
     try v.set(SEL, .p3v3);
     try v.update();
-    try v.expect_bus(A, 0x123, LVCMOS);
+    try v.expect_state(A, 0x123, LVCMOS);
 
     try v.set(OE, .p3v3);
     try v.set(SEL, .gnd);
     try v.update();
-    try v.expect_bus(A, 0x123, LVCMOS); // bus hold keeps the last value even though OE is no longer asserted
+    try v.expect_state(A, 0x123, LVCMOS); // bus hold keeps the last value even though OE is no longer asserted
 }
 
 const SN74ALVCH16260DGG = zoink.parts.SN74ALVCH16260DGG;

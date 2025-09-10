@@ -230,6 +230,9 @@ pub fn Async_8b(
                         if (v.read_logic(self.write_enable_low, levels) == false) {
                             const addr = v.read_bus(self.addr, levels);
                             state.mem[addr] = @intCast(v.read_bus(self.data, levels));
+                        } else if (v.read_logic(self.output_enable_low, levels) == false) {
+                            const addr = v.read_bus(self.addr, levels);
+                            try v.expect_output_valid(self.data, state.mem[addr], levels);
                         }
                     }
                 },
@@ -343,6 +346,11 @@ pub fn Async_16b(
                             const addr = v.read_bus(self.addr, levels);
                             if (lb) state.mem[addr].lower = @intCast(v.read_bus(self.lower_data, levels));
                             if (ub) state.mem[addr].upper = @intCast(v.read_bus(self.upper_data, levels));
+                        } else if (v.read_logic(self.output_enable_low, levels) == false) {
+                            const addr = v.read_bus(self.addr, levels);
+                            const word = state.mem[addr];
+                            if (lb) try v.expect_output_valid(self.lower_data, word.lower, levels);
+                            if (ub) try v.expect_output_valid(self.upper_data, word.upper, levels);
                         }
                     }
                 },

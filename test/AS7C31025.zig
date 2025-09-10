@@ -14,7 +14,7 @@ test {
     defer b.deinit();
     try configure(&b);
     try b.finish_configuration(std.testing.allocator);
-    var v = try zoink.Validator.init(&b, .{});
+    var v = try zoink.Validator.init(std.testing.allocator, &b, .{});
     defer v.deinit();
 
     const A = b.get_bus("A");
@@ -35,18 +35,18 @@ test {
     try v.update();
 
     try v.set_bus(A, 0x122, TTL);
-    try v.set_bus_hiz(D);
+    try v.unset_bus(D);
     try v.set(WE, .p3v3);
     try v.update();
-    try v.expect_bus(D, 0xAA, TTL);
+    try v.expect_state(D, 0xAA, TTL);
 
     try v.set_bus(A, 0x123, TTL);
     try v.update();
-    try v.expect_bus(D, 0x6B, TTL);
+    try v.expect_state(D, 0x6B, TTL);
 
     try v.set_bus(A, 0x124, TTL);
     try v.update();
-    try v.expect_bus(D, 0xFF, TTL);
+    try v.expect_state(D, 0xFF, TTL);
 }
 
 const AS7C1025_J = zoink.parts.AS7C1025_J;

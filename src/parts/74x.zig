@@ -97,10 +97,16 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                     .bus => |impl| {
                         try v.expect_valid(impl.a, levels);
                         try v.expect_valid(impl.b, levels);
+                        const a = v.read_bus(impl.a, levels);
+                        const b = v.read_bus(impl.b, levels);
+                        try v.expect_output_valid(impl.y, func(a, b), levels);
                     },
                     .gates => |impl| for (impl) |gate| {
                         try v.expect_valid(gate.a, levels);
                         try v.expect_valid(gate.b, levels);
+                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        const b = @intFromBool(v.read_logic(gate.b, levels));
+                        try v.expect_output_valid(gate.y, func(a, b) != 0, levels);
                     },
                 },
                 .nets_only => switch (self.logic) {
@@ -221,9 +227,15 @@ fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
                 .commit => switch (self.logic) {
                     .bus => |impl| {
                         try v.expect_valid(impl.a, levels);
+                        var a = v.read_bus(impl.a, levels);
+                        if (invert) a = ~a;
+                        try v.expect_output_valid(impl.y, a, levels);
                     },
                     .gates => |impl| for (impl) |gate| {
                         try v.expect_valid(gate.a, levels);
+                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        if (invert) a = !a;
+                        try v.expect_output_valid(gate.y, a, levels);
                     },
                 },
                 .nets_only => switch (self.logic) {
@@ -298,6 +310,8 @@ pub fn x34(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
 pub fn x86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Quad_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
 }
+
+// TODO x161, x163
 
 fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert_outputs: bool) type {
         return struct {
@@ -391,6 +405,13 @@ fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, compt
                 .commit => for (self.u) |unit| {
                     try v.expect_valid(unit.a, levels);
                     try v.expect_valid(unit.output_enable_low, levels);
+                    if (v.read_logic(unit.output_enable_low, levels) == false) {
+                        var data = v.read_bus(unit.a, levels);
+                        if (invert_outputs) {
+                            data = ~data;
+                        }
+                        try v.expect_output_valid(unit.y, data, levels);
+                    }
                 },
                 .nets_only => for (self.u) |unit| {
                     if (v.read_logic(unit.output_enable_low, levels) == false) {
@@ -519,6 +540,14 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     try v.expect_valid(self.u0.output_enable_low, levels);
                     try v.expect_valid(self.u1.a, levels);
                     try v.expect_valid(self.u1.output_enable, levels);
+                    if (v.read_logic(self.u0.output_enable_low, levels) == false) {
+                        const data = v.read_bus(self.u0.a, levels);
+                        try v.expect_output_valid(self.u0.y, data, levels);
+                    }
+                    if (v.read_logic(self.u1.output_enable, levels) == true) {
+                        const data = v.read_bus(self.u1.a, levels);
+                        try v.expect_output_valid(self.u1.y, data, levels);
+                    }
                 },
                 .nets_only => {
                     if (v.read_logic(self.u0.output_enable_low, levels) == false) {
@@ -608,8 +637,16 @@ pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     try v.expect_valid(self.a_to_b, levels);
                     if (v.read_logic(self.a_to_b, levels)) {
                         try v.expect_valid(self.a, levels);
+                        if (v.read_logic(self.output_enable_low, levels) == false) {
+                            const data = v.read_bus(self.a, levels);
+                            try v.expect_output_valid(self.b, data, levels);
+                        }
                     } else {
                         try v.expect_valid(self.b, levels);
+                        if (v.read_logic(self.output_enable_low, levels) == false) {
+                            const data = v.read_bus(self.b, levels);
+                            try v.expect_output_valid(self.a, data, levels);
+                        }
                     }
                 },
                 .nets_only => {
@@ -693,6 +730,11 @@ pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 .commit => {
                     try v.expect_valid(self.a, levels);
                     try v.expect_valid(self.output_enable_low, levels);
+                    const oe = v.read_bus(self.output_enable_low, levels);
+                    if (oe == 0) {
+                        const a = v.read_bus(self.a, levels);
+                        try v.expect_output_valid(self.y, a, levels);
+                    }
                 },
                 .nets_only => {
                     const oe = v.read_bus(self.output_enable_low, levels);
@@ -783,6 +825,10 @@ pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     if (le == true) {
                         state.data = @truncate(v.read_bus(self.d, levels));
                     }
+                    const oe = v.read_logic(self.output_enable_low, levels);
+                    if (oe == false) {
+                        try v.expect_output_valid(self.q, state.data, levels);
+                    }
                 },
                 .nets_only => {
                     const oe = v.read_logic(self.output_enable_low, levels);
@@ -872,6 +918,10 @@ pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     try v.expect_valid(self.d, levels);
                     try v.expect_valid(self.clk, levels);
                     try v.expect_valid(self.output_enable_low, levels);
+                    const oe = v.read_logic(self.output_enable_low, levels);
+                    if (oe == false) {
+                        try v.expect_output_valid(self.q, state.data, levels);
+                    }
                     const new_clk = v.read_logic(self.clk, levels);
                     if (new_clk and !state.clk) {
                         state.data = @truncate(v.read_bus(self.d, levels));
@@ -1010,36 +1060,50 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
         }
 
         const Validate_State = struct {
-            bus_hold: if (bus_hold) u16 else void,
+            bus_hold: if (bus_hold) u4 else void,
         };
 
-        pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
+        pub fn validate(self: @This(), v: *Validator, state: *[4]Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => if (bus_hold) {
-                    state.bus_hold = 0;
+                    state[0].bus_hold = 0;
+                    state[1].bus_hold = 0;
+                    state[2].bus_hold = 0;
+                    state[3].bus_hold = 0;
                 },
-                .commit => for (self.u) |unit| {
+                .commit => for (self.u, state) |unit, *unit_state| {
                     if (bus_hold) {
-                        try v.expect_valid_or_nc(unit.a, levels);
+                        try v.expect_valid_or_unconnected(unit.a, levels);
                     } else {
                         try v.expect_valid(unit.a, levels);
                     }
                     try v.expect_valid(unit.output_enable_low, levels);
+                    if (v.read_logic(unit.output_enable_low, levels) == false) {
+                        const data = read_a(unit, v, unit_state);
+                        try v.expect_output_valid(unit.y, data, levels);
+                    }
                 },
                 .nets_only => {
-                    for (self.u) |unit| {
+                    if (bus_hold) {
+                        for (self.u, state) |unit, *unit_state| {
+                            unit_state.bus_hold = @truncate(try v.pull_and_read_bus(unit.a, levels, unit_state.bus_hold));
+                        }
+                    }
+                    for (self.u, state) |unit, *unit_state| {
                         if (v.read_logic(unit.output_enable_low, levels) == false) {
-                            const data = v.read_bus(unit.a, levels);
+                            const data = read_a(unit, v, unit_state);
                             try v.drive_bus(unit.y, data, levels);
                         }
                     }
-
-                    if (bus_hold) {
-                        const a = self.u[0].a ++ self.u[1].a ++ self.u[2].a ++ self.u[3].a;
-                        try v.drive_bus_weak(a, state.bus_hold, levels);
-                        state.bus_hold = @truncate(v.read_bus_fallback(a, levels, state.bus_hold));
-                    }
                 },
+            }
+        }
+
+        fn read_a(unit: Unit, v: *Validator, state: *Validate_State) u16 {
+            if (bus_hold) {
+                return @truncate(v.read_bus_with_pull(unit.a, levels, state.bus_hold));
+            } else {
+                return @truncate(v.read_bus(unit.a, levels));
             }
         }
     };
@@ -1175,33 +1239,34 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     state[1].a_hold = 0;
                     state[1].b_hold = 0;
                 },
-                .commit => for (self.u) |unit| {
+                .commit => for (self.u, state) |unit, *unit_state| {
                     try v.expect_valid(unit.output_enable_low, levels);
                     try v.expect_valid(unit.a_to_b, levels);
                     if (v.read_logic(unit.a_to_b, levels)) {
-                        if (bus_hold) try v.expect_valid_or_nc(unit.a, levels) else try v.expect_valid(unit.a, levels);
+                        if (bus_hold) try v.expect_valid_or_unconnected(unit.a, levels) else try v.expect_valid(unit.a, levels);
                     } else {
-                        if (bus_hold) try v.expect_valid_or_nc(unit.b, levels) else try v.expect_valid(unit.b, levels);
+                        if (bus_hold) try v.expect_valid_or_unconnected(unit.b, levels) else try v.expect_valid(unit.b, levels);
+                    }
+                    if (v.read_logic(unit.output_enable_low, levels) == false) {
+                        if (v.read_logic(unit.a_to_b, levels)) {
+                            const data = read_a(unit, v, unit_state);
+                            try v.expect_output_valid(unit.b, data, levels);
+                        } else {
+                            const data = read_b(unit, v, unit_state);
+                            try v.expect_output_valid(unit.a, data, levels);
+                        }
                     }
                 },
-                .nets_only => {
-                    for (self.u, state) |unit, *unit_state| {
-                        if (bus_hold) {
-                            try v.drive_bus_weak(unit.a, unit_state.a_hold, levels);
-                            try v.drive_bus_weak(unit.b, unit_state.b_hold, levels);
-                            unit_state.a_hold = read_a(unit, v, unit_state);
-                            unit_state.b_hold = read_b(unit, v, unit_state);
-                        }
-                        if (v.read_logic(unit.output_enable_low, levels) == false) {
-                            if (v.read_logic(unit.a_to_b, levels)) {
-                                const data = read_a(unit, v, unit_state);
-                                try v.drive_bus(unit.b, data, levels);
-                                if (bus_hold) unit_state.b_hold = data;
-                            } else {
-                                const data = read_b(unit, v, unit_state);
-                                try v.drive_bus(unit.a, data, levels);
-                                if (bus_hold) unit_state.a_hold = data;
-                            }
+                .nets_only => for (self.u, state) |unit, *unit_state| {
+                    if (bus_hold) {
+                        unit_state.a_hold = @truncate(try v.pull_and_read_bus(unit.a, levels, unit_state.a_hold));
+                        unit_state.b_hold = @truncate(try v.pull_and_read_bus(unit.b, levels, unit_state.b_hold));
+                    }
+                    if (v.read_logic(unit.output_enable_low, levels) == false) {
+                        if (v.read_logic(unit.a_to_b, levels)) {
+                            try v.drive_bus(unit.b, read_a(unit, v, unit_state), levels);
+                        } else {
+                            try v.drive_bus(unit.a, read_b(unit, v, unit_state), levels);
                         }
                     }
                 },
@@ -1210,7 +1275,7 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_a(unit: Unit, v: *Validator, state: *Validate_State) u8 {
             if (bus_hold) {
-                return @truncate(v.read_bus_fallback(unit.a, levels, state.a_hold));
+                return @truncate(v.read_bus_with_pull(unit.a, levels, state.a_hold));
             } else {
                 return @truncate(v.read_bus(unit.a, levels));
             }
@@ -1218,10 +1283,179 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_b(unit: Unit, v: *Validator, state: *Validate_State) u8 {
             if (bus_hold) {
-                return @truncate(v.read_bus_fallback(unit.b, levels, state.b_hold));
+                return @truncate(v.read_bus_with_pull(unit.b, levels, state.b_hold));
             } else {
                 return @truncate(v.read_bus(unit.b, levels));
             }
+        }
+    };
+}
+
+/// 2x12b bus exchange switch
+pub fn CBT16212(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Multi(1, 4, pwr, Decoupler) = .{},
+        left: [2][12]Net_ID = @splat(@splat(.unset)),
+        right: [2][12]Net_ID = @splat(@splat(.unset)),
+        op_sel: [3]Net_ID = @splat(.unset),
+        remap: [12]u4 = .{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 },
+        r_on: f32 = 3,
+
+        pub const Op = enum (u3) {
+            disconnect = 0,
+            l0_r0 = 1, // l1, r1 Hi-Z
+            l0_r1 = 2, // l1, r0 Hi-Z
+            l1_r0 = 3, // l0, r1 Hi-Z
+            l1_r1 = 4, // l0, r0 Hi-Z
+            disconnect_alt = 5,
+            passthrough = 6, // l0 <=> r0, l1 <=> r1
+            exchange = 7,    // l0 <=> r1, l1 <=> r0
+        };
+
+        fn logical_l_net(self: @This(), bus: u1, physical_bit: usize) usize {
+            return self.left[bus][self.remap[physical_bit]];
+        }
+
+        fn logical_r_net(self: @This(), bus: u1, physical_bit: usize) usize {
+            return self.right[bus][self.remap[physical_bit]];
+        }
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_bits: [12]bool = @splat(false);
+            for (self.remap) |logical| {
+                mapped_bits[logical] = true;
+            }
+            for (0.., mapped_bits) |logical_bit, mapped| {
+                if (!mapped) {
+                    log.err("{s}: No physical bit assigned to logical bit {}", .{ @typeName(@This()), logical_bit });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.op_sel[0],
+                56 => self.op_sel[1],
+                55 => self.op_sel[2],
+
+                2  => self.logical_l_net(0, 0),
+                3  => self.logical_l_net(1, 0),
+                4  => self.logical_l_net(0, 1),
+                5  => self.logical_l_net(1, 1),
+                6  => self.logical_l_net(0, 2),
+                7  => self.logical_l_net(1, 2),
+                9  => self.logical_l_net(0, 3),
+                10 => self.logical_l_net(1, 3),
+                11 => self.logical_l_net(0, 4),
+                12 => self.logical_l_net(1, 4),
+                13 => self.logical_l_net(0, 5),
+                14 => self.logical_l_net(1, 5),
+                15 => self.logical_l_net(0, 6),
+                16 => self.logical_l_net(1, 6),
+                18 => self.logical_l_net(0, 7),
+                20 => self.logical_l_net(1, 7),
+                21 => self.logical_l_net(0, 8),
+                22 => self.logical_l_net(1, 8),
+                23 => self.logical_l_net(0, 9),
+                24 => self.logical_l_net(1, 9),
+                25 => self.logical_l_net(0, 10),
+                26 => self.logical_l_net(1, 10),
+                27 => self.logical_l_net(0, 11),
+                28 => self.logical_l_net(1, 11),
+
+                54 => self.logical_r_net(0, 0),
+                53 => self.logical_r_net(1, 0),
+                52 => self.logical_r_net(0, 1),
+                51 => self.logical_r_net(1, 1),
+                50 => self.logical_r_net(0, 2),
+                48 => self.logical_r_net(1, 2),
+                47 => self.logical_r_net(0, 3),
+                46 => self.logical_r_net(1, 3),
+                45 => self.logical_r_net(0, 4),
+                44 => self.logical_r_net(1, 4),
+                43 => self.logical_r_net(0, 5),
+                42 => self.logical_r_net(1, 5),
+                41 => self.logical_r_net(0, 6),
+                40 => self.logical_r_net(1, 6),
+                39 => self.logical_r_net(0, 7),
+                37 => self.logical_r_net(1, 7),
+                36 => self.logical_r_net(0, 8),
+                35 => self.logical_r_net(1, 8),
+                34 => self.logical_r_net(0, 9),
+                33 => self.logical_r_net(1, 9),
+                32 => self.logical_r_net(0, 10),
+                31 => self.logical_r_net(1, 10),
+                30 => self.logical_r_net(0, 11),
+                29 => self.logical_r_net(1, 11),
+
+                8 => self.pwr.gnd[0],
+                19 => self.pwr.gnd[1],
+                38 => self.pwr.gnd[2],
+                49 => self.pwr.gnd[3],
+
+                17 => @field(self.pwr, @tagName(pwr))[0],
+
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.op_sel, levels);
+                    try v.expect_below(self.left[0], levels.Vclamp);
+                    try v.expect_below(self.left[1], levels.Vclamp);
+                    try v.expect_below(self.right[0], levels.Vclamp);
+                    try v.expect_below(self.right[1], levels.Vclamp);
+
+                    const power_limit = 0.016384 * self.r_on;
+                    switch (self.read_op(v)) {
+                        .disconnect, .disconnect_alt => {},
+                        .l0_r0 => try v.verify_power_limit(self.left[0], self.right[0], self.r_on, power_limit),
+                        .l0_r1 => try v.verify_power_limit(self.left[0], self.right[1], self.r_on, power_limit),
+                        .l1_r0 => try v.verify_power_limit(self.left[1], self.right[0], self.r_on, power_limit),
+                        .l1_r1 => try v.verify_power_limit(self.left[1], self.right[1], self.r_on, power_limit),
+                        .passthrough => {
+                            try v.verify_power_limit(self.left[0], self.right[0], self.r_on, power_limit);
+                            try v.verify_power_limit(self.left[1], self.right[1], self.r_on, power_limit);
+                        },
+                        .exchange => {
+                            try v.verify_power_limit(self.left[0], self.right[1], self.r_on, power_limit);
+                            try v.verify_power_limit(self.left[1], self.right[0], self.r_on, power_limit);
+                        },
+                    }
+                },
+                .nets_only => {
+                    switch (self.read_op(v)) {
+                        .disconnect, .disconnect_alt => {},
+                        .l0_r0 => try v.connect_buses(self.left[0], self.right[0], self.r_on),
+                        .l0_r1 => try v.connect_buses(self.left[0], self.right[1], self.r_on),
+                        .l1_r0 => try v.connect_buses(self.left[1], self.right[0], self.r_on),
+                        .l1_r1 => try v.connect_buses(self.left[1], self.right[1], self.r_on),
+                        .passthrough => {
+                            try v.connect_buses(self.left[0], self.right[0], self.r_on);
+                            try v.connect_buses(self.left[1], self.right[1], self.r_on);
+                        },
+                        .exchange => {
+                            try v.connect_buses(self.left[0], self.right[1], self.r_on);
+                            try v.connect_buses(self.left[1], self.right[0], self.r_on);
+                        },
+                    }
+                },
+            }
+        }
+
+        fn read_op(self: @This(), v: *Validator) Op {
+            return @enumFromInt(v.read_bus(self.op_sel, levels));
         }
     };
 }
@@ -1360,9 +1594,9 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 },
                 .commit => {
                     if (bus_hold) {
-                        try v.expect_valid_or_nc(self.a.data, levels);
-                        try v.expect_valid_or_nc(self.bx.data, levels);
-                        try v.expect_valid_or_nc(self.by.data, levels);
+                        try v.expect_valid_or_unconnected(self.a.data, levels);
+                        try v.expect_valid_or_unconnected(self.bx.data, levels);
+                        try v.expect_valid_or_unconnected(self.by.data, levels);
                     } else {
                         try v.expect_valid(self.a.data, levels);
                         try v.expect_valid(self.bx.data, levels);
@@ -1384,35 +1618,48 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
                     if (v.read_logic(self.by.latch_input_data, levels)) state.by_to_a = self.read_by(v, state);
                     if (v.read_logic(self.by.latch_output_data, levels)) state.a_to_by = self.read_a(v, state);
+
+                    if (v.read_logic(self.a.output_enable_low, levels) == false) {
+                        const data = switch (v.read_logic(self.a.enable_bx, levels)) {
+                            true => if (v.read_logic(self.bx.latch_input_data, levels)) self.read_bx(v, state) else state.bx_to_a,
+                            false => if (v.read_logic(self.by.latch_input_data, levels)) self.read_by(v, state) else state.by_to_a,
+                        };
+                        try v.expect_output_valid(self.a.data, data, levels);
+                    }
+
+                    if (v.read_logic(self.bx.output_enable_low, levels) == false) {
+                        const data = if (v.read_logic(self.bx.latch_output_data, levels)) self.read_a(v, state) else state.a_to_bx;
+                        try v.expect_output_valid(self.bx.data, data, levels);
+                    }
+
+                    if (v.read_logic(self.by.output_enable_low, levels) == false) {
+                        const data = if (v.read_logic(self.by.latch_output_data, levels)) self.read_a(v, state) else state.a_to_by;
+                        try v.expect_output_valid(self.by.data, data, levels);
+                    }
                 },
                 .nets_only => {
+                    if (bus_hold) {
+                        state.a_hold = @truncate(try v.pull_and_read_bus(self.a.data, levels, state.a_hold));
+                        state.bx_hold = @truncate(try v.pull_and_read_bus(self.bx.data, levels, state.bx_hold));
+                        state.by_hold = @truncate(try v.pull_and_read_bus(self.by.data, levels, state.by_hold));
+                    }
+
                     if (v.read_logic(self.a.output_enable_low, levels) == false) {
-                        const data = if (v.read_logic(self.a.enable_bx, levels)) data: {
-                            break :data if (v.read_logic(self.bx.latch_input_data, levels)) self.read_bx(v, state) else state.bx_to_a;
-                        } else if (v.read_logic(self.by.latch_input_data, levels)) self.read_by(v, state) else state.by_to_a;
+                        const data = switch (v.read_logic(self.a.enable_bx, levels)) {
+                            true => if (v.read_logic(self.bx.latch_input_data, levels)) self.read_bx(v, state) else state.bx_to_a,
+                            false => if (v.read_logic(self.by.latch_input_data, levels)) self.read_by(v, state) else state.by_to_a,
+                        };
                         try v.drive_bus(self.a.data, data, levels);
-                        if (bus_hold) state.a_hold = data;
-                    } else if (bus_hold) {
-                        try v.drive_bus_weak(self.a.data, state.a_hold, levels);
-                        state.a_hold = @truncate(v.read_bus_fallback(self.a.data, levels, state.a_hold));
                     }
 
                     if (v.read_logic(self.bx.output_enable_low, levels) == false) {
                         const data = if (v.read_logic(self.bx.latch_output_data, levels)) self.read_a(v, state) else state.a_to_bx;
                         try v.drive_bus(self.bx.data, data, levels);
-                        if (bus_hold) state.bx_hold = data;
-                    } else if (bus_hold) {
-                        try v.drive_bus_weak(self.bx.data, state.bx_hold, levels);
-                        state.bx_hold = @truncate(v.read_bus_fallback(self.bx.data, levels, state.bx_hold));
                     }
 
                     if (v.read_logic(self.by.output_enable_low, levels) == false) {
                         const data = if (v.read_logic(self.by.latch_output_data, levels)) self.read_a(v, state) else state.a_to_by;
                         try v.drive_bus(self.by.data, data, levels);
-                        if (bus_hold) state.by_hold = data;
-                    } else if (bus_hold) {
-                        try v.drive_bus_weak(self.by.data, state.by_hold, levels);
-                        state.by_hold = @truncate(v.read_bus_fallback(self.by.data, levels, state.by_hold));
                     }
                 },
             }
@@ -1420,7 +1667,7 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_a(self: @This(), v: *Validator, state: *Validate_State) u12 {
             if (bus_hold) {
-                return @truncate(v.read_bus_fallback(self.a.data, levels, state.a_hold));
+                return @truncate(v.read_bus_with_pull(self.a.data, levels, state.a_hold));
             } else {
                 return @truncate(v.read_bus(self.a.data, levels));
             }
@@ -1428,7 +1675,7 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_bx(self: @This(), v: *Validator, state: *Validate_State) u12 {
             if (bus_hold) {
-                return @truncate(v.read_bus_fallback(self.bx.data, levels, state.bx_hold));
+                return @truncate(v.read_bus_with_pull(self.bx.data, levels, state.bx_hold));
             } else {
                 return @truncate(v.read_bus(self.bx.data, levels));
             }
@@ -1436,7 +1683,7 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_by(self: @This(), v: *Validator, state: *Validate_State) u12 {
             if (bus_hold) {
-                return @truncate(v.read_bus_fallback(self.by.data, levels, state.by_hold));
+                return @truncate(v.read_bus_with_pull(self.by.data, levels, state.by_hold));
             } else {
                 return @truncate(v.read_bus(self.by.data, levels));
             }
@@ -1610,10 +1857,10 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     try v.expect_valid(unit.b_to_a.clk, levels);
 
                     if (v.read_logic(unit.b_to_a.output_enable_low, levels) == true) {
-                        if (bus_hold) try v.expect_valid_or_nc(unit.a, levels) else try v.expect_valid(unit.a, levels);
+                        if (bus_hold) try v.expect_valid_or_unconnected(unit.a, levels) else try v.expect_valid(unit.a, levels);
                     }
                     if (v.read_logic(unit.a_to_b.output_enable, levels) == false) {
-                        if (bus_hold) try v.expect_valid_or_nc(unit.b, levels) else try v.expect_valid(unit.b, levels);
+                        if (bus_hold) try v.expect_valid_or_unconnected(unit.b, levels) else try v.expect_valid(unit.b, levels);
                     }
 
                     {
@@ -1633,11 +1880,10 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 },
                 .nets_only => for (self.u, state) |unit, *unit_state| {
                     if (bus_hold) {
-                        try v.drive_bus_weak(unit.a, unit_state.a_hold, levels);
-                        try v.drive_bus_weak(unit.b, unit_state.b_hold, levels);
-                        unit_state.a_hold = read_a(unit, v, unit_state, 2);
-                        unit_state.b_hold = read_b(unit, v, unit_state, 2);
+                        unit_state.a_hold = @truncate(try v.pull_and_read_bus(unit.a, levels, unit_state.a_hold));
+                        unit_state.b_hold = @truncate(try v.pull_and_read_bus(unit.b, levels, unit_state.b_hold));
                     }
+
                     if (v.read_logic(unit.b_to_a.output_enable_low, levels) == false) {
                         const data = read_a(unit, v, unit_state, 2);
                         try v.drive_bus(unit.a, data, levels);
@@ -1660,7 +1906,7 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     return read_b(unit, v, state, limit - 1);
                 }
             } else if (bus_hold) {
-                return @truncate(v.read_bus_fallback(unit.a, levels, state.a_hold));
+                return @truncate(v.read_bus_with_pull(unit.a, levels, state.a_hold));
             } else {
                 return @truncate(v.read_bus(unit.a, levels));
             }
@@ -1674,7 +1920,7 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     return read_a(unit, v, state, limit - 1);
                 }
             } else if (bus_hold) {
-                return @truncate(v.read_bus_fallback(unit.b, levels, state.b_hold));
+                return @truncate(v.read_bus_with_pull(unit.b, levels, state.b_hold));
             } else {
                 return @truncate(v.read_bus(unit.b, levels));
             }
@@ -1798,13 +2044,16 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 },
                 .commit => {
                     if (bus_hold) {
-                        try v.expect_valid_or_nc(self.d, levels);
+                        try v.expect_valid_or_unconnected(self.d, levels);
                     } else {
                         try v.expect_valid(self.d, levels);
                     }
                     try v.expect_valid(self.clk, levels);
                     try v.expect_valid(self.enable_clk_low, levels);
                     try v.expect_valid(self.output_enable_low, levels);
+                    if (v.read_logic(self.output_enable_low, levels) == false) {
+                        try v.expect_output_valid(self.q, state.data, levels);
+                    }
 
                     const new_clk = v.read_logic(self.clk, levels);
                     if (new_clk and !state.clk and v.read_logic(self.enable_clk_low, levels) == false) {
@@ -1818,8 +2067,7 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     }
                     
                     if (bus_hold) {
-                        try v.drive_bus_weak(self.d, state.bus_hold, levels);
-                        state.bus_hold = @truncate(v.read_bus_fallback(self.d, levels, state.bus_hold));
+                        state.bus_hold = self.read_d(v, state);
                     }
                 },
             }
@@ -1827,7 +2075,7 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_d(self: @This(), v: *Validator, state: *Validate_State) u20 {
             if (bus_hold) {
-                return @truncate(v.read_bus_fallback(self.d, levels, state.bus_hold));
+                return @truncate(v.read_bus_with_pull(self.d, levels, state.bus_hold));
             } else {
                 return @truncate(v.read_bus(self.d, levels));
             }

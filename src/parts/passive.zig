@@ -47,7 +47,8 @@ pub fn Resistor(comptime Pkg: type) type {
         },
         a: Net_ID = .unset,
         b: Net_ID = .unset,
-        value: u32 = 1_000,
+        value: f32 = 1_000,
+        max_power: f32 = 0.1,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -57,46 +58,11 @@ pub fn Resistor(comptime Pkg: type) type {
             };
         }
 
-        const Direction = enum {
-            unknown,
-            a_to_b,
-            b_to_a,
-            none,
-        };
-
-        pub fn validate(self: @This(), v: *Validator, state: *Direction, mode: Validator.Update_Mode) !void {
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
             switch (mode) {
-                .reset, .commit => state.* = .unknown,
-                .nets_only => switch (state.*) {
-                    .none => {},
-                    .a_to_b => {
-                        const a = v.read_net(self.a);
-                        const str = v.read_net_strength(self.a);
-                        try v.drive_net(self.b, a, @enumFromInt(@max(1, str.raw() / self.value)));
-                    },
-                    .b_to_a => {
-                        const b = v.read_net(self.b);
-                        const str = v.read_net_strength(self.b);
-                        try v.drive_net(self.a, b, @enumFromInt(@max(1, str.raw() / self.value)));
-                    },
-                    .unknown => {
-                        const as = v.read_net_strength(self.a);
-                        const bs = v.read_net_strength(self.b);
-                        if (self.b.is_power() and !self.a.is_power() or bs != .hiz and as == .hiz) {
-                            state.* = .b_to_a;
-                            const b = v.read_net(self.b);
-                            const str = v.read_net_strength(self.b);
-                            try v.drive_net(self.a, b, @enumFromInt(@max(1, str.raw() / self.value)));
-                        } else if (self.a.is_power() and !self.b.is_power() or as != .hiz and bs == .hiz) {
-                            state.* = .a_to_b;
-                            const a = v.read_net(self.a);
-                            const str = v.read_net_strength(self.a);
-                            try v.drive_net(self.b, a, @enumFromInt(@max(1, str.raw() / self.value)));
-                        } else {
-                            state.* = .none;
-                        }
-                    },
-                },
+                .reset => {},
+                .commit => try v.verify_power_limit(self.a, self.b, self.value, self.max_power),
+                .nets_only => try v.connect_nets(self.a, self.b, self.value),
             }
         }
     };

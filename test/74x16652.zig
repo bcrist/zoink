@@ -28,7 +28,7 @@ test {
     defer b.deinit();
     try configure(&b);
     try b.finish_configuration(std.testing.allocator);
-    var v = try zoink.Validator.init(&b, .{});
+    var v = try zoink.Validator.init(std.testing.allocator, &b, .{});
     defer v.deinit();
 
     const A = b.bus("A", 16);
@@ -53,16 +53,16 @@ test {
     try v.set(BA_CLK, .gnd);
     try v.update();
     try v.clock_high(AB_CLK, LVCMOS);
-    try v.expect_bus(B, 0xFACE, LVCMOS);
+    try v.expect_state(B, 0xFACE, LVCMOS);
     
-    try v.set_bus_hiz(A);
+    try v.unset_bus(A);
     try v.set(BA_OE, .gnd);
     try v.set(AB_REG, .p3v3);
     try v.update();
-    try v.expect_bus(A, 0xAAAA, LVCMOS);
-    try v.expect_bus(B, 0xFACE, LVCMOS);
+    try v.expect_state(A, 0xAAAA, LVCMOS);
+    try v.expect_state(B, 0xFACE, LVCMOS);
     try v.clock_high(BA_CLK, LVCMOS);
-    try v.expect_bus(A, 0xFACE, LVCMOS);
+    try v.expect_state(A, 0xFACE, LVCMOS);
 }
 
 const SN74LVTH16652DGG = zoink.parts.SN74LVTH16652DGG;
