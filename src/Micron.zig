@@ -7,24 +7,53 @@ pub fn mm(self: Micron, comptime F: type) F {
     return um / 1000;
 }
 
-pub fn format(self: Micron, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-    if (fmt.len > 0) {
-        return try std.fmt.formatInt(self.um, 10, .lower, options, writer);
-    }    
+pub fn formatNumber(self: Micron, writer: *std.io.Writer, options: std.fmt.Number) !void {
+    const precision = options.precision orelse 0;
+    std.debug.assert((options.mode.base() orelse 10) == 10);
+
+    var buf: [32]u8 = undefined;
+    var end: usize = 0;
+    var slice = buf[0..];
 
     const abs = @abs(self.um);
-    if (self.um < 0) try writer.writeByte('-');
-
-    var buf: [22]u8 = undefined;
-    const buf_len = std.fmt.formatIntBuf(&buf, abs, 10, .lower, .{ .width = 4, .fill = '0' });
-    try writer.writeAll(buf[0 .. buf_len - 3]);
-
-    const frac = buf[buf_len - 3 .. buf_len];
-    const frac_trimmed = std.mem.trimRight(u8, frac, '0');
-    if (frac_trimmed.len > 0) {
-        try writer.writeByte('.');
-        try writer.writeAll(frac_trimmed);
+    if (self.um < 0) {
+        buf[0] = '-';
+        slice = slice[1..];
+        end += 1;
     }
+
+    const slice_len = std.fmt.printInt(slice, abs, 10, .lower, .{ .width = 4, .fill = '0' });
+    const slice_end_of_int_part = slice_len - 3;
+    end += slice_end_of_int_part;
+
+    const frac = slice[slice_end_of_int_part..slice_len];
+    var frac_trimmed = std.mem.trimRight(u8, frac, '0');
+    if (frac_trimmed.len < precision) {
+        // options requested more precision, but we won't give more than 3 digits since that's all that we have
+        frac_trimmed = frac[0..@min(frac.len, precision)];
+    } else if (frac_trimmed.len > precision) {
+        // options requested less precision, and we're discarding some information.  We may need to round up the last displayed digit.
+        const truncated = frac_trimmed[precision];
+        if (truncated >= '5') {
+            frac_trimmed[precision - 1] = switch(truncated) {
+                '0'...'8' => truncated + 1,
+                '9' => '0',
+                else => unreachable,
+            };
+        }
+        frac_trimmed = frac_trimmed[0..precision];
+    }
+    if (frac_trimmed.len > 0) {
+        const moved_frac = slice[slice_end_of_int_part + 1..][0..frac_trimmed.len];
+        std.mem.copyBackwards(u8, moved_frac, frac_trimmed);
+        slice[slice_end_of_int_part] = '.';
+        end += 1 + frac_trimmed.len;
+    }
+
+    buf[end] = 'm';
+    buf[end+1] = 'm';
+
+    return writer.alignBuffer(buf[0 .. end + 2], options.width, options.alignment, options.fill);
 }
 
 const std = @import("std");

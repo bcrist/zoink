@@ -41,9 +41,9 @@ var t: f64 = 0;
 const Package_Data = union (enum) {
     smd: zoink.footprints.SMD_Data,
 
-    pub fn format(self: Package_Data, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(self: Package_Data, writer: *std.io.Writer) !void {
         switch (self) {
-            .smd => |data| try data.format(fmt, options, writer),
+            .smd => |data| try data.format(writer),
         }
     }
 };

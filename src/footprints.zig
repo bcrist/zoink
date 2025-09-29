@@ -77,9 +77,7 @@ pub const SMD_Data = struct {
     // This feature is used for SOT-23, some SOJ DRAM chips, etc.
     omitted_pins: []const usize = &.{},
 
-    pub fn format(self: SMD_Data, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
+    pub fn format(self: SMD_Data, writer: *std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
@@ -245,9 +243,7 @@ pub const SOT_Data = struct {
         seating: Dim, // portion of length that lies flat against the seating plane
     },
 
-    pub fn format(self: SOT_Data, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
+    pub fn format(self: SOT_Data, writer: *std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
@@ -275,9 +271,7 @@ pub const BGA_Data = struct {
     include_balls: []const Grid_Region = &.{ .all },
     exclude_balls: []const Grid_Region = &.{},
     
-    pub fn format(self: BGA_Data, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
+    pub fn format(self: BGA_Data, writer: std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
