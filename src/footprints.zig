@@ -7,6 +7,48 @@ pub const Density = enum {
 pub const Dim = struct {
     nominal_um: usize, // dimension in micrometers
     tolerance_um: usize, // measured dimension may be +/- this much
+
+    pub fn init_mm(nominal: comptime_float, tolerance: comptime_float) Dim {
+        return .{
+            .nominal_um = @intFromFloat(@round(nominal * 1000)),
+            .tolerance_um = @intFromFloat(@round(tolerance * 1000)),
+        };
+    }
+
+    pub fn init_mm_range(min: comptime_float, max: comptime_float) Dim {
+        return .{
+            .nominal_um = @intFromFloat(@round((min + max) * 500)),
+            .tolerance_um = @intFromFloat(@round(@abs(max - min) * 500)),
+        };
+    }
+
+    pub fn init_mil(nominal: comptime_float, tolerance: comptime_float) Dim {
+        return .{
+            .nominal_um = @intFromFloat(@round(nominal * 25.4)),
+            .tolerance_um = @intFromFloat(@round(tolerance * 25.4)),
+        };
+    }
+
+    pub fn init_mil_range(min: comptime_float, max: comptime_float) Dim {
+        return .{
+            .nominal_um = @intFromFloat(@round((min + max) * 12.7)),
+            .tolerance_um = @intFromFloat(@round(@abs(max - min) * 12.7)),
+        };
+    }
+
+    pub fn init_inches(nominal: comptime_float, tolerance: comptime_float) Dim {
+        return .{
+            .nominal_um = @intFromFloat(@round(nominal * 25400)),
+            .tolerance_um = @intFromFloat(@round(tolerance * 25400)),
+        };
+    }
+
+    pub fn init_inches_range(min: comptime_float, max: comptime_float) Dim {
+        return .{
+            .nominal_um = @intFromFloat(@round((min + max) * 12700)),
+            .tolerance_um = @intFromFloat(@round(@abs(max - min) * 12700)),
+        };
+    }
 };
 
 pub const Rect = struct {
@@ -29,6 +71,71 @@ pub const Pin1 = enum {
 fn mils_to_microns(mils: isize) isize {
     return ((mils * 254) + 6) / 10;
 }
+
+/// Rectangular dual inline packages, with square leads/pads on the edges of 2 sides.
+/// The same number of pins are placed on opposite sides.
+/// Pin 1 is the westmost pin on the south side.
+/// The southwest corner or west side of the body may have a notch to indicate pin 1.
+/// All pins have the same dimensions and pitch.
+/// Some pins may be omitted.
+///
+/// This footprint type is suitable for most through-hole ICs and some analog delay lines and transformers
+/// It could be used for 4-pin hermetically sealed oscillator/SAW filter cans, but is not recommended.
+/// This footprint is not usable for:
+///  - SMD/BGA packages
+///  - PGA packages
+///  - SIP/SIL packages
+///  - ZIP/ZIL packages
+///  - DZIP/DZIL packages
+///  - through hole transistor/passive packages
+pub const DIL_Data = struct {
+    package_name: []const u8,
+
+    body: Rect,
+    overall: Rect, // includes pins
+    max_z: Dim,
+    body_thickness: Dim, // leadframe assumed to be placed half thickness from top of body (max_z)
+
+    // Note this also includes any omitted pins, so the actual physical number of pins (and logical max pin number) may be less.
+    total_pins: usize,
+
+    pin_pitch: Dim, // typically 100mil; distance between adjacent pin centers
+    row_spacing: Dim, // typically 300mil, 400mil, 600mil, or 900mil; distance between centers of two rows of pins
+    pin_width: Dim, // typically ~18mil; hole diameter must be at least sqrt(pin_width^2 + pin_thickness^2)
+    pin_thickness: Dim, // typically ~10mil, a.k.a. leadframe thickness
+    pin_width_above_seating: Dim, // typically ~50mil
+    pin_length: Dim, // typically ~150mil; max excursion below the seating plane
+
+    // Pin numbers (as they would be defined for a variant with no omitted pins) that do not physically exist.
+    // Parts cann't reference omitted pins; they are not assigned pin numbers or Pin_IDs
+    // This feature is mainly used for delay lines and transformers.
+    omitted_pins: []const usize = &.{},
+
+    pub fn format(self: DIL_Data, writer: *std.io.Writer) !void {
+        try writer.writeAll(self.package_name);
+    }
+};
+pub fn DIL(comptime data: DIL_Data, comptime density: Density) type {
+    _ = density; // TODO use to control annular ring size & shape
+    //var pads: []Footprint.Pad = &.{};
+
+    var pin: usize = 1;
+    for (0..1) |_| {
+        for (0 .. data.total_pins / 2) |_| {
+            // TODO
+
+
+            pin += 1;
+        }
+    }
+
+    return struct {
+        pub const fp: Footprint = .{
+            .name = "SMD",
+        };
+    };
+}
+
 
 /// Rectangular SMD package, with square leads/pads on the edges of 2 or 4 sides.
 /// The same number of pins are placed on opposite sides.
@@ -248,6 +355,67 @@ pub const SOT_Data = struct {
     }
 };
 pub fn SOT(comptime data: SOT_Data, comptime density: Density) type {
+    _ = data;
+    _ = density;
+    return struct {
+        pub const fp: Footprint = .{
+        };
+    };
+}
+
+/// Rectangular PGA package with pins in a grid as used by PLCC-to-PGA adapters.
+/// Only the two rows/columns nearest the edges are used.
+/// The four corners of the grid are not populated.
+/// Pin_ID assignment:
+///     * Pin 1 is always on the west side, in the middle row, or the row above it.
+///         * If `(plcc_rows + plcc_cols + 2) * 2` is divisible by 16, then pin 1 is in the row above it, and is in the "inner ring"
+///         * Otherwise pin 1 is in the middle row, and part of the "outer ring"
+///     * Assignment proceeds counter-clockwise, visiting the pin in the outer ring before the inner one.
+///     * When reaching a corner, *both* outer pins is visited before the inner one
+pub const PLCC_PGA_Data = struct {
+    package_name: []const u8,
+    body: Rect,
+    max_z: Dim,
+    pin_diameter: Dim,
+    pin_length: Dim,
+    plcc_rows: usize,
+    plcc_cols: usize,
+    
+    pub fn format(self: PLCC_PGA_Data, writer: std.io.Writer) !void {
+        try writer.writeAll(self.package_name);
+    }
+};
+pub fn PLCC_PGA(comptime data: PLCC_PGA_Data, comptime density: Density) type {
+    _ = data;
+    _ = density;
+    return struct {
+        pub const fp: Footprint = .{
+        };
+    };
+}
+
+/// Rectangular PGA package with pins in a grid with uniform X/Y pitch
+/// Pin_IDs are assigned left-to-right, then top-to-bottom
+pub const PGA_Data = struct {
+    package_name: []const u8,
+    body: Rect,
+    body_thickness: Dim,
+    max_z: Dim,
+    pin_diameter: Dim,
+    pin_length: Dim,
+    rows: usize, // Lettered, from top to bottom (when viewed from above)
+    cols: usize, // Numbered, from left to right (when viewed from above)
+    row_pitch: Dim = .init_mil(100, 0),
+    col_pitch: Dim = .init_mil(100, 0),
+
+    include_pins: []const Grid_Region = &.{ .all },
+    exclude_pins: []const Grid_Region = &.{},
+    
+    pub fn format(self: PGA_Data, writer: std.io.Writer) !void {
+        try writer.writeAll(self.package_name);
+    }
+};
+pub fn PGA(comptime data: PGA_Data, comptime density: Density) type {
     _ = data;
     _ = density;
     return struct {

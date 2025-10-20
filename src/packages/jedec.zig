@@ -1,3 +1,200 @@
+// DIP (300mil width)
+pub fn MS_001D(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
+    const body_width: footprints.Dim = switch (lead_count) {
+        8 => .init_inches_range(0.355, 0.400),
+        14 => .init_inches_range(0.735, 0.775),
+        16 => .init_inches_range(0.780, 0.800),
+        18 => .init_inches_range(0.880, 0.920),
+        20 => .init_inches_range(0.980, 1.060),
+        22 => .init_inches_range(1.145, 1.165),
+        24 => .init_inches_range(1.230, 1.280),
+        28 => .init_inches_range(1.385, 1.425),
+        else => unreachable,
+    };
+
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.DIP(data, .normal).fp,
+        };
+
+        pub const data: DIL_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = body_width,
+                .height = .init_inches_range(0.24, 0.28),
+            },
+            .overall = .{
+                .width  = body_width,
+                .height = .init_inches_range(0.3, 0.325),
+            },
+            .max_z = .init_inches_range(0.21, 0.21),
+            .body_thickness = .init_inches_range(0.125, 0.195),
+            .total_pins = lead_count,
+            .pin_pitch = .init_inches(0.1, 0),
+            .row_spacing = .init_inches(0.3, 0),
+            .pin_width = .init_inches_range(0.014, 0.02),
+            .pin_thickness = .init_inches_range(0.008, 0.014),
+            .pin_width_above_seating = .init_inches_range(0.045, 0.07),
+            .pin_length = .init_inches_range(0.115, 0.15),
+        };
+    };
+}
+
+// DIP (400mil width)
+pub fn MS_010C(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
+    const body_width: footprints.Dim = switch (lead_count) {
+        22 => .init_inches_range(1.065, 1.12),
+        24 => .init_inches_range(1.165, 1.22),
+        28 => .init_inches_range(1.365, 1.42),
+        32 => .init_inches_range(1.565, 1.62),
+        else => unreachable,
+    };
+
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.DIP(data, .normal).fp,
+        };
+
+        pub const data: DIL_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = body_width,
+                .height = .init_inches_range(0.33, 0.39),
+            },
+            .overall = .{
+                .width  = body_width,
+                .height = .init_inches_range(0.39, 0.425),
+            },
+            .max_z = .init_inches_range(0.21, 0.21),
+            .body_thickness = .init_inches_range(0.125, 0.195),
+            .total_pins = lead_count,
+            .pin_pitch = .init_inches(0.1, 0),
+            .row_spacing = .init_inches(0.4, 0),
+            .pin_width = .init_inches_range(0.014, 0.02),
+            .pin_thickness = .init_inches_range(0.009, 0.015),
+            .pin_width_above_seating = .init_inches_range(0.045, 0.065),
+            .pin_length = .init_inches_range(0.115, 0.16),
+        };
+    };
+}
+
+// DIP (600mil width)
+pub fn MS_011B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
+    const body_width: footprints.Dim = switch (lead_count) {
+        24 => .init_inches_range(1.15, 1.29),
+        28 => .init_inches_range(1.38, 1.565),
+        40 => .init_inches_range(1.98, 2.095),
+        else => unreachable,
+    };
+
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.DIP(data, .normal).fp,
+        };
+
+        pub const data: DIL_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = body_width,
+                .height = .init_inches_range(0.485, 0.58),
+            },
+            .overall = .{
+                .width  = body_width,
+                .height = .init_inches_range(0.600, 0.625),
+            },
+            .max_z = .init_inches_range(0.25, 0.25),
+            .body_thickness = .init_inches_range(0.15, 0.235),
+            .total_pins = lead_count,
+            .pin_pitch = .init_inches(0.1, 0),
+            .row_spacing = .init_inches(0.6, 0),
+            .pin_width = .init_inches_range(0.014, 0.022),
+            .pin_thickness = .init_inches_range(0.008, 0.015),
+            .pin_width_above_seating = .init_inches_range(0.05, 0.07),
+            .pin_length = .init_inches_range(0.115, 0.2),
+        };
+    };
+}
+
+// Ceramic DIP
+pub fn MS_015A(comptime lead_count: comptime_int, comptime row_spacing_mil: comptime_int, comptime package_name: []const u8) type {
+    const body_width: footprints.Dim = switch (row_spacing_mil) {
+        300 => switch (lead_count) {
+            8 => .init_inches_range(0.5, 0.54),
+            14 => .init_inches_range(0.73, 0.77),
+            16 => .init_inches_range(0.78, 0.82),
+            18 => .init_inches_range(0.88, 0.92),
+            20 => .init_inches_range(0.98, 1.02),
+            22 => .init_inches_range(1.08, 1.12),
+            24 => .init_inches_range(1.18, 1.22),
+            28 => .init_inches_range(1.38, 1.42),
+            else => unreachable,
+        },
+        400 => switch (lead_count) {
+            20 => .init_inches_range(0.98, 1.02),
+            22 => .init_inches_range(1.06, 1.1),
+            24 => .init_inches_range(1.18, 1.22),
+            28 => .init_inches_range(1.38, 1.42),
+            else => unreachable,
+        },
+        600 => switch (lead_count) {
+            24 => .init_inches_range(1.18, 1.22),
+            28 => .init_inches_range(1.38, 1.42),
+            32 => .init_inches_range(1.58, 1.62),
+            36 => .init_inches_range(1.78, 1.82),
+            40 => .init_inches_range(1.98, 2.02),
+            48 => .init_inches_range(2.375, 2.43),
+            52 => .init_inches_range(2.575, 2.63),
+            else => unreachable,
+        },
+        900 => switch (lead_count) {
+            50 => .init_inches_range(2.475, 2.530),
+            64 => .init_inches_range(3.175, 3.230),
+            else => unreachable,
+        },
+        else => unreachable,
+    };
+
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.DIL(data, .normal).fp,
+        };
+
+        pub const data: DIL_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = body_width,
+                .height = switch (row_spacing_mil) {
+                    300 => .init_inches_range(0.28, 0.31),
+                    400 => .init_inches_range(0.38, 0.41),
+                    600 => .init_inches_range(0.58, 0.61),
+                    900 => .init_inches_range(0.88, 0.91),
+                    else => unreachable,
+                },
+            },
+            .overall = .{
+                .width  = body_width,
+                .height = switch (row_spacing_mil) {
+                    300 => .init_inches_range(0.3, 0.325),
+                    400 => .init_inches_range(0.4, 0.425),
+                    600 => .init_inches_range(0.6, 0.625),
+                    900 => .init_inches_range(0.9, 0.925),
+                    else => unreachable,
+                },
+            },
+            .max_z = .init_inches_range(0.085, 0.2),
+            .body_thickness = .init_inches_range(0.125, 0.175),
+            .total_pins = lead_count,
+            .pin_pitch = .init_inches(0.1, 0),
+            .row_spacing = .init_mil(row_spacing_mil, 0),
+            .pin_width = .init_inches_range(0.015, 0.022),
+            .pin_thickness = .init_inches_range(0.009, 0.015),
+            .pin_width_above_seating = .init_inches_range(0.045, 0.065),
+            .pin_length = .init_inches_range(0.125, 0.2),
+        };
+    };
+}
+
+
 pub const MS_026D_Variant = enum {
     thin, // up to 1.0mm thick
     low_profile, // up to 1.4mm thick
@@ -982,6 +1179,8 @@ pub const MO_207AD = struct {
     };
 };
 
+const DIL_Data = footprints.DIL_Data;
+const PGA_Data = footprints.PGA_Data;
 const BGA_Data = footprints.BGA_Data;
 const SOT_Data = footprints.SOT_Data;
 const SMD_Data = footprints.SMD_Data;

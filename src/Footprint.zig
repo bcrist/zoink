@@ -8,7 +8,7 @@ desc: []const u8 = "",
 keywords: []const u8 = "",
 properties: []const Property = &.{},
 model: ?Model = null,
-format_pin_name: *const fn (pin: Pin_ID, writer: std.io.AnyWriter) anyerror!void = default_format_pin_name,
+format_pin_name: *const fn (pin: Pin_ID, writer: *std.io.Writer) std.io.Writer.Error!void = default_format_pin_name,
 pads: []const Pad = &.{},
 // lines: []const Line,
 // polygons: []const Polygon,
@@ -133,7 +133,7 @@ pub fn write_sx(self: Footprint, writer: sx.Writer) !void {
 }
 
 
-pub fn default_format_pin_name(pin: Pin_ID, writer: std.io.AnyWriter) anyerror!void {
+pub fn default_format_pin_name(pin: Pin_ID, writer: *std.io.Writer) std.io.Writer.Error!void {
     if (pin == .heatsink) {
         try writer.writeAll("EP");
     } else {

@@ -3,6 +3,7 @@ var target: std.Build.ResolvedTarget = undefined;
 var optimize: std.builtin.OptimizeMode = undefined;
 var zoink: *std.Build.Module = undefined;
 var lc4k: *std.Build.Module = undefined;
+var bits: *std.Build.Module = undefined;
 var all_tests_step: *std.Build.Step = undefined;
 
 pub fn build(b: *std.Build) void {
@@ -11,6 +12,7 @@ pub fn build(b: *std.Build) void {
     optimize = b.standardOptimizeOption(.{});
     all_tests_step = b.step("test", "run all tests");
     lc4k = b.dependency("lc4k", .{}).module("lc4k");
+    bits = b.dependency("bit_helper", .{}).module("bits");
 
     // const sokol = b.dependency("sokol", .{
     //     .target = target,
@@ -35,6 +37,7 @@ pub fn build(b: *std.Build) void {
         .imports = &.{
             .{ .name = "sx", .module = b.dependency("sx", .{}).module("sx") },
             .{ .name = "lc4k", .module = lc4k },
+            .{ .name = "bits", .module = bits },
         },
     });
     
@@ -63,6 +66,8 @@ pub fn build(b: *std.Build) void {
     add_test("74x16721");
     add_test("LC4032ZE");
     add_test("74CBTLV16212");
+    add_test("IDT7216");
+    add_test("IDT7217");
 }
 
 fn add_test(comptime name: []const u8) void {
@@ -75,7 +80,7 @@ fn add_test(comptime name: []const u8) void {
             .imports = &.{
                 .{ .name = "zoink", .module = zoink },
                 .{ .name = "lc4k", .module = lc4k },
-
+                .{ .name = "bits", .module = bits },
             },
         }),
     });

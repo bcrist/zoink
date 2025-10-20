@@ -1,5 +1,31 @@
 pub const jedec = @import("packages/jedec.zig");
 pub const rc = @import("packages/rc.zig");
+pub const pga = @import("packages/pga.zig");
+
+pub const DIP8 = jedec.MS_001D(8, "DIP-8");
+pub const DIP14 = jedec.MS_001D(14, "DIP-14");
+pub const DIP16 = jedec.MS_001D(16, "DIP-16");
+pub const DIP18 = jedec.MS_001D(18, "DIP-18");
+pub const DIP20_300 = jedec.MS_001D(20, "DIP-20 (300 mil)");
+pub const DIP22_300 = jedec.MS_001D(22, "DIP-22 (300 mil)");
+pub const DIP24_300 = jedec.MS_001D(24, "DIP-24 (300 mil)");
+pub const DIP28_300 = jedec.MS_001D(28, "DIP-28 (300 mil)");
+pub const DIP20_400 = jedec.MS_015A(20, 400, "DIP-20 (400 mil)");
+pub const DIP22_400 = jedec.MS_010C(22, "DIP-22 (400 mil)");
+pub const DIP24_400 = jedec.MS_010C(24, "DIP-24 (400 mil)");
+pub const DIP28_400 = jedec.MS_010C(28, "DIP-28 (400 mil)");
+pub const DIP32_400 = jedec.MS_010C(32, "DIP-32 (400 mil)");
+pub const DIP24_600 = jedec.MS_011B(24, "DIP-24 (600 mil)");
+pub const DIP28_600 = jedec.MS_011B(28, "DIP-28 (600 mil)");
+pub const DIP32_600 = jedec.MS_015A(32, 600, "DIP-32 (600 mil)");
+pub const DIP36 = jedec.MS_015A(36, 600, "DIP-36");
+pub const DIP40 = jedec.MS_011B(40, "DIP-40");
+pub const DIP48 = jedec.MS_015A(48, 600, "DIP-48");
+pub const DIP52 = jedec.MS_015A(52, 600, "DIP-52");
+pub const DIP50 = jedec.MS_015A(50, 900, "DIP-50");
+pub const DIP64 = jedec.MS_015A(64, 900, "DIP-64");
+
+pub const PGA68 = pga.PGA68;
 
 pub const SOT23 = jedec.TO_236H__MO_193G(3, "SOT23");
 pub const SOT23_5 = jedec.TO_236H__MO_193G(5, "SOT23-5");
@@ -20,7 +46,6 @@ pub const SOJ_26 = jedec.MS_027A__MO_065A_077D_088A(26, 300, "SOJ-26");
 pub const SOJ_28_300 = jedec.MS_027A__MO_065A_077D_088A(28, 300, "SOJ-28 (300 mil)");
 pub const SOJ_32_300 = jedec.MS_027A__MO_065A_077D_088A(32, 300, "SOJ-32 (300 mil)");
 pub const SOJ_42_300 = jedec.MS_027A__MO_065A_077D_088A(42, 300, "SOJ-42 (300 mil)");
-
 pub const SOJ_28_400 = jedec.MS_027A__MO_065A_077D_088A(28, 400, "SOJ-28 (400 mil)");
 pub const SOJ_32_400 = jedec.MS_027A__MO_065A_077D_088A(32, 400, "SOJ-32 (400 mil)");
 pub const SOJ_34_400 = jedec.MS_027A__MO_065A_077D_088A(34, 400, "SOJ-34 (400 mil)");
@@ -51,6 +76,13 @@ pub const PLCC_68M = jedec.MO_047B(68, .west_middle, "PLCC-68M");
 pub const PLCC_84M = jedec.MO_047B(84, .west_middle, "PLCC-84M");
 pub const PLCC_100M = jedec.MO_047B(100, .west_middle, "PLCC-100M");
 pub const PLCC_124M = jedec.MO_047B(124, .west_middle, "PLCC-124M");
+
+pub const PLCC_32_PGA = pga.PLCC(9, 7);
+pub const PLCC_28M_PGA = pga.PLCC(7, 7);
+pub const PLCC_44M_PGA = pga.PLCC(11, 11);
+pub const PLCC_52M_PGA = pga.PLCC(13, 13);
+pub const PLCC_68M_PGA = pga.PLCC(17, 17);
+pub const PLCC_84M_PGA = pga.PLCC(21, 21);
 
 pub const SOIC_8_150 = jedec.MS_012G_02(8, "SOIC-8 (150 mil)");
 pub const SOIC_14_150 = jedec.MS_012G_02(14, "SOIC-14 (150 mil)");

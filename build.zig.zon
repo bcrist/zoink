@@ -18,5 +18,9 @@
             .url = "git+https://github.com/bcrist/zig-lc4k#034340051bd8ffaf83c849dbc455876edc35904c",
             .hash = "lc4k-0.2.3-5R47QotYEwAfvU_lpNiBN2_XTfPO6Py3vWLWTMnbXhas",
         },
+        .bit_helper = .{
+            .url = "git+https://github.com/bcrist/zig-bithelper#01fe5f519f54ab42c649096573c45ddaa351e1d5",
+            .hash = "bit_helper-1.0.1-C8c75iguAABAXw3jPh9pvNp-RPvblh1vV7MbQ1w99fFF",
+        },
     },
 }
