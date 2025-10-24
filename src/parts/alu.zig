@@ -1,30 +1,305 @@
-// 16b x 16b => 32b signed/unsigned multipliers
-// Manufactured by various companies, but with only two externally distinct variants
-// - IDT 7216, 7217
-// - Cypress CY7C516, CY7C517
-// - AMD Am29516, Am29517, Am29C516, Am29C517
-// - LOGIC LMU16, LMU216, LMU217
+// LOGIC L4C381 16b ALU
+// Package = packages.PLCC_68M or packages.PLCC_68M_PGA
+pub fn L4C381(comptime Decoupler: type, comptime Package: type) type {
+    return struct {
+        base: Part.Base = .{
+            .prefix = .U,
+            .package = &Package.pkg,
+        },
+
+        pwr: power.Single(.p5v, Decoupler) = .{},
+
+        a: [16]Net_ID = @splat(.unset),
+        b: [16]Net_ID = @splat(.unset),
+        f: [16]Net_ID = @splat(.unset),
+
+        operation: [3]Net_ID = @splat(.unset),
+        operand_select: [2]Net_ID = @splat(.unset),
+        carry_in: Net_ID = .unset,
+        carry_out: Net_ID = .unset,
+        n_carry_propagate: Net_ID = .unset,
+        n_carry_generate: Net_ID = .unset,
+        zero: Net_ID = .unset,
+        overflow: Net_ID = .unset,
+        flowthrough_ab: Net_ID = .unset,
+        flowthrough_f: Net_ID = .unset,
+        n_oe: Net_ID = .unset,
+        n_ce_a: Net_ID = .unset,
+        n_ce_b: Net_ID = .unset,
+        n_ce_f: Net_ID = .unset,
+        clk: Net_ID = .unset,
+
+        pub const Operation = enum (u3) {
+            zeroes = 0,
+            nadd = 1,
+            sub = 2,
+            add = 3,
+            xor = 4,
+            @"or" = 5,
+            @"and" = 6,
+            ones = 7,
+        };
+
+        pub const Operand_Select = enum(u2) {
+            a_f = 0,
+            a_zero = 1,
+            zero_b = 2,
+            a_b = 3,
+        };
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.a[0],
+                2 => self.a[1],
+                3 => self.a[2],
+                4 => self.a[3],
+                5 => self.a[4],
+                6 => self.a[5],
+                7 => self.a[6],
+                8 => self.a[7],
+                9 => self.a[8],
+                10 => self.a[9],
+                11 => self.a[10],
+                12 => self.a[11],
+                13 => self.a[12],
+                14 => self.a[13],
+                15 => self.a[14],
+                16 => self.a[15],
+                17 => self.clk,
+                18 => self.pwr.p5v,
+                19 => self.pwr.gnd,
+                20 => self.carry_out,
+                21 => self.n_carry_propagate,
+                22 => self.n_carry_generate,
+                23 => self.zero,
+                24 => self.overflow,
+                25 => self.n_ce_f,
+                26 => self.flowthrough_f,
+                27 => self.n_oe,
+                28 => self.f[15],
+                29 => self.f[14],
+                30 => self.f[13],
+                31 => self.f[12],
+                32 => self.f[11],
+                33 => self.f[10],
+                34 => self.f[9],
+                35 => self.f[8],
+                36 => self.f[7],
+                37 => self.f[6],
+                38 => self.f[5],
+                39 => self.f[4],
+                40 => self.f[3],
+                41 => self.f[2],
+                42 => self.f[1],
+                43 => self.f[0],
+                44 => self.carry_in,
+                45 => self.operation[0],
+                46 => self.operation[1],
+                47 => self.operation[2],
+                48 => self.operand_select[0],
+                49 => self.operand_select[1],
+                50 => self.flowthrough_ab,
+                51 => self.n_ce_b,
+                52 => self.n_ce_a,
+                53 => self.b[0],
+                54 => self.a[1],
+                55 => self.a[2],
+                56 => self.a[3],
+                57 => self.a[4],
+                58 => self.a[5],
+                59 => self.a[6],
+                60 => self.a[7],
+                61 => self.a[8],
+                62 => self.a[9],
+                63 => self.a[10],
+                64 => self.a[11],
+                65 => self.a[12],
+                66 => self.a[13],
+                67 => self.a[14],
+                68 => self.a[15],
+            };
+        }
+
+        const levels = Voltage.TTL;
+
+        const Validator_State = struct {
+            clk: bool,
+            a: u16,
+            b: u16,
+            f: u16,
+        };
+
+        pub fn validate(self: @This(), v: *Validator, state: *Validator_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.* = std.mem.zeroes(Validator_State);
+                },
+                .commit => {
+                    try v.expect_valid(self.clk, levels);
+                    try v.expect_valid(self.n_oe, levels);
+                    try v.expect_valid(self.carry_in, levels);
+                    try v.expect_valid(self.operation, levels);
+                    try v.expect_valid(self.operand_select, levels);
+                    try v.expect_valid(self.flowthrough_ab, levels);
+                    try v.expect_valid(self.flowthrough_f, levels);
+
+                    const result = self.compute_result(v, state.*);
+                    try v.expect_output_valid(self.carry_out, result.carry, levels);
+                    try v.expect_output_valid(self.overflow, result.overflow, levels);
+                    try v.expect_output_valid(self.n_carry_generate, !result.generate, levels);
+                    try v.expect_output_valid(self.n_carry_propagate, !result.propagate, levels);
+                    try v.expect_output_valid(self.zero, result.zero, levels);
+
+                    if (!v.read_logic(self.n_oe, levels)) {
+                        if (v.read_logic(self.flowthrough_f, levels)) {
+                            // flow through F
+                            try v.expect_output_valid(&self.f, result.f, levels);
+                        } else {
+                            // registered F
+                            try v.expect_output_valid(&self.f, state.f, levels);
+                        }
+                    }
+
+                    const new_clk = v.read_logic(self.clk, levels);
+                    if (new_clk and !state.clk) {
+                        try v.expect_valid(self.n_ce_a, levels);
+                        try v.expect_valid(self.n_ce_b, levels);
+                        try v.expect_valid(self.n_ce_f, levels);
+
+                        if (!v.read_logic(self.n_ce_f, levels)) {
+                            state.f = result.f;
+                        }
+                        if (!v.read_logic(self.n_ce_a, levels)) {
+                            try v.expect_valid(self.a, levels);
+                            state.a = @truncate(v.read_bus(self.a, levels));
+                        }
+                        if (!v.read_logic(self.n_ce_b, levels)) {
+                            try v.expect_valid(self.b, levels);
+                            state.b = @truncate(v.read_bus(self.b, levels));
+                        }
+                    }
+                    state.clk = new_clk;
+                },
+                .nets_only => {
+                    const result = self.compute_result(v, state.*);
+                    try v.drive_logic(self.carry_out, result.carry, levels);
+                    try v.drive_logic(self.overflow, result.overflow, levels);
+                    try v.drive_logic(self.n_carry_generate, !result.generate, levels);
+                    try v.drive_logic(self.n_carry_propagate, !result.propagate, levels);
+                    try v.drive_logic(self.zero, result.zero, levels);
+
+                    if (!v.read_logic(self.n_oe, levels)) {
+                        if (v.read_logic(self.flowthrough_f, levels)) {
+                            // flow through F
+                            try v.drive_bus(&self.f, result.f, levels);
+                        } else {
+                            // registered F
+                            try v.drive_bus(&self.f, state.f, levels);
+                        }
+                    }
+                },
+            }
+        }
+
+        const Result = struct {
+            f: u16,
+            carry: bool = false,
+            generate: bool = false,
+            propagate: bool = false,
+            overflow: bool = false,
+            zero: bool,
+        };
+
+        fn compute_result(self: @This(), v: *Validator, state: Validator_State) Result {
+            const operand_select = self.read_operand_select(v);
+            const flowthrough_ab = v.read_logic(self.flowthrough_ab, levels);
+
+            const a: u16 = switch (operand_select) {
+                .zero_b => 0,
+                .a_f, .a_zero, .a_b => switch (flowthrough_ab) {
+                    false => state.a,
+                    true => @intCast(v.read_bus(self.a, levels)),
+                },
+            };
+
+            const b: u16 = switch (operand_select) {
+                .a_f => state.f,
+                .a_zero => 0,
+                .a_b, .zero_b => switch (flowthrough_ab) {
+                    false => state.b,
+                    true => @intCast(v.read_bus(self.b, levels)),
+                },
+            };
+
+            const ua: u16, const ub: u16 = switch (self.read_operation(v)) {
+                .zeroes => return .{
+                    .f = 0,
+                    .zero = true,
+                },
+                .nadd => .{ ~a, b },
+                .sub => .{ a, ~b },
+                .add => .{ a, b },
+                .xor => return .{
+                    .f = a ^ b,
+                    .zero = a == b,
+                },
+                .@"or" => return .{
+                    .f = a | b,
+                    .zero = (a | b) == 0,
+                },
+                .@"and" => return .{
+                    .f = a & b,
+                    .zero = (a & b) == 0,
+                },
+                .ones => return .{
+                    .f = 0xFFFF,
+                    .zero = false,
+                },
+            };
+
+            const sa: i16 = @bitCast(ua);
+            const sb: i16 = @bitCast(ub);
+
+            const ua32: u32 = ua;
+            const ub32: u32 = ub;
+
+            const sa32: i32 = sa;
+            const sb32: i32 = sb;
+
+            const carry_in = v.read_logic(self.carry_in, levels);
+
+            const unsigned_sum = ua32 + ub32 + @intFromBool(carry_in);
+            const signed_sum = sa32 + sb32 + @intFromBool(carry_in);
+
+            return .{
+                .f = @truncate(unsigned_sum),
+                .carry = (unsigned_sum & 0x10000) != 0,
+                .generate = ((ua32 + ub32) & 0x10000) != 0,
+                .propagate = (ua32 | ub32) == 0xFFFF,
+                .overflow = signed_sum > std.math.maxInt(i16) or signed_sum < std.math.minInt(i16),
+                .zero = (unsigned_sum & 0xFFFF) == 0,
+            };
+        }
+        
+        fn read_operand_select(self: @This(), v: *Validator) Operand_Select {
+            return @enumFromInt(v.read_bus(self.operand_select, levels));
+        }
+
+        fn read_operation(self: @This(), v: *Validator) Operation {
+            return @enumFromInt(v.read_bus(self.operation, levels));
+        }
+
+    };
+}
+
+// 16b x 16b => 32b signed/unsigned multipliers based on the TRW MPY016H pinout
+// Manufactured by various companies
+// - IDT 7216
+// - Cypress CY7C516
+// - AMD Am29516, Am29C516
+// - LOGIC LMU16, LMU216
 // - TRW MPY016H
-
-pub const Package_Type = enum {
-    dip64,
-    plcc68,
-    plcc68_pga68, // PLCC68 in a PGA68 socket
-    pga68, // warning: same physical form factor as plcc68_pga68, but different pinout!
-    flatpack64,
-};
-
-pub const Input_Format = enum (u1) {
-    unsigned = 0,
-    signed = 1,
-};
-
-pub const Output_Format = enum (u1) {
-    adjusted = 0,
-    normal = 1,
-};
-
-pub fn M16(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime package_type: Package_Type) type {
+pub fn M16(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime package_type: Multiplier_Package_Type) type {
     return struct {
         base: Part.Base = .{
             .prefix = .U,
@@ -80,6 +355,17 @@ pub fn M16(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
         clk_y: Net_ID = .unset,
         clk_msp: Net_ID = .unset,
         clk_lsp: Net_ID = .unset,
+
+
+        pub const Input_Format = enum (u1) {
+            unsigned = 0,
+            signed = 1,
+        };
+
+        pub const Output_Format = enum (u1) {
+            adjusted = 0,
+            normal = 1,
+        };
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (package_type) {
@@ -527,7 +813,14 @@ pub fn M16(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
     };
 }
 
-pub fn M17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime package_type: Package_Type) type {
+
+// 16b x 16b => 32b signed/unsigned multipliers with single clock
+// Manufactured by various companies
+// - IDT 7217
+// - Cypress CY7C517
+// - AMD Am29517, Am29C517
+// - LOGIC LMU217
+pub fn M17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime package_type: Multiplier_Package_Type) type {
     return struct {
         base: Part.Base = .{
             .prefix = .U,
@@ -583,6 +876,9 @@ pub fn M17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
         n_ce_x: Net_ID = .unset,
         n_ce_y: Net_ID = .unset,
         n_ce_p: Net_ID = .unset,
+
+        pub const Input_Format = M16(pwr, Decoupler, levels, package_type).Input_Format;
+        pub const Output_Format = M16(pwr, Decoupler, levels, package_type).Output_Format;
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (package_type) {
@@ -1017,8 +1313,17 @@ pub fn M17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
     };
 }
 
+pub const Multiplier_Package_Type = enum {
+    dip64,
+    plcc68,
+    plcc68_pga68, // PLCC68 in a PGA68 socket
+    pga68, // warning: same physical form factor as plcc68_pga68, but different pinout!
+    flatpack64,
+};
+
 const Net_ID = enums.Net_ID;
 const Pin_ID = enums.Pin_ID;
+const Voltage = enums.Voltage;
 const enums = @import("../enums.zig");
 const Validator = @import("../Validator.zig");
 const Part = @import("../Part.zig");

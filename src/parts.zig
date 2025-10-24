@@ -106,17 +106,20 @@ pub const LC4032ZE_TQFP48_3v3 = LC4k(.LC4032ZE_TQFP48, .p1v8, .p3v3, .p3v3, C040
 pub const LC4064ZC_TQFP100_3v3 = LC4k(.LC4064ZC_TQFP100, .p1v8, .p3v3, .p3v3, C0402_Decoupler);
 pub const LC4128ZC_csBGA132_3v3 = LC4k(.LC4128ZC_csBGA132, .p1v8, .p3v3, .p3v3, C0402_Decoupler);
 
-pub const mul16 = @import("parts/mul16.zig");
+pub const alu = @import("parts/alu.zig");
 
-pub const IDT7216L_C = mul16.M16(.p5v, C0402_Decoupler, TTL, .dip64);
-pub const IDT7216L_J = mul16.M16(.p5v, C0402_Decoupler, TTL, .plcc68);
-pub const IDT7216L_G = mul16.M16(.p5v, C0402_Decoupler, TTL, .pga68);
-pub const IDT7216L_J_PGA = mul16.M16(.p5v, C0402_Decoupler, TTL, .plcc68_pga68);
+pub const L4C381 = alu.L4C381(C0402_Decoupler, pkg.PLCC_68M);
+pub const L4C381_PGA = alu.L4C381(C0402_Decoupler, pkg.PLCC_68M_PGA);
 
-pub const IDT7217L_C = mul16.M17(.p5v, C0402_Decoupler, TTL, .dip64);
-pub const IDT7217L_J = mul16.M17(.p5v, C0402_Decoupler, TTL, .plcc68);
-pub const IDT7217L_G = mul16.M17(.p5v, C0402_Decoupler, TTL, .pga68);
-pub const IDT7217L_J_PGA = mul16.M17(.p5v, C0402_Decoupler, TTL, .plcc68_pga68);
+pub const IDT7216L_C = alu.M16(.p5v, C0402_Decoupler, TTL, .dip64);
+pub const IDT7216L_J = alu.M16(.p5v, C0402_Decoupler, TTL, .plcc68);
+pub const IDT7216L_G = alu.M16(.p5v, C0402_Decoupler, TTL, .pga68);
+pub const IDT7216L_J_PGA = alu.M16(.p5v, C0402_Decoupler, TTL, .plcc68_pga68);
+
+pub const IDT7217L_C = alu.M17(.p5v, C0402_Decoupler, TTL, .dip64);
+pub const IDT7217L_J = alu.M17(.p5v, C0402_Decoupler, TTL, .plcc68);
+pub const IDT7217L_G = alu.M17(.p5v, C0402_Decoupler, TTL, .pga68);
+pub const IDT7217L_J_PGA = alu.M17(.p5v, C0402_Decoupler, TTL, .plcc68_pga68);
 
 pub const dpsram = @import("parts/dpsram.zig");
 

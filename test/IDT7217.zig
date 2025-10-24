@@ -114,12 +114,12 @@ test {
     try expect_product(&v, &b, 444);
 }
 
-fn set_x(v: *zoink.Validator, b: *zoink.Board, x: u16, xm: zoink.parts.mul16.Input_Format) !void {
+fn set_x(v: *zoink.Validator, b: *zoink.Board, x: u16, xm: IDT7217.Input_Format) !void {
     try v.set_bus(b.get_bus("X"), x, TTL);
     try v.set_logic(b.net("XM"), @intFromEnum(xm) != 0, TTL);
 }
 
-fn set_y(v: *zoink.Validator, b: *zoink.Board, y: u16, ym: zoink.parts.mul16.Input_Format) !void {
+fn set_y(v: *zoink.Validator, b: *zoink.Board, y: u16, ym: IDT7217.Input_Format) !void {
     try v.set_bus(b.get_bus("Y"), y, TTL);
     try v.set_logic(b.net("YM"), @intFromEnum(ym) != 0, TTL);
 }

@@ -206,13 +206,13 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) type {
         },
         .west_middle => {
             var pin: usize = 1 + data.total_pins - data.pins_on_first_side / 2;
-            pads = add_smd_pads(data, .west, pin, data.pins_on_first_side, density);
+            pads = add_smd_pads(pads, data, .west, pin, data.pins_on_first_side, density);
             pin = 1 + (data.pins_on_first_side + 1) / 2;
-            pads = add_smd_pads(data, .south, pin, pins_on_second_side, density);
+            pads = add_smd_pads(pads, data, .south, pin, pins_on_second_side, density);
             pin += pins_on_second_side;
-            pads = add_smd_pads(data, .east, pin, data.pins_on_first_side, density);
+            pads = add_smd_pads(pads, data, .east, pin, data.pins_on_first_side, density);
             pin += data.pins_on_first_side;
-            pads = add_smd_pads(data, .north, pin, pins_on_second_side, density);
+            pads = add_smd_pads(pads, data, .north, pin, pins_on_second_side, density);
         },
     }
 

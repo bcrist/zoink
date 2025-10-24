@@ -109,7 +109,7 @@ test {
     try expect_product(&v, &b, 444);
 }
 
-fn clk_x(v: *zoink.Validator, b: *zoink.Board, x: u16, xm: zoink.parts.mul16.Input_Format) !void {
+fn clk_x(v: *zoink.Validator, b: *zoink.Board, x: u16, xm: IDT7216.Input_Format) !void {
     const clk = b.net("CLK_X");
     try v.clock_low(clk, TTL);
     try v.set_bus(b.get_bus("X"), x, TTL);
@@ -117,7 +117,7 @@ fn clk_x(v: *zoink.Validator, b: *zoink.Board, x: u16, xm: zoink.parts.mul16.Inp
     try v.clock_high(clk, TTL);
 }
 
-fn clk_y(v: *zoink.Validator, b: *zoink.Board, y: u16, ym: zoink.parts.mul16.Input_Format) !void {
+fn clk_y(v: *zoink.Validator, b: *zoink.Board, y: u16, ym: IDT7216.Input_Format) !void {
     const clk = b.net("CLK_Y");
     try v.clock_low(clk, TTL);
     try v.set_bus(b.get_bus("Y"), y, TTL);
