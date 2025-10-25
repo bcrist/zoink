@@ -1,3 +1,184 @@
+fn Single_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        a: Net_ID = .unset,
+        y: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => .no_connect,
+                2 => self.a,
+                3 => self.pwr.gnd,
+                4 => self.y,
+                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.a, levels);
+                    try v.expect_valid(self.b, levels);
+                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    try v.expect_output_valid(self.y, if (invert) !a else a, levels);
+                },
+                .nets_only => {
+                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    try v.drive_logic(self.y, if (invert) !a else a, levels);
+                },
+            }
+        }
+    };
+}
+
+fn Single_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        a: Net_ID = .unset,
+        b: Net_ID = .unset,
+        y: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.b,
+                2 => self.a,
+                3 => self.pwr.gnd,
+                4 => self.y,
+                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.a, levels);
+                    try v.expect_valid(self.b, levels);
+                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    const b = @intFromBool(v.read_logic(self.b, levels));
+                    try v.expect_output_valid(self.y, func(a, b) != 0, levels);
+                },
+                .nets_only => {
+                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    const b = @intFromBool(v.read_logic(self.b, levels));
+                    try v.drive_logic(self.y, func(a, b) != 0, levels);
+                },
+            }
+        }
+    };
+}
+
+fn Single_3in_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize, c: usize) usize) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        a: Net_ID = .unset,
+        b: Net_ID = .unset,
+        c: Net_ID = .unset,
+        y: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.b,
+                2 => self.pwr.gnd,
+                3 => self.a,
+                4 => self.y,
+                5 => @field(self.pwr, @tagName(pwr)),
+                6 => self.c,
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.a, levels);
+                    try v.expect_valid(self.b, levels);
+                    try v.expect_valid(self.c, levels);
+                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    const b = @intFromBool(v.read_logic(self.b, levels));
+                    const c = @intFromBool(v.read_logic(self.c, levels));
+                    try v.expect_output_valid(self.y, func(a, b, c) != 0, levels);
+                },
+                .nets_only => {
+                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    const b = @intFromBool(v.read_logic(self.b, levels));
+                    const c = @intFromBool(v.read_logic(self.c, levels));
+                    try v.drive_logic(self.y, func(a, b, c) != 0, levels);
+                },
+            }
+        }
+    };
+}
+
+fn Single_3in_Mux_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize, sel: usize) usize) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        a: Net_ID = .unset,
+        b: Net_ID = .unset,
+        sel: Net_ID = .unset,
+        y: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.b,
+                2 => self.pwr.gnd,
+                3 => self.a,
+                4 => self.y,
+                5 => @field(self.pwr, @tagName(pwr)),
+                6 => self.sel,
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.a, levels);
+                    try v.expect_valid(self.b, levels);
+                    try v.expect_valid(self.sel, levels);
+                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    const b = @intFromBool(v.read_logic(self.b, levels));
+                    const sel = @intFromBool(v.read_logic(self.sel, levels));
+                    try v.expect_output_valid(self.y, func(a, b, sel) != 0, levels);
+                },
+                .nets_only => {
+                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    const b = @intFromBool(v.read_logic(self.b, levels));
+                    const sel = @intFromBool(v.read_logic(self.sel, levels));
+                    try v.drive_logic(self.y, func(a, b, sel) != 0, levels);
+                },
+            }
+        }
+    };
+}
+
 fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
     return struct {
         base: Part.Base = .{
@@ -127,7 +308,7 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
     };
 }
 
-fn Hex_Buf(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, invert: bool) type {
+fn Hex_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, invert: bool) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
@@ -271,9 +452,51 @@ fn nor_gate(a: usize, b: usize) usize {
     return ~(a | b);
 }
 
+fn and3_gate(a: usize, b: usize, c: usize) usize {
+    return a & b & c;
+}
+fn or3_gate(a: usize, b: usize, c: usize) usize {
+    return a | b | c;
+}
+fn xor3_gate(a: usize, b: usize, c: usize) usize {
+    return a ^ b ^ c;
+}
+fn nand3_gate(a: usize, b: usize, c: usize) usize {
+    return ~(a & b & c);
+}
+fn nor3_gate(a: usize, b: usize, c: usize) usize {
+    return ~(a | b | c);
+}
+fn and_or_gate(a: usize, b: usize, c: usize) usize {
+    return (a & b) | c;
+}
+fn or_and_gate(a: usize, b: usize, c: usize) usize {
+    return (a | b) & c;
+}
+fn mux57_gate(a: usize, b: usize, c: usize) usize {
+    return (~a & ~c) | (b & c);
+}
+fn mux58_gate(a: usize, b: usize, c: usize) usize {
+    return (a & ~c) | (~b & c);
+}
+fn mux97_gate(a: usize, b: usize, c: usize) usize {
+    return (a & c) | (b & ~c);
+}
+fn mux98_gate(a: usize, b: usize, c: usize) usize {
+    return (~a & c) | (~b & ~c);
+}
+fn mux157_gate(a: usize, b: usize, c: usize) usize {
+    return (a & ~c) | (b & c);
+}
+
 /// Quad 2-in NAND
 pub fn x00(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Quad_Gate(pwr, Decoupler, levels, Pkg, nand_gate);
+}
+
+/// Single 2-in NAND
+pub fn x1G00(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Gate(pwr, Decoupler, levels, Pkg, nand_gate);
 }
 
 /// Quad 2-in NOR
@@ -281,9 +504,19 @@ pub fn x02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
     return Quad_Gate(pwr, Decoupler, levels, Pkg, nor_gate);
 }
 
+/// Single 2-in NOR
+pub fn x1G02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Gate(pwr, Decoupler, levels, Pkg, nor_gate);
+}
+
 /// Hex inverter
 pub fn x04(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Hex_Buf(pwr, Decoupler, levels, Pkg, true);
+    return Hex_Buffer(pwr, Decoupler, levels, Pkg, true);
+}
+
+/// Single inverter
+pub fn x1G04(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Buffer(pwr, Decoupler, levels, Pkg, true);
 }
 
 /// Quad 2-in AND
@@ -291,9 +524,24 @@ pub fn x08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
     return Quad_Gate(pwr, Decoupler, levels, Pkg, and_gate);
 }
 
+/// Single 2-in AND
+pub fn x1G08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Gate(pwr, Decoupler, levels, Pkg, and_gate);
+}
+
 /// Hex inverter, ST inputs
 pub fn x14(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Hex_Buf(pwr, Decoupler, levels, Pkg, true);
+    return Hex_Buffer(pwr, Decoupler, levels, Pkg, true);
+}
+
+/// Single inverter, ST inputs
+pub fn x1G14(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Buffer(pwr, Decoupler, levels, Pkg, true);
+}
+
+/// Single buffer, ST inputs
+pub fn x1G17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Buffer(pwr, Decoupler, levels, Pkg, false);
 }
 
 /// Quad 2-in OR
@@ -301,15 +549,778 @@ pub fn x32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
     return Quad_Gate(pwr, Decoupler, levels, Pkg, or_gate);
 }
 
-/// Hex buffer
-pub fn x34(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Hex_Buf(pwr, Decoupler, levels, Pkg, false);
+/// Single 2-in OR
+pub fn x1G32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Gate(pwr, Decoupler, levels, Pkg, or_gate);
+}
+
+/// Single buffer
+pub fn x1G34(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Buffer(pwr, Decoupler, levels, Pkg, false);
 }
 
 /// Quad 2-in XOR
 pub fn x86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Quad_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
 }
+
+/// Single 2-in XOR
+pub fn x1G86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
+}
+
+/// Single 3-in NAND
+pub fn x1G10(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, nand3_gate);
+}
+
+/// Single 3-in AND
+pub fn x1G11(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, and3_gate);
+}
+
+/// Single 3-in NOR
+pub fn x1G27(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, nor3_gate);
+}
+
+/// Single 3-in OR
+pub fn x1G332(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, or3_gate);
+}
+
+/// Single 3-in XOR
+pub fn x1G386(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, xor3_gate);
+}
+
+/// Single OR-AND
+pub fn x1G3208(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, or_and_gate);
+}
+
+/// Single AND-OR
+pub fn x1G0832(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, and_or_gate);
+}
+
+/// Single 2:1 mux, A input inverted
+pub fn x1G57(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux57_gate);
+}
+
+/// Single 2:1 mux, B input inverted
+pub fn x1G58(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux58_gate);
+}
+
+/// Single 2:1 mux, C input inverted
+pub fn x1G97(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux97_gate);
+}
+
+/// Single 2:1 mux, all inputs inverted
+pub fn x1G98(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux98_gate);
+}
+
+/// Single 2:1 mux
+pub fn x1G157(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux157_gate);
+}
+
+/// Single 2:1 bus switch
+pub fn x1G3157(comptime pwr: Net_ID, comptime Decoupler: type, comptime input_levels: type, switch_levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        a: [2]Net_ID = @splat(.unset),
+        b: Net_ID = .unset,
+        sel: Net_ID = .unset,
+        r_on: f32 = 5,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.a[1],
+                2 => self.pwr.gnd,
+                3 => self.a[0],
+                4 => self.b,
+                5 => @field(self.pwr, @tagName(pwr)),
+                6 => self.sel,
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.sel, input_levels);
+                    try v.expect_below(self.a[0], switch_levels.Vclamp);
+                    try v.expect_below(self.a[1], switch_levels.Vclamp);
+                    try v.expect_below(self.b, switch_levels.Vclamp);
+
+                    const power_limit = 0.016384 * self.r_on;
+                    if (v.read_logic(self.sel, input_levels)) {
+                        try v.verify_power_limit(self.a[1], self.b, self.r_on, power_limit);
+                    } else {
+                        try v.verify_power_limit(self.a[0], self.b, self.r_on, power_limit);
+                    }
+                },
+                .nets_only => {
+                    if (v.read_logic(self.sel, input_levels)) {
+                        try v.connect_nets(self.a[1], self.b, self.r_on);
+                    } else {
+                        try v.connect_nets(self.a[0], self.b, self.r_on);
+                    }
+                },
+            }
+        }
+    };
+}
+
+fn Single_1_2_Demux(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime hiz_inactive: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        a: Net_ID = .unset,
+        y: [2]Net_ID = @splat(.unset),
+        sel: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.sel,
+                2 => self.pwr.gnd,
+                3 => self.a,
+                4 => self.y[1],
+                5 => @field(self.pwr, @tagName(pwr)),
+                6 => self.y[0],
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.sel, levels);
+                    try v.expect_valid(self.a, levels);
+
+                    const sel = v.read_logic(self.sel, levels);
+                    const a = v.read_logic(self.a, levels);
+                    v.expect_output_valid(self.y[@intFromBool(sel)], a, levels);
+
+                    if (!hiz_inactive) {
+                        v.expect_output_valid(self.y[@intFromBool(!sel)], true, levels);
+                    }
+                },
+                .nets_only => {
+                    const sel = v.read_logic(self.sel, levels);
+                    const a = v.read_logic(self.a, levels);
+                    v.drive_logic(self.y[@intFromBool(sel)], a, levels);
+
+                    if (!hiz_inactive) {
+                        v.drive_logic(self.y[@intFromBool(!sel)], true, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+/// Single 1:2 3-state demux
+pub fn x1G18(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_1_2_Demux(pwr, Decoupler, levels, Pkg, true);
+}
+
+/// Single 1:2 decoder
+pub fn x1G19(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_1_2_Demux(pwr, Decoupler, levels, Pkg, false);
+}
+
+/// Single 1:3 decoder
+pub fn x1G29(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        a: Net_ID = .unset,
+        y: [3]Net_ID = @splat(.unset),
+        sel: [2]Net_ID = @splat(.unset),
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.a,
+                2 => self.y[1],
+                3 => self.sel[0],
+                4 => self.pwr.gnd,
+                5 => self.y[2],
+                6 => self.sel[1],
+                7 => self.y[0],
+                8 => @field(self.pwr, @tagName(pwr)),
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.sel, levels);
+                    try v.expect_valid(self.a, levels);
+
+                    const sel = v.read_bus(self.sel, levels);
+                    const a = v.read_logic(self.a, levels);
+                    switch (sel) {
+                        0, 1 => {
+                            v.expect_output_valid(self.y[0], a, levels);
+                            v.expect_output_valid(self.y[1], true, levels);
+                            v.expect_output_valid(self.y[2], true, levels);
+                        },
+                        2 => {
+                            v.expect_output_valid(self.y[0], true, levels);
+                            v.expect_output_valid(self.y[1], a, levels);
+                            v.expect_output_valid(self.y[2], true, levels);
+                        },
+                        3 => {
+                            v.expect_output_valid(self.y[0], true, levels);
+                            v.expect_output_valid(self.y[1], true, levels);
+                            v.expect_output_valid(self.y[2], a, levels);
+                        },
+                    }
+                },
+                .nets_only => {
+                    const sel = v.read_bus(self.sel, levels);
+                    const a = v.read_logic(self.a, levels);
+                    switch (sel) {
+                        0, 1 => {
+                            v.drive_logic(self.y[0], a, levels);
+                            v.drive_logic(self.y[1], true, levels);
+                            v.drive_logic(self.y[2], true, levels);
+                        },
+                        2 => {
+                            v.drive_logic(self.y[0], true, levels);
+                            v.drive_logic(self.y[1], a, levels);
+                            v.drive_logic(self.y[2], true, levels);
+                        },
+                        3 => {
+                            v.drive_logic(self.y[0], true, levels);
+                            v.drive_logic(self.y[1], true, levels);
+                            v.drive_logic(self.y[2], a, levels);
+                        },
+                    }
+                },
+            }
+        }
+    };
+}
+
+/// Single 1:4 decoder
+pub fn x1G139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        y: [4]Net_ID = @splat(.unset),
+        sel: [2]Net_ID = @splat(.unset),
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.sel[0],
+                2 => self.sel[1],
+                3 => self.y[3],
+                4 => self.pwr.gnd,
+                5 => self.y[2],
+                6 => self.y[1],
+                7 => self.y[0],
+                8 => @field(self.pwr, @tagName(pwr)),
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.sel, levels);
+                    const sel: u2 = @truncate(v.read_bus(self.sel, levels));
+                    const val = @as(u4, 1) << sel;
+                    v.expect_output_valid(self.y, ~val, levels);
+                },
+                .nets_only => {
+                    const sel: u2 = @truncate(v.read_bus(self.sel, levels));
+                    const val = @as(u4, 1) << sel;
+                    v.expect_output_valid(self.y, ~val, levels);
+                },
+            }
+        }
+    };
+}
+
+fn Single_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        a: Net_ID = .unset,
+        y: Net_ID = .unset,
+        n_oe: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.n_oe,
+                2 => self.a,
+                3 => self.pwr.gnd,
+                4 => self.y,
+                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.n_oe, levels);
+                    try v.expect_valid(self.a, levels);
+                    if (!v.read_logic(self.n_oe, levels)) {
+                        const a = v.read_logic(self.a, levels);
+                        v.expect_output_valid(self.y, if (invert) !a else a, levels);
+                    }
+                },
+                .nets_only => {
+                    if (!v.read_logic(self.n_oe, levels)) {
+                        const a = v.read_logic(self.a, levels);
+                        v.drive_logic(self.y, if (invert) !a else a, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+fn Single_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        a: Net_ID = .unset,
+        y: Net_ID = .unset,
+        oe: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.oe,
+                2 => self.a,
+                3 => self.pwr.gnd,
+                4 => self.y,
+                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                else => unreachable,
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => {
+                    try v.expect_valid(self.oe, levels);
+                    try v.expect_valid(self.a, levels);
+                    if (v.read_logic(self.oe, levels)) {
+                        const a = v.read_logic(self.a, levels);
+                        v.expect_output_valid(self.y, if (invert) !a else a, levels);
+                    }
+                },
+                .nets_only => {
+                    if (v.read_logic(self.oe, levels)) {
+                        const a = v.read_logic(self.a, levels);
+                        v.drive_logic(self.y, if (invert) !a else a, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+pub fn x1G125(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Tristate_Driver_Active_Low(pwr, Decoupler, levels, Pkg, false);
+}
+pub fn x1G126(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Tristate_Driver_Active_High(pwr, Decoupler, levels, Pkg, false);
+}
+pub fn x1G240(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_Tristate_Driver_Active_Low(pwr, Decoupler, levels, Pkg, true);
+}
+
+pub fn x1G74(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        clk: Net_ID = .unset,
+        d: Net_ID = .unset,
+        q: Net_ID = .unset,
+        n_q: Net_ID = .unset,
+        n_async_set: Net_ID = .unset,
+        n_async_clr: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.clk,
+                2 => self.d,
+                3 => self.n_q,
+                4 => self.pwr.gnd,
+                5 => self.q,
+                6 => self.n_async_clr,
+                7 => self.n_async_set,
+                8 => @field(self.pwr, @tagName(pwr)),
+                else => unreachable,
+            };
+        }
+
+        const Validator_State = struct {
+            clk: bool,
+            q: bool,
+        };
+
+        pub fn validate(self: @This(), v: *Validator, state: *Validator_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.q = false;
+                    state.clk = true;
+                },
+                .commit => {
+                    try v.expect_valid(self.d, levels);
+                    try v.expect_valid(self.clk, levels);
+                    try v.expect_valid(self.n_async_clr, levels);
+                    try v.expect_valid(self.n_async_set, levels);
+
+                    try v.expect_output_valid(self.q, state.q, levels);
+                    try v.expect_output_valid(self.n_q, !state.q, levels);
+
+                    const new_clk = v.read_logic(self.clk, levels);
+                    if (new_clk and !state.clk) {
+                        state.q = v.read_logic(self.d, levels);
+                    }
+                    state.clk = new_clk;
+
+                    const ac = !v.read_logic(self.n_async_clr, levels);
+                    const as = !v.read_logic(self.n_async_set, levels);
+
+                    if (ac and !as) {
+                        state.q = false;
+                    } else if (as and !ac) {
+                        state.q = true;
+                    }
+                },
+                .nets_only => {
+                    const ac = !v.read_logic(self.n_async_clr, levels);
+                    const as = !v.read_logic(self.n_async_set, levels);
+
+                    if (ac) {
+                        if (as) {
+                            try v.drive_logic(self.q, true, levels);
+                            try v.drive_logic(self.n_q, true, levels);
+                        } else {
+                            try v.drive_logic(self.q, false, levels);
+                            try v.drive_logic(self.n_q, true, levels);
+                        }
+                    } else if (as) {
+                        try v.drive_logic(self.q, true, levels);
+                        try v.drive_logic(self.n_q, false, levels);
+                    } else {
+                        try v.drive_logic(self.q, state.q, levels);
+                        try v.drive_logic(self.n_q, !state.q, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+fn Single_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        clk: Net_ID = .unset,
+        d: Net_ID = .unset,
+        q: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.d,
+                2 => self.clk,
+                3 => self.pwr.gnd,
+                4 => self.q,
+                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                else => unreachable,
+            };
+        }
+
+        const Validator_State = struct {
+            clk: bool,
+            q: bool,
+        };
+
+        pub fn validate(self: @This(), v: *Validator, state: *Validator_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.q = false;
+                    state.clk = true;
+                },
+                .commit => {
+                    try v.expect_valid(self.d, levels);
+                    try v.expect_valid(self.clk, levels);
+                    try v.expect_output_valid(self.q, state.q, levels);
+
+                    const new_clk = v.read_logic(self.clk, levels);
+                    if (new_clk and !state.clk) {
+                        const d = v.read_logic(self.d, levels);
+                        state.q = if (invert) !d else d;
+                    }
+                    state.clk = new_clk;
+                },
+                .nets_only => {
+                    try v.drive_logic(self.q, state.q, levels);
+                },
+            }
+        }
+    };
+}
+
+pub fn x1G79(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_DFF(pwr, Decoupler, levels, Pkg, false);
+}
+pub fn x1G80(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Single_DFF(pwr, Decoupler, levels, Pkg, true);
+}
+
+/// Single DFF with async clear
+pub fn x1G175(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        clk: Net_ID = .unset,
+        d: Net_ID = .unset,
+        q: Net_ID = .unset,
+        n_async_clr: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.clk,
+                2 => self.pwr.gnd,
+                3 => self.d,
+                4 => self.q,
+                5 => @field(self.pwr, @tagName(pwr)),
+                6 => self.n_async_clr,
+                else => unreachable,
+            };
+        }
+
+        const Validator_State = struct {
+            clk: bool,
+            q: bool,
+        };
+
+        pub fn validate(self: @This(), v: *Validator, state: *Validator_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.q = false;
+                    state.clk = true;
+                },
+                .commit => {
+                    try v.expect_valid(self.d, levels);
+                    try v.expect_valid(self.clk, levels);
+                    try v.expect_valid(self.n_async_clr, levels);
+
+                    try v.expect_output_valid(self.q, state.q, levels);
+
+                    const new_clk = v.read_logic(self.clk, levels);
+                    if (new_clk and !state.clk) {
+                        state.q = v.read_logic(self.d, levels);
+                    }
+                    state.clk = new_clk;
+
+                    if (!v.read_logic(self.n_async_clr, levels)) {
+                        state.q = false;
+                    }
+                },
+                .nets_only => {
+                    if (!v.read_logic(self.n_async_clr, levels)) {
+                        try v.drive_logic(self.q, false, levels);
+                    } else {
+                        try v.drive_logic(self.q, state.q, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+/// Single DFF with OE
+pub fn x1G374(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        clk: Net_ID = .unset,
+        d: Net_ID = .unset,
+        q: Net_ID = .unset,
+        n_oe: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.clk,
+                2 => self.pwr.gnd,
+                3 => self.d,
+                4 => self.q,
+                5 => @field(self.pwr, @tagName(pwr)),
+                6 => self.n_oe,
+                else => unreachable,
+            };
+        }
+
+        const Validator_State = struct {
+            clk: bool,
+            q: bool,
+        };
+
+        pub fn validate(self: @This(), v: *Validator, state: *Validator_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.q = false;
+                    state.clk = true;
+                },
+                .commit => {
+                    try v.expect_valid(self.d, levels);
+                    try v.expect_valid(self.clk, levels);
+                    try v.expect_valid(self.n_oe, levels);
+
+                    if (!v.read_logic(self.n_oe, levels)) {
+                        try v.drive_logic(self.q, state.q, levels);
+                    }
+
+                    const new_clk = v.read_logic(self.clk, levels);
+                    if (new_clk and !state.clk) {
+                        state.q = v.read_logic(self.d, levels);
+                    }
+                    state.clk = new_clk;
+                },
+                .nets_only => {
+                    if (!v.read_logic(self.n_oe, levels)) {
+                        try v.drive_logic(self.q, state.q, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+pub fn x1G373(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        transparent: Net_ID = .unset,
+        d: Net_ID = .unset,
+        q: Net_ID = .unset,
+        n_oe: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.transparent,
+                2 => self.pwr.gnd,
+                3 => self.d,
+                4 => self.q,
+                5 => @field(self.pwr, @tagName(pwr)),
+                6 => self.n_oe,
+                else => unreachable,
+            };
+        }
+
+        const Validator_State = struct {
+            q: bool,
+        };
+        
+        pub fn validate(self: @This(), v: *Validator, state: *Validator_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.q = false;
+                },
+                .commit => {
+                    try v.expect_valid(self.d, levels);
+                    try v.expect_valid(self.transparent, levels);
+                    try v.expect_valid(self.n_oe, levels);
+                    if (v.read_logic(self.transparent, levels)) {
+                        state.q = v.read_logic(self.d, levels);
+                    }
+                    if (!v.read_logic(self.n_oe, levels)) {
+                        try v.expect_output_valid(self.q, state.q, levels);
+                    }
+                },
+                .nets_only => {
+                    if (!v.read_logic(self.n_oe, levels)) {
+                        const le = v.read_logic(self.transparent, levels);
+                        const q = if (le) v.read_logic(self.d, levels) else state.q;
+                        try v.drive_bus(self.q, q, levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+// TODO x2G00
+// TODO x2G08
+// TODO x2G32
+// TODO x2G86
+// TODO x2G04
+// TODO x2G34
+// TODO x2G3404 // only AUP/AXP
+// TODO x2G74
+// TODO x2G79
+// TODO x2G80
+// TODO x2G100
+// TODO x2G101
 
 // 3:8 decoder/demux
 pub fn x138(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
@@ -460,7 +1471,18 @@ pub fn x139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
     };
 }
 
-// TODO x161, x163
+// TODO x1G123
+// TODO x151
+// TODO x153
+// TODO x157
+// TODO x251
+// TODO x253
+// TODO x257
+// TODO x3251
+// TODO x3253
+// TODO x3257
+// TODO x161
+// TODO x163
 
 fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert_outputs: bool) type {
     return struct {

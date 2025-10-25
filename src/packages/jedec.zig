@@ -567,7 +567,7 @@ pub fn MS_012G_02(comptime lead_count: comptime_int, comptime package_name: []co
     };
 }
 
-/// SOIC (200mil)
+/// SOIC (208mil)
 pub fn MO_046B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
         14, 16 => 10300,
@@ -583,7 +583,7 @@ pub fn MO_046B(comptime lead_count: comptime_int, comptime package_name: []const
             .package_name = package_name,
             .body = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 200 },
-                .height = .{ .nominal_um = 5100, .tolerance_um = 200 },
+                .height = .{ .nominal_um = 5300, .tolerance_um = 200 },
             },
             .overall = .{
                 .width  = .{ .nominal_um = body_width, .tolerance_um = 400 },
@@ -700,7 +700,7 @@ pub fn MO_126B(comptime lead_count: comptime_int, comptime package_name: []const
     };
 }
 
-/// SSOP (200mil)
+/// SSOP (208mil)
 pub fn MO_150B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
         8 => 3000,
@@ -943,6 +943,160 @@ pub fn MO_194B(comptime lead_count: comptime_int, comptime package_name: []const
             .pin_pitch = .{ .nominal_um = 400, .tolerance_um = 0 },
             .pin_width = .{ .nominal_um = 180, .tolerance_um = 50 },
             .pin_seating = .{ .nominal_um = 600, .tolerance_um = 150 },
+        };
+    };
+}
+
+/// a.k.a. VSSOP-8 (0.65mm pitch)
+pub fn MO_187F_AA(comptime with_heat_slug: bool, comptime package_name: []const u8) type {
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.SMD(data, .normal).fp,
+        };
+
+        pub const data: SMD_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_mm(3, 0.1),
+                .height = .init_mm(3, 0.1),
+            },
+            .overall = .{
+                .width  = .init_mm(3, 0.1),
+                .height = .init_mm(4.9, 0.1),
+            },
+            .max_z = .init_mm_range(0.9, 1.1),
+            .total_pins = 8,
+            .pins_on_first_side = 4,
+            .pin_pitch = .init_mm(0.65, 0),
+            .pin_width = .init_mm_range(0.22, 0.38),
+            .pin_seating = .init_mm_range(0.4, 0.8),
+            .heat_slug = if (with_heat_slug) .{
+                .width = .init_mm_range(0.75, 2.5),
+                .height = .init_mm_range(0.75, 2.5),
+            } else null,
+        };
+    };
+}
+
+/// a.k.a. VSSOP-10
+pub fn MO_187F_BA(comptime with_heat_slug: bool, comptime package_name: []const u8) type {
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.SMD(data, .normal).fp,
+        };
+
+        pub const data: SMD_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_mm(3, 0.1),
+                .height = .init_mm(3, 0.1),
+            },
+            .overall = .{
+                .width  = .init_mm(3, 0.1),
+                .height = .init_mm(4.9, 0.1),
+            },
+            .max_z = .init_mm_range(0.9, 1.1),
+            .total_pins = 10,
+            .pins_on_first_side = 5,
+            .pin_pitch = .init_mm(0.5, 0),
+            .pin_width = .init_mm_range(0.17, 0.33),
+            .pin_seating = .init_mm_range(0.4, 0.8),
+            .heat_slug = if (with_heat_slug) .{
+                .width = .init_mm_range(0.75, 2.5),
+                .height = .init_mm_range(0.75, 2.5),
+            } else null,
+        };
+    };
+}
+
+/// a.k.a. VSSOP-8 (0.5mm pitch), texas instruments DCU package code
+pub fn MO_187F_CA(comptime package_name: []const u8) type {
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.SMD(data, .normal).fp,
+        };
+
+        pub const data: SMD_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_mm(2, 0.1),
+                .height = .init_mm(2.3, 0.1),
+            },
+            .overall = .{
+                .width  = .init_mm(2, 0.1),
+                .height = .init_mm(3.1, 0.1),
+            },
+            .max_z = .init_mm_range(0.8, 1),
+            .total_pins = 8,
+            .pins_on_first_side = 4,
+            .pin_pitch = .init_mm(0.5, 0),
+            .pin_width = .init_mm_range(0.17, 0.33),
+            .pin_seating = .init_mm_range(0.15, 0.4),
+        };
+    };
+}
+
+/// a.k.a. SSOP-8 (0.65mm pitch), texas instruments DCT package code
+pub fn MO_187F_DA(comptime package_name: []const u8) type {
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.SMD(data, .normal).fp,
+        };
+
+        pub const data: SMD_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_mm(2.95, 0.1),
+                .height = .init_mm(2.8, 0.1),
+            },
+            .overall = .{
+                .width  = .init_mm(2.95, 0.1),
+                .height = .init_mm(4, 0.25),
+            },
+            .max_z = .init_mm_range(1.15, 1.35),
+            .total_pins = 8,
+            .pins_on_first_side = 4,
+            .pin_pitch = .init_mm(0.65, 0),
+            .pin_width = .init_mm_range(0.15, 0.3),
+            .pin_seating = .init_mm_range(0.2, 0.6),
+        };
+    };
+}
+
+/// a.k.a. SC70-5/6/8, SC-88, SOT323-5/6/8, SOT353, SOT363
+/// technically JEDEC doesn't standardize the 3 terminal version, but it's just the 6 terminal version with three less pins
+pub fn MO_203E(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
+    const pins = switch (lead_count) {
+        3, 5, 6 => 6,
+        8 => 8,
+        else => unreachable,
+    };
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.SMD(data, .normal).fp,
+        };
+
+        pub const data: SMD_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_mm(2, 0.1),
+                .height = .init_mm(1.25, 0.1),
+            },
+            .overall = .{
+                .width  = .init_mm(2, 0.1),
+                .height = .init_mm(2.1, 0.15),
+            },
+            .max_z = .init_mm_range(0.9, 1.1),
+            .total_pins = pins,
+            .pins_on_first_side = pins / 2,
+            .omitted_pins = switch (lead_count) {
+                3 => &.{ 2, 4, 6 },
+                5 => &.{ 5 },
+                6, 8 => &.{},
+            },
+            .pin_pitch = if (lead_count == 8) .init_mm(0.5, 0) else .init_mm(0.65, 0),
+            .pin_width = if (lead_count == 8) .init_mm_range(0.15, 0.27) else .init_mm_range(0.15, 0.30),
+            .pin_seating = .init_mm(0.36, 0.1),
         };
     };
 }

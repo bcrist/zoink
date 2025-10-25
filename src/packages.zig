@@ -27,6 +27,11 @@ pub const DIP64 = jedec.MS_015A(64, 900, "DIP-64");
 
 pub const PGA68 = pga.PGA68;
 
+pub const SOT323 = jedec.MO_203E(3, "SOT323-5");
+pub const SOT323_5 = jedec.MO_203E(5, "SOT323-5");
+pub const SOT323_6 = jedec.MO_203E(6, "SOT323-6");
+pub const SOT323_8 = jedec.MO_203E(8, "SOT323-8");
+
 pub const SOT23 = jedec.TO_236H__MO_193G(3, "SOT23");
 pub const SOT23_5 = jedec.TO_236H__MO_193G(5, "SOT23-5");
 pub const SOT23_6 = jedec.TO_236H__MO_193G(6, "SOT23-6");
@@ -36,6 +41,11 @@ pub const SOT143 = jedec.TO_253D;
 
 pub const SOT223 = jedec.TO_261AA;
 pub const SOT223_5 = jedec.TO_261AB;
+
+pub const MSOP_8 = jedec.MO_187F_AA(false, "MSOP-8");
+pub const MSOP_10 = jedec.MO_187F_BA(false, "MSOP-10");
+pub const VSSOP_8 = jedec.MO_187F_CA("VSSOP-8");
+pub const TSSOP_8 = jedec.MO_187F_DA("TSSOP-8");
 
 pub const SOJ_14 = jedec.MS_027A__MO_065A_077D_088A(14, 300, "SOJ-14");
 pub const SOJ_16 = jedec.MS_027A__MO_065A_077D_088A(16, 300, "SOJ-16");
@@ -87,9 +97,9 @@ pub const PLCC_84M_PGA = pga.PLCC(21, 21);
 pub const SOIC_8_150 = jedec.MS_012G_02(8, "SOIC-8 (150 mil)");
 pub const SOIC_14_150 = jedec.MS_012G_02(14, "SOIC-14 (150 mil)");
 pub const SOIC_16_150 = jedec.MS_012G_02(16, "SOIC-16 (150 mil)");
-pub const SOIC_14_200 = jedec.MO_046B(14, "SOIC-14 (200 mil)");
-pub const SOIC_16_200 = jedec.MO_046B(16, "SOIC-16 (200 mil)");
-pub const SOIC_20_200 = jedec.MO_046B(20, "SOIC-20 (200 mil)");
+pub const SOIC_14_208 = jedec.MO_046B(14, "SOIC-14 (208 mil)");
+pub const SOIC_16_208 = jedec.MO_046B(16, "SOIC-16 (208 mil)");
+pub const SOIC_20_208 = jedec.MO_046B(20, "SOIC-20 (208 mil)");
 pub const SOIC_8_300 = jedec.MS_013G(8, "SOIC-8 (300 mil)");
 pub const SOIC_14_300 = jedec.MS_013G(14, "SOIC-14 (300 mil)");
 pub const SOIC_16_300 = jedec.MS_013G(16, "SOIC-16 (300 mil)");
@@ -119,9 +129,9 @@ pub const SSOP_18 = jedec.MO_150B(18, "SSOP-18");
 pub const SSOP_20 = jedec.MO_150B(20, "SSOP-20");
 pub const SSOP_22 = jedec.MO_150B(22, "SSOP-22");
 pub const SSOP_24 = jedec.MO_150B(24, "SSOP-24");
-pub const SSOP_28_200 = jedec.MO_150B(28, "SSOP-28 (200 mil)");
-pub const SSOP_30_200 = jedec.MO_150B(30, "SSOP-30 (200 mil)");
-pub const SSOP_38_200 = jedec.MO_150B(38, "SSOP-38 (200 mil)");
+pub const SSOP_28_208 = jedec.MO_150B(28, "SSOP-28 (208 mil)");
+pub const SSOP_30_208 = jedec.MO_150B(30, "SSOP-30 (208 mil)");
+pub const SSOP_38_208 = jedec.MO_150B(38, "SSOP-38 (208 mil)");
 pub const SSOP_28_300 = jedec.MO_118B(28, "SSOP-28 (300 mil)");
 pub const SSOP_48 = jedec.MO_118B(48, "SSOP-48");
 pub const SSOP_56 = jedec.MO_118B(56, "SSOP-56");
@@ -143,6 +153,10 @@ pub const TVSOP_80 = jedec.MO_194B(80, "TVSOP-80");
 pub const TVSOP_100 = jedec.MO_194B(100, "TVSOP-100");
 
 pub const BGA_48_6mm_8mm = jedec.MO_207AD;
+
+pub const bmc = @import("packages/bmc.zig");
+
+pub const BGA_BMC151 = bmc.BGA151;
 
 pub const lattice = @import("packages/lattice.zig");
 

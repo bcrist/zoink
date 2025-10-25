@@ -22,6 +22,7 @@ pub fn LC4k(
         .csBGA132 => pkg.lattice.csBGA132,
         .ucBGA132 => pkg.lattice.ucBGA132,
         .csBGA144 => pkg.lattice.csBGA144,
+        .BMC151 => pkg.bmc.BGA151,
     };
 
     switch (Device.family) {
