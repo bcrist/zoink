@@ -1,4 +1,3 @@
-
 pub fn Cap(comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
@@ -7,6 +6,9 @@ pub fn Cap(comptime Pkg: type) type {
         },
         a: Net_ID = .unset,
         b: Net_ID = .unset,
+        value_nf: f32 = 100,
+        voltage_rating: f32 = 50,
+        populate: bool = true,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -14,6 +16,15 @@ pub fn Cap(comptime Pkg: type) type {
                 2 => self.b,
                 else => .unset
             };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            if (!self.populate) return;
+            switch (mode) {
+                .reset => {},
+                .commit => try v.verify_voltage_rating(self.a, self.b, self.voltage_rating),
+                .nets_only => {},
+            }
         }
     };
 }
@@ -27,6 +38,9 @@ pub fn Cap_Decoupler(comptime Pkg: type) type {
         gnd: Net_ID = .unset,
         internal: Net_ID = .unset,
         external: Net_ID = .unset,
+        value_nf: f32 = 100,
+        voltage_rating: f32 = 50,
+        populate: bool = true,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -35,6 +49,15 @@ pub fn Cap_Decoupler(comptime Pkg: type) type {
                 3 => self.external,
                 else => .unset
             };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            if (!self.populate) return;
+            switch (mode) {
+                .reset => {},
+                .commit => try v.verify_voltage_rating(self.gnd, self.external, self.voltage_rating),
+                .nets_only => try v.connect_nets(self.internal, self.external, 0.1),
+            }
         }
     };
 }
@@ -49,6 +72,7 @@ pub fn Resistor(comptime Pkg: type) type {
         b: Net_ID = .unset,
         value: f32 = 1_000,
         max_power: f32 = 0.1,
+        populate: bool = true,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -59,6 +83,7 @@ pub fn Resistor(comptime Pkg: type) type {
         }
 
         pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            if (!self.populate) return;
             switch (mode) {
                 .reset => {},
                 .commit => try v.verify_power_limit(self.a, self.b, self.value, self.max_power),

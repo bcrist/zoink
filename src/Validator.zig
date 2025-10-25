@@ -664,6 +664,22 @@ pub fn verify_net_power_limit(self: *Validator, a: Net_ID, b: Net_ID, resistance
     }
 }
 
+pub fn verify_voltage_rating(self: *Validator, a: Net_ID, b: Net_ID, max_dv: f32) !void {
+    if (a == .no_connect or a == .unset or b == .no_connect or b == .unset) return;
+
+    const va = self.read_net(a);
+    const vb = self.read_net(b);
+    const dv = @abs(va.as_float() - vb.as_float());
+    if (dv > max_dv) {
+        log.warn("Voltage drop of {f} between between {s} and {s} violates voltage rating of {d} V", .{
+            Voltage.from_float(dv),
+            self.b.net_name(a),
+            self.b.net_name(b),
+            dv,
+        });
+    }
+}
+
 pub fn expect_above(self: *const Validator, what: anytype, v: Voltage) !void {
     switch (@typeInfo(@TypeOf(what))) {
         .@"enum" => try self.expect_net_above(what, v),
