@@ -3,9 +3,9 @@ pub fn configure(b: *Board) !void {
     U1.d = b.bus("D", 20);
     U1.q = b.bus("Q", 20);
 
-    U1.output_enable_low = b.net("~OE");
+    U1.n_oe = b.net("~OE");
     U1.clk = b.net("CLK");
-    U1.enable_clk_low = b.net("~CE");
+    U1.n_ce = b.net("~CE");
 }
 
 test {

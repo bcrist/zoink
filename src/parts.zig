@@ -20,6 +20,14 @@ pub const SN74LVC86AD   = _74.x86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_1
 pub const SN74LVC86ADB  = _74.x86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
 pub const SN74LVC86APW  = _74.x86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
 
+pub const SN74LVC138AD = _74.x138(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_16_150);
+pub const SN74LVC138ADB = _74.x138(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_16);
+pub const SN74LVC138APW = _74.x138(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_16);
+
+pub const SN74LVC139AD = _74.x139(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_16_150);
+pub const SN74LVC139ADB = _74.x139(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_16);
+pub const SN74LVC139APW = _74.x139(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_16);
+
 pub const SN74LVC541ADB  = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_20);
 pub const SN74LVC541ADGV = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TVSOP_20);
 pub const SN74LVC541ADW  = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_20_300);

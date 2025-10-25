@@ -5,26 +5,26 @@ pub fn configure(b: *Board) !void {
     U1.left.addr = b.bus("LA", 12);
     U1.left.lower_data = b.bus("LD[0:7]", 8);
     U1.left.upper_data = b.bus("LD[8:15]", 8);
-    U1.left.chip_enable_low = .gnd;
-    U1.left.lower_byte_enable_low = .gnd;
-    U1.left.upper_byte_enable_low = .gnd;
-    U1.left.semaphore_enable_low = .p3v3;
-    U1.left.interrupt_low = .no_connect;
-    U1.left.busy_low = .no_connect;
-    U1.left.write_enable_low = b.net("L~WE");
-    U1.left.output_enable_low = b.net("L~OE");
+    U1.left.n_ce = .gnd;
+    U1.left.n_lower_byte_enable = .gnd;
+    U1.left.n_upper_byte_enable = .gnd;
+    U1.left.n_semaphore_enable = .p3v3;
+    U1.left.n_interrupt = .no_connect;
+    U1.left.n_busy = .no_connect;
+    U1.left.n_we = b.net("L~WE");
+    U1.left.n_oe = b.net("L~OE");
 
     U1.right.addr = b.bus("RA", 12);
     U1.right.lower_data = b.bus("RD[0:7]", 8);
     U1.right.upper_data = b.bus("RD[8:15]", 8);
-    U1.right.chip_enable_low = .gnd;
-    U1.right.lower_byte_enable_low = .gnd;
-    U1.right.upper_byte_enable_low = .gnd;
-    U1.right.semaphore_enable_low = .p3v3;
-    U1.right.interrupt_low = .no_connect;
-    U1.right.busy_low = .no_connect;
-    U1.right.write_enable_low = b.net("R~WE");
-    U1.right.output_enable_low = b.net("R~OE");
+    U1.right.n_ce = .gnd;
+    U1.right.n_lower_byte_enable = .gnd;
+    U1.right.n_upper_byte_enable = .gnd;
+    U1.right.n_semaphore_enable = .p3v3;
+    U1.right.n_interrupt = .no_connect;
+    U1.right.n_busy = .no_connect;
+    U1.right.n_we = b.net("R~WE");
+    U1.right.n_oe = b.net("R~OE");
 }
 
 test {

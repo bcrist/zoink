@@ -6,8 +6,8 @@ pub fn configure(b: *Board) !void {
     U1.u[0].b = b.bus("B[0:7]", 8);
     U1.u[1].b = b.bus("B[8:15]", 8);
 
-    U1.u[0].output_enable_low = b.net("~OE[0]");
-    U1.u[1].output_enable_low = b.net("~OE[1]");
+    U1.u[0].n_oe = b.net("~OE[0]");
+    U1.u[1].n_oe = b.net("~OE[1]");
     U1.u[0].a_to_b = b.net("DIR[0]");
     U1.u[1].a_to_b = b.net("DIR[1]");
 }

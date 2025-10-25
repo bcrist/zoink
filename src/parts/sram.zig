@@ -2,9 +2,9 @@ pub fn Pins_8b_Alliance(comptime Self: type, comptime Pkg: type) type {
     if (Pkg == packages.TSOP_II_32 or Pkg == packages.SOJ_32) return struct {
         pub fn pin(self: Self, pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                28 => self.outpue_enable_low,
-                5 => self.chip_enable_low,
-                12 => self.write_enable_low,
+                28 => self.n_oe,
+                5 => self.n_ce,
+                12 => self.n_we,
 
                 1 => self.addr[self.remap_addr[0]],
                 2 => self.addr[self.remap_addr[1]],
@@ -48,12 +48,12 @@ pub fn Pins_16b_GSI(comptime Self: type, comptime Pkg: type) type {
     if (Pkg == packages.FBGA_48) return struct {
         pub fn pin(self: Self, pin_id: Pin_ID) Net_ID {
             return switch (packages.FBGA_48.Pin_ID.from_generic(pin_id)) {
-                .A1 => self.lower_byte_enable_low,
-                .B2 => self.upper_byte_enable_low,
+                .A1 => self.n_lower_byte_enable,
+                .B2 => self.n_upper_byte_enable,
 
-                .A2 => self.outpue_enable_low,
-                .B5 => self.chip_enable_low,
-                .G5 => self.write_enable_low,
+                .A2 => self.n_oe,
+                .B5 => self.n_ce,
+                .G5 => self.n_we,
 
                 .A3 => self.addr[self.remap_addr[0]],
                 .A4 => self.addr[self.remap_addr[1]],
@@ -104,12 +104,12 @@ pub fn Pins_16b_GSI(comptime Self: type, comptime Pkg: type) type {
     if (Pkg == packages.SOJ_44 or Pkg == packages.TSOP_II_44) return struct {
         pub fn pin(self: Self, pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                39 => self.lower_byte_enable_low,
-                40 => self.upper_byte_enable_low,
+                39 => self.n_lower_byte_enable,
+                40 => self.n_upper_byte_enable,
 
-                41 => self.outpue_enable_low,
-                6 => self.chip_enable_low,
-                17 => self.write_enable_low,
+                41 => self.n_oe,
+                6 => self.n_ce,
+                17 => self.n_we,
 
                 5 => self.addr[self.remap_addr[0]],
                 4 => self.addr[self.remap_addr[1]],
@@ -178,9 +178,9 @@ pub fn Async_8b(
         pwr: Power = .{},
         data: [8]Net_ID = @splat(.unset),
         addr: [addr_bits]Net_ID = @splat(.unset),
-        chip_enable_low: Net_ID = .unset,
-        write_enable_low: Net_ID = .unset,
-        output_enable_low: Net_ID = .unset,
+        n_ce: Net_ID = .unset,
+        n_we: Net_ID = .unset,
+        n_oe: Net_ID = .unset,
         remap_data: [8]u3 = .{ 0,1,2,3,4,5,6,7 },
         remap_addr: [addr_bits]u5 = Part.identity_remap(u5, addr_bits),
 
@@ -219,27 +219,27 @@ pub fn Async_8b(
                     @memset(&state.mem, 0xAA);
                 },
                 .commit => {
-                    try v.expect_valid(self.chip_enable_low, levels);
-                    try v.expect_valid(self.write_enable_low, levels);
-                    try v.expect_valid(self.output_enable_low, levels);
+                    try v.expect_valid(self.n_ce, levels);
+                    try v.expect_valid(self.n_we, levels);
+                    try v.expect_valid(self.n_oe, levels);
 
-                    if (v.read_logic(self.chip_enable_low, levels) == false) {
+                    if (v.read_logic(self.n_ce, levels) == false) {
                         try v.expect_valid(self.addr, levels);
                         try v.expect_valid(self.data, levels);
 
-                        if (v.read_logic(self.write_enable_low, levels) == false) {
+                        if (v.read_logic(self.n_we, levels) == false) {
                             const addr = v.read_bus(self.addr, levels);
                             state.mem[addr] = @intCast(v.read_bus(self.data, levels));
-                        } else if (v.read_logic(self.output_enable_low, levels) == false) {
+                        } else if (v.read_logic(self.n_oe, levels) == false) {
                             const addr = v.read_bus(self.addr, levels);
                             try v.expect_output_valid(self.data, state.mem[addr], levels);
                         }
                     }
                 },
                 .nets_only => {
-                    if (v.read_logic(self.chip_enable_low, levels) == false 
-                        and v.read_logic(self.output_enable_low, levels) == false
-                        and v.read_logic(self.write_enable_low, levels) == true
+                    if (v.read_logic(self.n_ce, levels) == false 
+                        and v.read_logic(self.n_oe, levels) == false
+                        and v.read_logic(self.n_we, levels) == true
                     ) {
                         const addr = v.read_bus(self.addr, levels);
                         try v.drive_bus(self.data, state.mem[addr], levels);
@@ -267,11 +267,11 @@ pub fn Async_16b(
         lower_data: [8]Net_ID = @splat(.unset),
         upper_data: [8]Net_ID = @splat(.unset),
         addr: [addr_bits]Net_ID = @splat(.unset),
-        chip_enable_low: Net_ID = .unset,
-        lower_byte_enable_low: Net_ID = .unset,
-        upper_byte_enable_low: Net_ID = .unset,
-        write_enable_low: Net_ID = .unset,
-        output_enable_low: Net_ID = .unset,
+        n_ce: Net_ID = .unset,
+        n_lower_byte_enable: Net_ID = .unset,
+        n_upper_byte_enable: Net_ID = .unset,
+        n_we: Net_ID = .unset,
+        n_oe: Net_ID = .unset,
         remap_lower_data: [8]u3 = .{ 0,1,2,3,4,5,6,7 },
         remap_upper_data: [8]u3 = .{ 0,1,2,3,4,5,6,7 },
         remap_addr: [addr_bits]u5 = Part.identity_remap(u5, addr_bits),
@@ -327,26 +327,26 @@ pub fn Async_16b(
                     @memset(&state.mem, .{ .lower = 0xAA, .upper = 0xAA });
                 },
                 .commit => {
-                    try v.expect_valid(self.chip_enable_low, levels);
-                    try v.expect_valid(self.lower_byte_enable_low, levels);
-                    try v.expect_valid(self.upper_byte_enable_low, levels);
-                    try v.expect_valid(self.write_enable_low, levels);
-                    try v.expect_valid(self.output_enable_low, levels);
+                    try v.expect_valid(self.n_ce, levels);
+                    try v.expect_valid(self.n_lower_byte_enable, levels);
+                    try v.expect_valid(self.n_upper_byte_enable, levels);
+                    try v.expect_valid(self.n_we, levels);
+                    try v.expect_valid(self.n_oe, levels);
 
-                    if (v.read_logic(self.chip_enable_low, levels) == false) {
+                    if (v.read_logic(self.n_ce, levels) == false) {
                         try v.expect_valid(self.addr, levels);
 
-                        const lb = v.read_logic(self.lower_byte_enable_low, levels) == false;
-                        const ub = v.read_logic(self.upper_byte_enable_low, levels) == false;
+                        const lb = v.read_logic(self.n_lower_byte_enable, levels) == false;
+                        const ub = v.read_logic(self.n_upper_byte_enable, levels) == false;
 
                         if (lb) try v.expect_valid(self.lower_data, levels);
                         if (ub) try v.expect_valid(self.upper_data, levels);
 
-                        if (v.read_logic(self.write_enable_low, levels) == false) {
+                        if (v.read_logic(self.n_we, levels) == false) {
                             const addr = v.read_bus(self.addr, levels);
                             if (lb) state.mem[addr].lower = @intCast(v.read_bus(self.lower_data, levels));
                             if (ub) state.mem[addr].upper = @intCast(v.read_bus(self.upper_data, levels));
-                        } else if (v.read_logic(self.output_enable_low, levels) == false) {
+                        } else if (v.read_logic(self.n_oe, levels) == false) {
                             const addr = v.read_bus(self.addr, levels);
                             const word = state.mem[addr];
                             if (lb) try v.expect_output_valid(self.lower_data, word.lower, levels);
@@ -355,17 +355,17 @@ pub fn Async_16b(
                     }
                 },
                 .nets_only => {
-                    if (v.read_logic(self.chip_enable_low, levels) == false 
-                        and v.read_logic(self.output_enable_low, levels) == false
-                        and v.read_logic(self.write_enable_low, levels) == true
+                    if (v.read_logic(self.n_ce, levels) == false 
+                        and v.read_logic(self.n_oe, levels) == false
+                        and v.read_logic(self.n_we, levels) == true
                     ) {
                         const addr = v.read_bus(self.addr, levels);
                         const word = state.mem[addr];
 
-                        if (v.read_logic(self.lower_byte_enable_low, levels) == false) {
+                        if (v.read_logic(self.n_lower_byte_enable, levels) == false) {
                             try v.drive_bus(self.lower_data, word.lower, levels);
                         }
-                        if (v.read_logic(self.upper_byte_enable_low, levels) == false) {
+                        if (v.read_logic(self.n_upper_byte_enable, levels) == false) {
                             try v.drive_bus(self.upper_data, word.upper, levels);
                         }
                     }

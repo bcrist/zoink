@@ -128,6 +128,7 @@ pub const SSOP_56 = jedec.MO_118B(56, "SSOP-56");
 pub const SSOP_64 = jedec.MO_118B(64, "SSOP-64");
 
 pub const TSSOP_14 = jedec.MO_153H(14, 650, .b, "TSSOP-14");
+pub const TSSOP_16 = jedec.MO_153H(16, 650, .b, "TSSOP-16");
 pub const TSSOP_20 = jedec.MO_153H(20, 650, .b, "TSSOP-20");
 pub const TSSOP_48 = jedec.MO_153H(48, 500, .c, "TSSOP-48");
 pub const TSSOP_56 = jedec.MO_153H(56, 500, .c, "TSSOP-56");

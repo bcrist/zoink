@@ -4,14 +4,14 @@ pub fn configure(b: *Board) !void {
     U1.bx.data = b.bus("BX", 12);
     U1.by.data = b.bus("BY", 12);
 
-    U1.a.output_enable_low = b.net("OE");
+    U1.a.n_oe = b.net("OE");
     U1.a.enable_bx = b.net("SEL");
 
-    U1.bx.output_enable_low = .p3v3;
+    U1.bx.n_oe = .p3v3;
     U1.bx.latch_input_data = .p3v3;
     U1.bx.latch_output_data = .gnd;
 
-    U1.by.output_enable_low = .p3v3;
+    U1.by.n_oe = .p3v3;
     U1.by.latch_input_data = .p3v3;
     U1.by.latch_output_data = .gnd;
 }

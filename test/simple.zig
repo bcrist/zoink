@@ -23,11 +23,11 @@ pub fn configure(b: *Board) !void {
     U3.addr = b.bus("addr", 16);
     U3.lower_data = b.bus("D[0:7]", 8);
     U3.upper_data = b.bus("D[8:15]", 8);
-    U3.chip_enable_low = .gnd;
-    U3.lower_byte_enable_low = .gnd;
-    U3.upper_byte_enable_low = .gnd;
-    U3.write_enable_low = b.net("~WE");
-    U3.output_enable_low = b.net("~OE");
+    U3.n_ce = .gnd;
+    U3.n_lower_byte_enable = .gnd;
+    U3.n_upper_byte_enable = .gnd;
+    U3.n_we = b.net("~WE");
+    U3.n_oe = b.net("~OE");
 
     const R1 = b.part(zoink.parts.R0402);
     R1.a = .gnd;

@@ -3,11 +3,11 @@ pub fn configure(b: *Board) !void {
     U1.addr = b.bus("A", 16);
     U1.lower_data = b.bus("D[0:7]", 8);
     U1.upper_data = b.bus("D[8:15]", 8);
-    U1.chip_enable_low = .gnd;
-    U1.lower_byte_enable_low = .gnd;
-    U1.upper_byte_enable_low = .gnd;
-    U1.write_enable_low = b.net("~WE");
-    U1.output_enable_low = b.net("~OE");
+    U1.n_ce = .gnd;
+    U1.n_lower_byte_enable = .gnd;
+    U1.n_upper_byte_enable = .gnd;
+    U1.n_we = b.net("~WE");
+    U1.n_oe = b.net("~OE");
 }
 
 test {

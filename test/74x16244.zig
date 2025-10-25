@@ -10,10 +10,10 @@ pub fn configure(b: *Board) !void {
     U1.u[2].y = b.bus("Y[8:11]", 4);
     U1.u[3].y = b.bus("Y[12:15]", 4);
 
-    U1.u[0].output_enable_low = b.net("~OE[0]");
-    U1.u[1].output_enable_low = b.net("~OE[1]");
-    U1.u[2].output_enable_low = b.net("~OE[2]");
-    U1.u[3].output_enable_low = b.net("~OE[3]");
+    U1.u[0].n_oe = b.net("~OE[0]");
+    U1.u[1].n_oe = b.net("~OE[1]");
+    U1.u[2].n_oe = b.net("~OE[2]");
+    U1.u[3].n_oe = b.net("~OE[3]");
 }
 
 test {

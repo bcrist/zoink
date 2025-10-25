@@ -2,9 +2,9 @@ pub fn configure(b: *Board) !void {
     const U1 = b.part(AS7C1025_J);
     U1.addr = b.bus("A", 17);
     U1.data = b.bus("D", 8);
-    U1.chip_enable_low = .gnd;
-    U1.write_enable_low = b.net("~WE");
-    U1.output_enable_low = b.net("~OE");
+    U1.n_ce = .gnd;
+    U1.n_we = b.net("~WE");
+    U1.n_oe = b.net("~OE");
 }
 
 test {

@@ -31,15 +31,15 @@ pub fn CY7C0xx(
             upper_data: [byte_bits]Net_ID = @splat(.unset),
             addr: [addr_bits]Net_ID = @splat(.unset),
 
-            chip_enable: if (addr_bits >= 15) Net_ID else void = if (addr_bits >= 15) .unset else {},
-            chip_enable_low: Net_ID = .unset,
-            lower_byte_enable_low: Net_ID = .unset,
-            upper_byte_enable_low: Net_ID = .unset,
-            write_enable_low: Net_ID = .unset,
-            output_enable_low: Net_ID = .unset,
-            semaphore_enable_low: Net_ID = .unset,
-            interrupt_low: Net_ID = .unset,
-            busy_low: Net_ID = .unset,
+            ce: if (addr_bits >= 15) Net_ID else void = if (addr_bits >= 15) .unset else {},
+            n_ce: Net_ID = .unset,
+            n_lower_byte_enable: Net_ID = .unset,
+            n_upper_byte_enable: Net_ID = .unset,
+            n_we: Net_ID = .unset,
+            n_oe: Net_ID = .unset,
+            n_semaphore_enable: Net_ID = .unset,
+            n_interrupt: Net_ID = .unset,
+            n_busy: Net_ID = .unset,
         };
 
         pub const Power = if (addr_bits < 15)
@@ -90,25 +90,25 @@ pub fn CY7C0xx(
                     // CY7C027/CY7C028
                     87 => self.master,
 
-                    89 => self.left.busy_low,
-                    90 => self.left.interrupt_low,
-                    10 => self.left.lower_byte_enable_low,
-                    11 => self.left.upper_byte_enable_low,
-                    12 => self.left.chip_enable_low,
-                    13 => self.left.chip_enable,
-                    14 => self.left.semaphore_enable_low,
-                    16 => self.left.write_enable_low,
-                    17 => self.left.output_enable_low,
+                    89 => self.left.n_busy,
+                    90 => self.left.n_interrupt,
+                    10 => self.left.n_lower_byte_enable,
+                    11 => self.left.n_upper_byte_enable,
+                    12 => self.left.n_ce,
+                    13 => self.left.ce,
+                    14 => self.left.n_semaphore_enable,
+                    16 => self.left.n_we,
+                    17 => self.left.n_oe,
 
-                    59 => self.right.output_enable_low,
-                    60 => self.right.write_enable_low,
-                    62 => self.right.semaphore_enable_low,
-                    63 => self.right.chip_enable,
-                    64 => self.right.chip_enable_low,
-                    65 => self.right.upper_byte_enable_low,
-                    66 => self.right.lower_byte_enable_low,
-                    85 => self.right.interrupt_low,
-                    86 => self.right.busy_low,
+                    59 => self.right.n_oe,
+                    60 => self.right.n_we,
+                    62 => self.right.n_semaphore_enable,
+                    63 => self.right.ce,
+                    64 => self.right.n_ce,
+                    65 => self.right.n_upper_byte_enable,
+                    66 => self.right.n_lower_byte_enable,
+                    85 => self.right.n_interrupt,
+                    86 => self.right.n_busy,
 
                     92 => self.left.addr[self.remap_addr[0]],
                     93 => self.left.addr[self.remap_addr[1]],
@@ -207,25 +207,25 @@ pub fn CY7C0xx(
                     // CY7C037/CY7C038
                     86 => self.master,
 
-                    90 => self.left.busy_low,
-                    91 => self.left.interrupt_low,
-                    8 => self.left.lower_byte_enable_low,
-                    9 => self.left.upper_byte_enable_low,
-                    10 => self.left.chip_enable_low,
-                    11 => self.left.chip_enable,
-                    12 => self.left.semaphore_enable_low,
-                    13 => self.left.write_enable_low,
-                    14 => self.left.output_enable_low,
+                    90 => self.left.n_busy,
+                    91 => self.left.n_interrupt,
+                    8 => self.left.n_lower_byte_enable,
+                    9 => self.left.n_upper_byte_enable,
+                    10 => self.left.n_ce,
+                    11 => self.left.ce,
+                    12 => self.left.n_semaphore_enable,
+                    13 => self.left.n_we,
+                    14 => self.left.n_oe,
 
-                    60 => self.right.output_enable_low,
-                    62 => self.right.write_enable_low,
-                    63 => self.right.semaphore_enable_low,
-                    64 => self.right.chip_enable,
-                    65 => self.right.chip_enable_low,
-                    66 => self.right.upper_byte_enable_low,
-                    67 => self.right.lower_byte_enable_low,
-                    84 => self.right.interrupt_low,
-                    85 => self.right.busy_low,
+                    60 => self.right.n_oe,
+                    62 => self.right.n_we,
+                    63 => self.right.n_semaphore_enable,
+                    64 => self.right.ce,
+                    65 => self.right.n_ce,
+                    66 => self.right.n_upper_byte_enable,
+                    67 => self.right.n_lower_byte_enable,
+                    84 => self.right.n_interrupt,
+                    85 => self.right.n_busy,
 
                     92 => self.left.addr[self.remap_addr[0]],
                     93 => self.left.addr[self.remap_addr[1]],
@@ -328,23 +328,23 @@ pub fn CY7C0xx(
                     // CY7C024/CY7C0241/CY7C025/CY7C0251/CY7C0246
                     62 => self.master,
 
-                    64 => self.left.busy_low,
-                    65 => self.left.interrupt_low,
-                    83 => self.left.lower_byte_enable_low,
-                    84 => self.left.upper_byte_enable_low,
-                    85 => self.left.chip_enable_low,
-                    86 => self.left.semaphore_enable_low,
-                    87 => self.left.write_enable_low,
-                    89 => self.left.output_enable_low,
+                    64 => self.left.n_busy,
+                    65 => self.left.n_interrupt,
+                    83 => self.left.n_lower_byte_enable,
+                    84 => self.left.n_upper_byte_enable,
+                    85 => self.left.n_ce,
+                    86 => self.left.n_semaphore_enable,
+                    87 => self.left.n_we,
+                    89 => self.left.n_oe,
 
-                    36 => self.right.output_enable_low,
-                    37 => self.right.write_enable_low,
-                    39 => self.right.semaphore_enable_low,
-                    40 => self.right.chip_enable_low,
-                    41 => self.right.upper_byte_enable_low,
-                    42 => self.right.lower_byte_enable_low,
-                    60 => self.right.interrupt_low,
-                    61 => self.right.busy_low,
+                    36 => self.right.n_oe,
+                    37 => self.right.n_we,
+                    39 => self.right.n_semaphore_enable,
+                    40 => self.right.n_ce,
+                    41 => self.right.n_upper_byte_enable,
+                    42 => self.right.n_lower_byte_enable,
+                    60 => self.right.n_interrupt,
+                    61 => self.right.n_busy,
 
                     66 => self.left.addr[self.remap_addr[0]],
                     67 => self.left.addr[self.remap_addr[1]],
@@ -443,23 +443,23 @@ pub fn CY7C0xx(
                     // CY7C024/CY7C025
                     63 => self.master,
 
-                    65 => self.left.busy_low,
-                    66 => self.left.interrupt_low,
-                    80 => self.left.lower_byte_enable_low,
-                    81 => self.left.upper_byte_enable_low,
-                    82 => self.left.chip_enable_low,
-                    83 => self.left.semaphore_enable_low,
-                    84 => self.left.write_enable_low,
-                    2 => self.left.output_enable_low,
+                    65 => self.left.n_busy,
+                    66 => self.left.n_interrupt,
+                    80 => self.left.n_lower_byte_enable,
+                    81 => self.left.n_upper_byte_enable,
+                    82 => self.left.n_ce,
+                    83 => self.left.n_semaphore_enable,
+                    84 => self.left.n_we,
+                    2 => self.left.n_oe,
 
-                    41 => self.right.output_enable_low,
-                    42 => self.right.write_enable_low,
-                    44 => self.right.semaphore_enable_low,
-                    45 => self.right.chip_enable_low,
-                    46 => self.right.upper_byte_enable_low,
-                    47 => self.right.lower_byte_enable_low,
-                    61 => self.right.interrupt_low,
-                    62 => self.right.busy_low,
+                    41 => self.right.n_oe,
+                    42 => self.right.n_we,
+                    44 => self.right.n_semaphore_enable,
+                    45 => self.right.n_ce,
+                    46 => self.right.n_upper_byte_enable,
+                    47 => self.right.n_lower_byte_enable,
+                    61 => self.right.n_interrupt,
+                    62 => self.right.n_busy,
 
                     67 => self.left.addr[self.remap_addr[0]],
                     68 => self.left.addr[self.remap_addr[1]],
@@ -580,8 +580,8 @@ pub fn CY7C0xx(
                 .commit => {
                     try v.expect_valid(self.master, levels);
                     if (v.read_logic(self.master, levels) == false) {
-                        try v.expect_valid(self.left.busy_low, levels);
-                        try v.expect_valid(self.right.busy_low, levels);
+                        try v.expect_valid(self.left.n_busy, levels);
+                        try v.expect_valid(self.right.n_busy, levels);
                     }
 
                     try write_port(self.left, v, .{
@@ -618,12 +618,12 @@ pub fn CY7C0xx(
                     _ = try read_port(mode, self.right, v, right_ce, &state.mem, state.right_semaphores);
 
                     if (v.read_logic(self.master, levels)) {
-                        try v.expect_output_valid(self.left.busy_low, !state.left_busy, levels);
-                        try v.expect_output_valid(self.right.busy_low, !state.right_busy, levels);
+                        try v.expect_output_valid(self.left.n_busy, !state.left_busy, levels);
+                        try v.expect_output_valid(self.right.n_busy, !state.right_busy, levels);
                     }
 
-                    try v.expect_output_valid(self.left.interrupt_low, !state.left_interrupt, levels);
-                    try v.expect_output_valid(self.right.interrupt_low, !state.right_interrupt, levels);
+                    try v.expect_output_valid(self.left.n_interrupt, !state.left_interrupt, levels);
+                    try v.expect_output_valid(self.right.n_interrupt, !state.right_interrupt, levels);
                 },
                 .nets_only => {
                     const left_ce = read_port_ce(self.left, v);
@@ -647,57 +647,57 @@ pub fn CY7C0xx(
                                 }
                             }
                         }
-                        try v.drive_logic(self.left.busy_low, !state.left_busy, levels);
-                        try v.drive_logic(self.right.busy_low, !state.right_busy, levels);
+                        try v.drive_logic(self.left.n_busy, !state.left_busy, levels);
+                        try v.drive_logic(self.right.n_busy, !state.right_busy, levels);
                     }
 
-                    try v.drive_logic(self.left.interrupt_low, !state.left_interrupt, levels);
-                    try v.drive_logic(self.right.interrupt_low, !state.right_interrupt, levels);
+                    try v.drive_logic(self.left.n_interrupt, !state.left_interrupt, levels);
+                    try v.drive_logic(self.right.n_interrupt, !state.right_interrupt, levels);
                 },
             }
         }
 
         fn read_port_ce(port: Port, v: *Validator) bool {
-            return v.read_logic(port.chip_enable_low, levels) == false and (@TypeOf(port.chip_enable) == void or v.read_logic(port.chip_enable, levels) == true);
+            return v.read_logic(port.n_ce, levels) == false and (@TypeOf(port.ce) == void or v.read_logic(port.ce, levels) == true);
         }
 
         fn read_port(mode: Validator.Update_Mode, port: Port, v: *Validator, ce: bool, mem: *const [1 << addr_bits]Validator_State.Word, semaphores: [8]Validator_State.Semaphore_State) !?usize {
             var addr: ?usize = null;
             if (ce
-                and v.read_logic(port.output_enable_low, levels) == false
-                and v.read_logic(port.write_enable_low, levels) == true
+                and v.read_logic(port.n_oe, levels) == false
+                and v.read_logic(port.n_we, levels) == true
             ) {
                 addr = v.read_bus(port.addr, levels);
                 const word = mem[addr.?];
 
-                if (v.read_logic(port.lower_byte_enable_low, levels) == false) {
+                if (v.read_logic(port.n_lower_byte_enable, levels) == false) {
                     switch (mode) {
                         .commit => try v.expect_output_valid(port.lower_data, word.lower, levels),
                         else => try v.drive_bus(port.lower_data, word.lower, levels),
                     }
                 }
-                if (v.read_logic(port.upper_byte_enable_low, levels) == false) {
+                if (v.read_logic(port.n_upper_byte_enable, levels) == false) {
                     switch (mode) {
                         .commit => try v.expect_output_valid(port.upper_data, word.upper, levels),
                         else => try v.drive_bus(port.upper_data, word.upper, levels),
                     }
                 }
-            } else if (v.read_logic(port.chip_enable_low, levels) == true
-                and v.read_logic(port.semaphore_enable_low, levels) == false
-                and v.read_logic(port.output_enable_low, levels) == false
-                and v.read_logic(port.write_enable_low, levels) == true
+            } else if (v.read_logic(port.n_ce, levels) == true
+                and v.read_logic(port.n_semaphore_enable, levels) == false
+                and v.read_logic(port.n_oe, levels) == false
+                and v.read_logic(port.n_we, levels) == true
             ) {
                 const sem_addr = v.read_bus(port.addr[0..2], levels);
                 const sem = semaphores[sem_addr];
 
-                if (v.read_logic(port.lower_byte_enable_low, levels) == false) {
+                if (v.read_logic(port.n_lower_byte_enable, levels) == false) {
                     const value: u16 = if (sem == .owned) 0 else 0x1FF;
                     switch (mode) {
                         .commit => try v.expect_output_valid(port.lower_data, value, levels),
                         else => try v.drive_bus(port.lower_data, value, levels),
                     }
                 }
-                if (v.read_logic(port.upper_byte_enable_low, levels) == false) {
+                if (v.read_logic(port.n_upper_byte_enable, levels) == false) {
                     const value: u16 = if (sem == .owned) 0 else 0x1FF;
                     switch (mode) {
                         .commit => try v.expect_output_valid(port.upper_data, value, levels),
@@ -710,8 +710,8 @@ pub fn CY7C0xx(
         }
 
         fn is_busy(port: Port, v: *Validator, internal: bool) bool {
-            if (port.busy_low == .no_connect or port.busy_low == .unset) return internal;
-            return v.read_logic(port.busy_low, levels) == false;
+            if (port.n_busy == .no_connect or port.n_busy == .unset) return internal;
+            return v.read_logic(port.n_busy, levels) == false;
         }
 
         const Write_Port_Params = struct {
@@ -726,29 +726,29 @@ pub fn CY7C0xx(
             mem: *[1 << addr_bits]Validator_State.Word
         };
         fn write_port(port: Port, v: *Validator, p: Write_Port_Params) !void {
-            if (@TypeOf(port.chip_enable) != void) {
-                try v.expect_valid(port.chip_enable, levels);
+            if (@TypeOf(port.ce) != void) {
+                try v.expect_valid(port.ce, levels);
             }
-            try v.expect_valid(port.chip_enable_low, levels);
-            try v.expect_valid(port.lower_byte_enable_low, levels);
-            try v.expect_valid(port.upper_byte_enable_low, levels);
-            try v.expect_valid(port.write_enable_low, levels);
-            try v.expect_valid(port.output_enable_low, levels);
-            try v.expect_valid(port.semaphore_enable_low, levels);
+            try v.expect_valid(port.n_ce, levels);
+            try v.expect_valid(port.n_lower_byte_enable, levels);
+            try v.expect_valid(port.n_upper_byte_enable, levels);
+            try v.expect_valid(port.n_we, levels);
+            try v.expect_valid(port.n_oe, levels);
+            try v.expect_valid(port.n_semaphore_enable, levels);
 
             var new_mutex_addr: usize = std.math.maxInt(usize);
 
             if (read_port_ce(port, v)) {
                 try v.expect_valid(port.addr, levels);
 
-                const lb = v.read_logic(port.lower_byte_enable_low, levels) == false;
-                const ub = v.read_logic(port.upper_byte_enable_low, levels) == false;
+                const lb = v.read_logic(port.n_lower_byte_enable, levels) == false;
+                const ub = v.read_logic(port.n_upper_byte_enable, levels) == false;
 
                 if (lb) try v.expect_valid(port.lower_data, levels);
                 if (ub) try v.expect_valid(port.upper_data, levels);
 
                 if (!is_busy(port, v, p.busy)) {
-                    if (v.read_logic(port.write_enable_low, levels) == false) {
+                    if (v.read_logic(port.n_we, levels) == false) {
                         new_mutex_addr = v.read_bus(port.addr, levels);
 
                         if (lb) {
@@ -763,16 +763,16 @@ pub fn CY7C0xx(
                         if (new_mutex_addr == p.other_interrupt_addr and !p.other_interrupt_flag.*) {
                             p.other_interrupt_flag.* = true;
                         }
-                    } else if (v.read_logic(port.output_enable_low, levels) == false) {
+                    } else if (v.read_logic(port.n_oe, levels) == false) {
                         const addr = v.read_bus(port.addr, levels);
                         if (addr == p.interrupt_addr and p.interrupt_flag.*) {
                             p.interrupt_flag.* = false;
                         }
                     }
                 }
-            } else if (v.read_logic(port.chip_enable_low, levels) == true
-                and v.read_logic(port.semaphore_enable_low, levels) == false
-                and v.read_logic(port.write_enable_low, levels) == false
+            } else if (v.read_logic(port.n_ce, levels) == true
+                and v.read_logic(port.n_semaphore_enable, levels) == false
+                and v.read_logic(port.n_we, levels) == false
             ) {
                 try v.expect_valid(port.addr[0..2], levels);
                 try v.expect_valid(port.lower_data[0], levels);
@@ -803,10 +803,10 @@ pub fn CY7C0xx(
         fn finalize_semaphores(port: Port, v: *Validator, semaphores: *[8]Validator_State.Semaphore_State) !void {
             for (semaphores) |*sem| {
                 if (sem.* != .owned_masked) continue;
-                if (v.read_logic(port.chip_enable_low, levels) == false
-                    or v.read_logic(port.semaphore_enable_low, levels) == true
-                    or v.read_logic(port.output_enable_low, levels) == true
-                    or v.read_logic(port.write_enable_low, levels) == false
+                if (v.read_logic(port.n_ce, levels) == false
+                    or v.read_logic(port.n_semaphore_enable, levels) == true
+                    or v.read_logic(port.n_oe, levels) == true
+                    or v.read_logic(port.n_we, levels) == false
                 ) sem.* = .owned;
             }
         }

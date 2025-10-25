@@ -6,15 +6,15 @@ pub fn configure(b: *Board) !void {
     U1.u[0].b = b.bus("B[0:7]", 8);
     U1.u[1].b = b.bus("B[8:15]", 8);
 
-    U1.u[0].a_to_b.output_enable = b.net("OEAB");
-    U1.u[1].a_to_b.output_enable = b.net("OEAB");
+    U1.u[0].a_to_b.oe = b.net("OEAB");
+    U1.u[1].a_to_b.oe = b.net("OEAB");
     U1.u[0].a_to_b.output_register = b.net("SAB");
     U1.u[1].a_to_b.output_register = b.net("SAB");
     U1.u[0].a_to_b.clk = b.net("CLKAB");
     U1.u[1].a_to_b.clk = b.net("CLKAB");
 
-    U1.u[0].b_to_a.output_enable_low = b.net("~OEBA");
-    U1.u[1].b_to_a.output_enable_low = b.net("~OEBA");
+    U1.u[0].b_to_a.n_oe = b.net("~OEBA");
+    U1.u[1].b_to_a.n_oe = b.net("~OEBA");
     U1.u[0].b_to_a.output_register = b.net("SBA");
     U1.u[1].b_to_a.output_register = b.net("SBA");
     U1.u[0].b_to_a.clk = b.net("CLKBA");
