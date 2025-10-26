@@ -176,11 +176,23 @@ pub const R0603 = lcr._0603(450, "R0603");
 pub const R0402 = lcr._0402(350, "R0402");
 pub const R0201 = lcr._0201(230, "R0201");
 
+pub const R1206K = lcr.K1206(550, "R1206");
+pub const R0805K = lcr.K0805(550, "R0805");
+pub const R0603K = lcr.K0603(450, "R0603");
+pub const R0402K = lcr.K0402(350, "R0402");
+pub const R0201K = lcr.K0201(230, "R0201");
+
 pub const C1206 = lcr._1206(1750, "C1206");
 pub const C0805 = lcr._0805(1350, "C0805");
 pub const C0603 = lcr._0603(950, "C0603");
 pub const C0402 = lcr._0402(550, "C0402");
 pub const C0201 = lcr._0201(330, "C0201");
+
+pub const C1206K = lcr.K1206(1750, "C1206");
+pub const C0805K = lcr.K0805(1350, "C0805");
+pub const C0603K = lcr.K0603(950, "C0603");
+pub const C0402K = lcr.K0402(550, "C0402");
+pub const C0201K = lcr.K0201(330, "C0201");
 
 pub const L1206 = lcr._1206(1750, "L1206");
 pub const L0805 = lcr._0805(1350, "L0805");

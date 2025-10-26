@@ -293,6 +293,7 @@ pub const i2c = @import("parts/i2c.zig");
 
 const passive = @import("parts/passive.zig");
 pub const Resistor = passive.Resistor;
+pub const Resistor_Kelvin = passive.Resistor;
 pub const Cap = passive.Cap;
 pub const Cap_Decoupler = passive.Cap_Decoupler;
 pub const Inductor = passive.Inductor;
@@ -303,17 +304,23 @@ pub const R0603 = Resistor(pkg.R0603);
 pub const R0402 = Resistor(pkg.R0402);
 pub const R0201 = Resistor(pkg.R0201);
 
+pub const R1206_Kelvin = Resistor_Kelvin(pkg.R1206K);
+pub const R0805_Kelvin = Resistor_Kelvin(pkg.R0805K);
+pub const R0603_Kelvin = Resistor_Kelvin(pkg.R0603K);
+pub const R0402_Kelvin = Resistor_Kelvin(pkg.R0402K);
+pub const R0201_Kelvin = Resistor_Kelvin(pkg.R0201K);
+
 pub const C1206 = Cap(pkg.C1206);
 pub const C0805 = Cap(pkg.C0805);
 pub const C0603 = Cap(pkg.C0603);
 pub const C0402 = Cap(pkg.C0402);
 pub const C0201 = Cap(pkg.C0201);
 
-pub const C1206_Decoupler = Cap_Decoupler(pkg.C1206);
-pub const C0805_Decoupler = Cap_Decoupler(pkg.C0805);
-pub const C0603_Decoupler = Cap_Decoupler(pkg.C0603);
-pub const C0402_Decoupler = Cap_Decoupler(pkg.C0402);
-pub const C0201_Decoupler = Cap_Decoupler(pkg.C0201);
+pub const C1206_Decoupler = Cap_Decoupler(pkg.C1206K);
+pub const C0805_Decoupler = Cap_Decoupler(pkg.C0805K);
+pub const C0603_Decoupler = Cap_Decoupler(pkg.C0603K);
+pub const C0402_Decoupler = Cap_Decoupler(pkg.C0402K);
+pub const C0201_Decoupler = Cap_Decoupler(pkg.C0201K);
 
 pub const L1206 = Inductor(pkg.L1206);
 pub const L0805 = Inductor(pkg.L0805);

@@ -45,8 +45,9 @@ pub fn Cap_Decoupler(comptime Pkg: type) type {
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 1 => self.gnd,
-                2 => self.internal,
-                3 => self.external,
+                2 => self.gnd,
+                3 => self.internal,
+                4 => self.external,
                 else => .unset
             };
         }
@@ -88,6 +89,45 @@ pub fn Resistor(comptime Pkg: type) type {
                 .reset => {},
                 .commit => try v.verify_power_limit(self.a, self.b, self.value, self.max_power),
                 .nets_only => try v.connect_nets(self.a, self.b, self.value),
+            }
+        }
+    };
+}
+
+pub fn Resistor_Kelvin(comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .R,
+        },
+        a: Net_ID = .unset,
+        b: Net_ID = .unset,
+        a_sense: Net_ID = .unset,
+        b_sense: Net_ID = .unset,
+        value: f32 = 1,
+        max_power: f32 = 1,
+        populate: bool = true,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.a,
+                2 => self.a_sense,
+                3 => self.b_sense,
+                4 => self.b,
+                else => .unset
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            if (!self.populate) return;
+            switch (mode) {
+                .reset => {},
+                .commit => try v.verify_power_limit(self.a, self.b, self.value, self.max_power),
+                .nets_only => {
+                    try v.connect_nets(self.a, self.b, self.value);
+                    try v.connect_nets(self.a, self.a_sense, self.value);
+                    try v.connect_nets(self.a, self.b_sense, self.value);
+                },
             }
         }
     };
