@@ -170,6 +170,9 @@ pub const BGA_p050_144_7mm = lattice.csBGA144;
 pub const BGA_p040_64_4mm = lattice.ucBGA64;
 pub const BGA_p040_132_6mm = lattice.ucBGA132;
 
+pub const TO92 = jedec.TO_226G_AA("TO92");
+pub const TO92_2 = jedec.TO_226G_AC("TO92-2");
+
 pub const R1206 = lcr._1206(550, "R1206");
 pub const R0805 = lcr._0805(550, "R0805");
 pub const R0603 = lcr._0603(450, "R0603");

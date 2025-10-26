@@ -1868,6 +1868,56 @@ pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_si
     };
 }
 
+pub fn TO_226G_AA(comptime package_name: []const u8) type {
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.SIL(data, .normal).fp,
+        };
+
+        pub const data: SIL_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_inches_range(0.175, 0.205),
+                .height = .init_inches_range(0.175, 0.205),
+            },
+            .max_z = .init_inches_range(0.270, 0.310),
+            .body_thickness = .init_inches_range(0.170, 0.210),
+            .total_pins = 3,
+            .pin_pitch = .init_inches(0.05, 0),
+            .pin_width = .init_inches_range(0.015, 0.022),
+            .pin_width_above_seating = .init_inches_range(0.015, 0.03),
+            .pin_thickness = .init_inches_range(0.014, 0.020),
+            .pin_length = .init_inches_range(0.4, 1),
+        };
+    };
+}
+
+pub fn TO_226G_AC(comptime package_name: []const u8) type {
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.SIL(data, .normal).fp,
+        };
+
+        pub const data: SIL_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_inches_range(0.175, 0.205),
+                .height = .init_inches_range(0.175, 0.205),
+            },
+            .max_z = .init_inches_range(0.270, 0.310),
+            .body_thickness = .init_inches_range(0.170, 0.210),
+            .total_pins = 2,
+            .pin_pitch = .init_inches(0.1, 0),
+            .pin_width = .init_inches_range(0.015, 0.022),
+            .pin_width_above_seating = .init_inches_range(0.015, 0.03),
+            .pin_thickness = .init_inches_range(0.014, 0.020),
+            .pin_length = .init_inches_range(0.4, 1),
+        };
+    };
+}
+
+
+const SIL_Data = footprints.SIL_Data;
 const DIL_Data = footprints.DIL_Data;
 const PGA_Data = footprints.PGA_Data;
 const BGA_Data = footprints.BGA_Data;

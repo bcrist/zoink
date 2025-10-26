@@ -291,6 +291,35 @@ pub const GS72116U  = sram.Async_16b(17, power.Multi(2, 2, .p3v3, C0402_Decouple
 
 pub const i2c = @import("parts/i2c.zig");
 
+pub const EMC1702 = i2c.EMC1702(C0402_Decoupler);
+
+pub const regulator = @import("parts/regulator.zig");
+
+pub const AP62300TWU = regulator.AP62300TWU;
+
+pub const transistor = @import("parts/transistor.zig");
+
+pub const @"2N2222" = transistor.BJT(.npn, pkg.TO92, .ebc);
+pub const @"2N2907" = transistor.BJT(.pnp, pkg.TO92, .ebc);
+
+pub const @"2N3904" = transistor.BJT(.npn, pkg.TO92, .ebc);
+pub const @"2N3906" = transistor.BJT(.pnp, pkg.TO92, .ebc);
+
+pub const BC546 = transistor.BJT(.npn, pkg.TO92, .cbe);
+pub const BC556 = transistor.BJT(.pnp, pkg.TO92, .cbe);
+
+pub const BC547 = transistor.BJT(.npn, pkg.TO92, .cbe);
+pub const BC557 = transistor.BJT(.pnp, pkg.TO92, .cbe);
+
+pub const BC548 = transistor.BJT(.npn, pkg.TO92, .cbe);
+pub const BC558 = transistor.BJT(.pnp, pkg.TO92, .cbe);
+
+pub const BC549 = transistor.BJT(.npn, pkg.TO92, .cbe);
+pub const BC559 = transistor.BJT(.pnp, pkg.TO92, .cbe);
+
+pub const @"2N7002" = transistor.FET(.n_channel, pkg.SOT23, .gsd);
+pub const BSS84 = transistor.FET(.p_channel, pkg.SOT23, .gsd);
+
 const passive = @import("parts/passive.zig");
 pub const Resistor = passive.Resistor;
 pub const Resistor_Kelvin = passive.Resistor_Kelvin;
@@ -327,10 +356,6 @@ pub const L0805 = Inductor(pkg.L0805);
 pub const L0603 = Inductor(pkg.L0603);
 pub const L0402 = Inductor(pkg.L0402);
 pub const L0201 = Inductor(pkg.L0201);
-
-pub const regulator = @import("parts/regulator.zig");
-
-pub const AP62300TWU = regulator.AP62300TWU;
 
 pub fn Connector(comptime n: comptime_int, comptime Pkg: type) type {
     return struct {

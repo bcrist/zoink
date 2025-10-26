@@ -72,6 +72,63 @@ fn mils_to_microns(mils: isize) isize {
     return ((mils * 254) + 6) / 10;
 }
 
+/// Single inline packages, with pins extending directly beneath center of body.
+/// Pin 1 is the westmost pin.
+/// The west/southwest/south side of the body may have a notch to indicate pin 1.
+/// All pins have the same dimensions and pitch.
+/// Some pins may be omitted.
+///
+/// This footprint type is suitable for:
+///   * through-hole transistors
+///   * through-hole voltage regulators
+///   * some delay lines
+///   * some reed relays
+pub const SIL_Data = struct {
+    package_name: []const u8,
+
+    body: Rect,
+    max_z: Dim,
+    body_thickness: Dim, // leadframe assumed to be placed half thickness from top of body (max_z)
+
+    // Note this also includes any omitted pins, so the actual physical number of pins (and logical max pin number) may be less.
+    total_pins: usize,
+
+    pin_pitch: Dim, // typically 100mil; distance between adjacent pin centers
+    pin_width: Dim, // typically ~18mil; hole diameter must be at least sqrt(pin_width^2 + pin_thickness^2)
+    pin_thickness: Dim, // typically ~10mil, a.k.a. leadframe thickness
+    pin_width_above_seating: Dim, // sometimes there is a "bulge" in leads from how leadframe is trimmed
+    pin_length: Dim, // typically ~150mil; max excursion below the seating plane
+
+    // Pin numbers (as they would be defined for a variant with no omitted pins) that do not physically exist.
+    // Parts cann't reference omitted pins; they are not assigned pin numbers or Pin_IDs
+    // This feature is mainly used for delay lines and transformers.
+    omitted_pins: []const usize = &.{},
+
+    pub fn format(self: SIL_Data, writer: *std.io.Writer) !void {
+        try writer.writeAll(self.package_name);
+    }
+};
+pub fn SIL(comptime data: SIL_Data, comptime density: Density) type {
+    _ = density; // TODO use to control annular ring size & shape
+    //var pads: []Footprint.Pad = &.{};
+
+    var pin: usize = 1;
+    for (0..1) |_| {
+        for (0 .. data.total_pins) |_| {
+            // TODO
+
+
+            pin += 1;
+        }
+    }
+
+    return struct {
+        pub const fp: Footprint = .{
+            .name = "SIL",
+        };
+    };
+}
+
 /// Rectangular dual inline packages, with square leads/pads on the edges of 2 sides.
 /// The same number of pins are placed on opposite sides.
 /// Pin 1 is the westmost pin on the south side.
@@ -131,7 +188,7 @@ pub fn DIL(comptime data: DIL_Data, comptime density: Density) type {
 
     return struct {
         pub const fp: Footprint = .{
-            .name = "SMD",
+            .name = "DIL",
         };
     };
 }
