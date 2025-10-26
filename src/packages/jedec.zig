@@ -1333,6 +1333,541 @@ pub const MO_207AD = struct {
     };
 };
 
+
+// height x width
+pub const MO_220_Body_Dimensions = enum {
+    @"2x2",
+    @"3x3",
+    @"3.5x3.5",
+    @"3.5x4.5",
+    @"4x3",
+    @"4x4",
+    @"4x5",
+    @"4.5x5.5",
+    @"4.5x6.5",
+    @"5x4",
+    @"5x5",
+    @"5x6",
+    @"5x7",
+    @"5.5x6.5",
+    @"6x5",
+    @"6x6",
+    @"7x5",
+    @"7x7",
+    @"7x9",
+    @"8x8",
+    @"9x9",
+    @"10x10",
+    @"12x12",
+};
+pub const MO_220_Body_Thickness = enum {
+    very_thin, // up to 1.0mm thick
+    very_very_thin, // up to 0.8mm thick
+};
+/// QFN
+pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_side: comptime_int, comptime pitch_um: comptime_int, comptime dim: MO_220_Body_Dimensions, comptime has_heat_slug: bool, comptime thickness: MO_220_Body_Thickness, comptime package_name: []const u8) type {
+    const width_mm: comptime_float, const height_mm: comptime_float = switch (dim) {
+        .@"2x2"     => .{ 2, 2 },
+        .@"3x3"     => .{ 3, 3 },
+        .@"3.5x3.5" => .{ 3.5, 3.5 },
+        .@"3.5x4.5" => .{ 4.5, 3.5 },
+        .@"4x3"     => .{ 3, 4 },
+        .@"4x4"     => .{ 4, 4 },
+        .@"4x5"     => .{ 5, 4 },
+        .@"4.5x5.5" => .{ 5.5, 4.5 },
+        .@"4.5x6.5" => .{ 6.5, 4.5 },
+        .@"5x4"     => .{ 4, 5 },
+        .@"5x5"     => .{ 5, 5 },
+        .@"5x6"     => .{ 6, 5 },
+        .@"5x7"     => .{ 7, 5 },
+        .@"5.5x6.5" => .{ 6.5, 5.5 },
+        .@"6x5"     => .{ 5, 6 },
+        .@"6x6"     => .{ 6, 6 },
+        .@"7x5"     => .{ 5, 7 },
+        .@"7x7"     => .{ 7, 7 },
+        .@"7x9"     => .{ 9, 7 },
+        .@"8x8"     => .{ 8, 8 },
+        .@"9x9"     => .{ 9, 9 },
+        .@"10x10"   => .{ 10, 10 },
+        .@"12x12"   => .{ 12, 12 },
+    };
+
+    switch (dim) {
+        .@"2x2" => switch (lead_count) {
+            8 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 2),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"3x3" => switch (lead_count) {
+            4 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 2),
+                else => unreachable,
+            },
+            8 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 2),
+                else => unreachable,
+            },
+            12 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 3),
+                500 => std.debug.assert(lead_count_first_side == 3),
+                else => unreachable,
+            },
+            16 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 4),
+                400 => std.debug.assert(lead_count_first_side == 4),
+                else => unreachable,
+            },
+            20 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 5),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"3.5x3.5" => switch (lead_count) {
+            20 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 5),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"3.5x4.5" => switch (lead_count) {
+            24 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 8),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"4x3" => switch (lead_count) {
+            8 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 1),
+                else => unreachable,
+            },
+            12 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 2),
+                else => unreachable,
+            },
+            16 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 3),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"4x4" => switch (lead_count) {
+            12 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 3),
+                650 => std.debug.assert(lead_count_first_side == 3),
+                else => unreachable,
+            },
+            14 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 3),
+                500 => std.debug.assert(lead_count_first_side == 3),
+                else => unreachable,
+            },
+            16 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 4),
+                500 => std.debug.assert(lead_count_first_side == 4),
+                else => unreachable,
+            },
+            20 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 5),
+                else => unreachable,
+            },
+            24 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 6),
+                else => unreachable,
+            },
+            28 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 8),
+                400 => std.debug.assert(lead_count_first_side == 7),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"4x5" => switch (lead_count) {
+            10 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 3),
+                else => unreachable,
+            },
+            24 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 6 or lead_count_first_side == 7),
+                else => unreachable,
+            },
+            28 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 8),
+                else => unreachable,
+            },
+            32 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 9),
+                else => unreachable,
+            },
+            34 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 10),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"4.5x5.5" => switch (lead_count) {
+            32 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 10),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"4.5x6.5" => switch (lead_count) {
+            36 => switch(pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 12),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"5x4" => switch (lead_count) {
+            14 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 3),
+                else => unreachable,
+            },
+            16 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 3),
+                else => unreachable,
+            },
+            18 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 4),
+                else => unreachable,
+            },
+            24 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 5),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"5x5" => switch (lead_count) {
+            16 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 4),
+                else => unreachable,
+            },
+            20 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 4),
+                650 => std.debug.assert(lead_count_first_side == 5),
+                else => unreachable,
+            },
+            24 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 6),
+                else => unreachable,
+            },
+            28 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 7),
+                else => unreachable,
+            },
+            32 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 8),
+                else => unreachable,
+            },
+            36 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 9),
+                else => unreachable,
+            },
+            40 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 10),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"5x6" => switch (lead_count) {
+            22 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 6),
+                else => unreachable,
+            },
+            32 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 9),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"5x7" => switch (lead_count) {
+            38 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 12),
+                else => unreachable,
+            },
+            40 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 12),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"5.5x6.5" => switch (lead_count) {
+            40 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 12),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"6x5" => switch (lead_count) {
+            18 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 4),
+                else => unreachable,
+            },
+            20 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 4),
+                else => unreachable,
+            },
+            22 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 5),
+                else => unreachable,
+            },
+            32 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 7),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"6x6" => switch (lead_count) {
+            20 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 5),
+                else => unreachable,
+            },
+            24 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 5 or lead_count_first_side == 7),
+                650 => std.debug.assert(lead_count_first_side == 6),
+                else => unreachable,
+            },
+            28 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 7),
+                else => unreachable,
+            },
+            32 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 8),
+                500 => std.debug.assert(lead_count_first_side == 8),
+                else => unreachable,
+            },
+            36 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 9),
+                else => unreachable,
+            },
+            38 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 9),
+                else => unreachable,
+            },
+            40 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 10),
+                else => unreachable,
+            },
+            48 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 12),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"7x5" => switch (lead_count) {
+            38 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 7),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"7x7" => switch (lead_count) {
+            28 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 7),
+                else => unreachable,
+            },
+            32 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 8),
+                else => unreachable,
+            },
+            36 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 9),
+                else => unreachable,
+            },
+            40 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 10),
+                else => unreachable,
+            },
+            44 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 10 or lead_count_first_side == 11 or lead_count_first_side == 12),
+                else => unreachable,
+            },
+            48 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 12 or lead_count_first_side == 13),
+                else => unreachable,
+            },
+            56 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 14),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"7x9" => switch (lead_count) {
+            38 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 11),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"8x8" => switch (lead_count) {
+            28 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 6),
+                else => unreachable,
+            },
+            32 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 8),
+                else => unreachable,
+            },
+            36 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 9),
+                else => unreachable,
+            },
+            40 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 10),
+                else => unreachable,
+            },
+            44 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 11),
+                else => unreachable,
+            },
+            48 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 11 or lead_count_first_side == 12),
+                else => unreachable,
+            },
+            52 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 13),
+                else => unreachable,
+            },
+            56 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 14),
+                else => unreachable,
+            },
+            64 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 16),
+                else => unreachable,
+            },
+            68 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 17),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"9x9" => switch (lead_count) {
+            36 => switch (pitch_um) {
+                800 => std.debug.assert(lead_count_first_side == 9),
+                else => unreachable,
+            },
+            44 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 11),
+                else => unreachable,
+            },
+            48 => switch (pitch_um) {
+                650 => std.debug.assert(lead_count_first_side == 12),
+                else => unreachable,
+            },
+            56 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 14),
+                else => unreachable,
+            },
+            60 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 15),
+                else => unreachable,
+            },
+            64 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 16),
+                else => unreachable,
+            },
+            72 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 18),
+                else => unreachable,
+            },
+            76 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 19),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"10x10" => switch (lead_count) {
+            64 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 16),
+                else => unreachable,
+            },
+            68 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 17),
+                else => unreachable,
+            },
+            72 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 18),
+                else => unreachable,
+            },
+            88 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 22),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+        .@"12x12" => switch (lead_count) {
+            80 => switch (pitch_um) {
+                500 => std.debug.assert(lead_count_first_side == 20),
+                else => unreachable,
+            },
+            100 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 25),
+                else => unreachable,
+            },
+            108 => switch (pitch_um) {
+                400 => std.debug.assert(lead_count_first_side == 27),
+                else => unreachable,
+            },
+            else => unreachable,
+        },
+    }
+
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = &fp.SMD(data, .normal).fp,
+        };
+
+        pub const data: SMD_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_mm(width_mm, 0.1),
+                .height = .init_mm(height_mm, 0.1),
+            },
+            .overall = .{
+                .width  = .init_mm(width_mm, 0.1),
+                .height = .init_mm(height_mm, 0.1),
+            },
+            .max_z = .init_mm(switch (thickness) {
+                .very_thin => 1.0,
+                .very_very_thin => 0.8,
+            }, 0),
+            .total_pins = lead_count,
+            .pins_on_first_side = lead_count_first_side,
+            .pin_pitch = .{ .nominal_um = pitch_um, .tolerance_um = 0 },
+            .pin_width = switch (pitch_um) {
+                800 => .init_mm_range(0.25, 0.35),
+                650 => .init_mm_range(0.25, 0.35),
+                500 => .init_mm_range(0.18, 0.30),
+                400 => .init_mm_range(0.15, 0.25),
+                else => unreachable,
+            },
+            .pin_seating = switch (pitch_um) {
+                800 => .init_mm_range(0.35, 0.75),
+                650 => .init_mm_range(0.30, 0.75),
+                500 => .init_mm_range(0.30, 0.75),
+                400 => .init_mm_range(0.30, 0.5),
+                else => unreachable,
+            },
+            .heat_slug = if (has_heat_slug) switch (pitch_um) {
+                800, 650, 500 => .{
+                    .width = .init_mm_range(0.5, width_mm - 1.75),
+                    .height = .init_mm_range(0.5, height_mm - 1.75),
+                },
+                400 => .{
+                    .width = .init_mm_range(0.5, width_mm - 1.25),
+                    .height = .init_mm_range(0.5, height_mm - 1.25),
+                },
+                else => unreachable,
+            } else null,
+        };
+    };
+}
+
 const DIL_Data = footprints.DIL_Data;
 const PGA_Data = footprints.PGA_Data;
 const BGA_Data = footprints.BGA_Data;

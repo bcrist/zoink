@@ -98,6 +98,14 @@ pub const VTable = struct {
                                         maybe_set_power_net_or_generate_decoupler(Pwr, net, net_ptr, b);
                                     }
                                 }
+                            } else if (std.mem.eql(u8, info.name, "vcc")) {
+                                if (info.type == Net_ID) {
+                                    maybe_set_power_net_or_generate_decoupler(Pwr, .unset, &pwr.vcc, b);
+                                } else {
+                                    for (&pwr.vcc) |*net_ptr| {
+                                        maybe_set_power_net_or_generate_decoupler(Pwr, .unset, net_ptr, b);
+                                    }
+                                }
                             }
                         }
                     }
@@ -142,6 +150,17 @@ pub const VTable = struct {
             }
 
             fn maybe_set_power_net_or_generate_decoupler(comptime Pwr: type, comptime power_net: Net_ID, net_ptr: *Net_ID, b: *Board) void {
+                if (power_net == .unset) {
+                    if (@hasDecl(Pwr, "Decouple") and Pwr.Decouple != void) {
+                        const decoupler = b.part(Pwr.Decouple);
+                        decoupler.gnd = .gnd;
+                        decoupler.internal = b.unique_net("Vcc");
+                        decoupler.external = net_ptr.*;
+                        net_ptr.* = decoupler.internal;
+                    }
+                    return;
+                }
+
                 if (net_ptr.* != .unset) return;
 
                 if (@hasDecl(Pwr, "Decouple") and Pwr.Decouple != void and power_net != .gnd) {

@@ -14,7 +14,16 @@ pub fn Single(comptime v: Net_ID, comptime Decoupler: type) type {
         .p1v5 => Single_1V5(Decoupler),
         .p1v2 => Single_1V2(Decoupler),
         .p1v => Single_1V(Decoupler),
+        .unset => Single_Unknown(Decoupler),
         else => @compileError(unreachable),
+    };
+}
+
+pub fn Single_Unknown(comptime Decoupler: type) type {
+    return struct {
+        gnd: Net_ID = .unset,
+        vcc: Net_ID = .unset,
+        pub const Decouple = Decoupler;
     };
 }
 
@@ -157,7 +166,16 @@ pub fn Multi(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int,
         .p1v5 => Multi_1V5(vcc_count, gnd_count, Decoupler),
         .p1v2 => Multi_1V2(vcc_count, gnd_count, Decoupler),
         .p1v => Multi_1V(vcc_count, gnd_count, Decoupler),
+        .unset => Multi_Unknown(vcc_count, gnd_count, Decoupler),
         else => @compileError(unreachable),
+    };
+}
+
+pub fn Multi_Unknown(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
+    return struct {
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        vcc: [vcc_count]Net_ID = @splat(.unset),
+        pub const Decouple = Decoupler;
     };
 }
 

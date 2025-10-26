@@ -289,6 +289,8 @@ pub const GS72116TP = sram.Async_16b(17, power.Multi(2, 2, .p3v3, C0402_Decouple
 pub const GS72116J  = sram.Async_16b(17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.SOJ_44);
 pub const GS72116U  = sram.Async_16b(17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.BGA_48_6mm_8mm);
 
+pub const i2c = @import("parts/i2c.zig");
+
 const passive = @import("parts/passive.zig");
 pub const Resistor = passive.Resistor;
 pub const Cap = passive.Cap;
@@ -311,6 +313,10 @@ pub const C0805_Decoupler = Cap_Decoupler(pkg.C0805);
 pub const C0603_Decoupler = Cap_Decoupler(pkg.C0603);
 pub const C0402_Decoupler = Cap_Decoupler(pkg.C0402);
 pub const C0201_Decoupler = Cap_Decoupler(pkg.C0201);
+
+pub const regulator = @import("parts/regulator.zig");
+
+pub const AP62300TWU = regulator.AP62300TWU;
 
 pub fn Connector(comptime n: comptime_int, comptime Pkg: type) type {
     return struct {
