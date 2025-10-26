@@ -293,7 +293,7 @@ pub const i2c = @import("parts/i2c.zig");
 
 const passive = @import("parts/passive.zig");
 pub const Resistor = passive.Resistor;
-pub const Resistor_Kelvin = passive.Resistor;
+pub const Resistor_Kelvin = passive.Resistor_Kelvin;
 pub const Cap = passive.Cap;
 pub const Cap_Decoupler = passive.Cap_Decoupler;
 pub const Inductor = passive.Inductor;
