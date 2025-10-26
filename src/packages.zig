@@ -1,5 +1,5 @@
 pub const jedec = @import("packages/jedec.zig");
-pub const rc = @import("packages/rc.zig");
+pub const lcr = @import("packages/lcr.zig");
 pub const pga = @import("packages/pga.zig");
 
 pub const DIP8 = jedec.MS_001D(8, "DIP-8");
@@ -119,6 +119,8 @@ pub const LQFP_100_14mm = jedec.MS_026D(100, 14, 14, .low_profile, "LQFP-100 (14
 pub const LQFP_128_14mm = jedec.MS_026D(128, 14, 14, .low_profile, "LQFP-128 (14mm)");
 pub const LQFP_144_20mm = jedec.MS_026D(144, 20, 20, .low_profile, "LQFP-144 (20mm)");
 
+pub const QFN_12_4x4_EP = jedec.MO_220K01(12, 3, 800, .@"4x4", true, .very_very_thin, "QFN-12 (4mm x 4mm)");
+
 pub const TSOP_II_32 = jedec.MS_024H(32, 1270, "TSOP-II-32");
 pub const TSOP_II_44 = jedec.MS_024H(44, 800, "TSOP-II-44");
 
@@ -168,14 +170,20 @@ pub const BGA_p050_144_7mm = lattice.csBGA144;
 pub const BGA_p040_64_4mm = lattice.ucBGA64;
 pub const BGA_p040_132_6mm = lattice.ucBGA132;
 
-pub const R1206 = rc._1206(550, "R1206");
-pub const R0805 = rc._0805(550, "R0805");
-pub const R0603 = rc._0603(450, "R0603");
-pub const R0402 = rc._0402(350, "R0402");
-pub const R0201 = rc._0201(230, "R0201");
+pub const R1206 = lcr._1206(550, "R1206");
+pub const R0805 = lcr._0805(550, "R0805");
+pub const R0603 = lcr._0603(450, "R0603");
+pub const R0402 = lcr._0402(350, "R0402");
+pub const R0201 = lcr._0201(230, "R0201");
 
-pub const C1206 = rc._1206(1750, "C1206");
-pub const C0805 = rc._0805(1350, "C0805");
-pub const C0603 = rc._0603(950, "C0603");
-pub const C0402 = rc._0402(550, "C0402");
-pub const C0201 = rc._0201(330, "C0201");
+pub const C1206 = lcr._1206(1750, "C1206");
+pub const C0805 = lcr._0805(1350, "C0805");
+pub const C0603 = lcr._0603(950, "C0603");
+pub const C0402 = lcr._0402(550, "C0402");
+pub const C0201 = lcr._0201(330, "C0201");
+
+pub const L1206 = lcr._1206(1750, "L1206");
+pub const L0805 = lcr._0805(1350, "L0805");
+pub const L0603 = lcr._0603(950, "L0603");
+pub const L0402 = lcr._0402(550, "L0402");
+pub const L0201 = lcr._0201(330, "L0201");

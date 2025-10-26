@@ -295,6 +295,7 @@ const passive = @import("parts/passive.zig");
 pub const Resistor = passive.Resistor;
 pub const Cap = passive.Cap;
 pub const Cap_Decoupler = passive.Cap_Decoupler;
+pub const Inductor = passive.Inductor;
 
 pub const R1206 = Resistor(pkg.R1206);
 pub const R0805 = Resistor(pkg.R0805);
@@ -313,6 +314,12 @@ pub const C0805_Decoupler = Cap_Decoupler(pkg.C0805);
 pub const C0603_Decoupler = Cap_Decoupler(pkg.C0603);
 pub const C0402_Decoupler = Cap_Decoupler(pkg.C0402);
 pub const C0201_Decoupler = Cap_Decoupler(pkg.C0201);
+
+pub const L1206 = Inductor(pkg.L1206);
+pub const L0805 = Inductor(pkg.L0805);
+pub const L0603 = Inductor(pkg.L0603);
+pub const L0402 = Inductor(pkg.L0402);
+pub const L0201 = Inductor(pkg.L0201);
 
 pub const regulator = @import("parts/regulator.zig");
 

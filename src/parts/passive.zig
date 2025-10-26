@@ -93,6 +93,36 @@ pub fn Resistor(comptime Pkg: type) type {
     };
 }
 
+pub fn Inductor(comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .R,
+        },
+        a: Net_ID = .unset,
+        b: Net_ID = .unset,
+        value_nh: f32 = 1_000,
+        populate: bool = true,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.a,
+                2 => self.b,
+                else => .unset
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            if (!self.populate) return;
+            switch (mode) {
+                .reset => {},
+                .commit => {},
+                .nets_only => try v.connect_nets(self.a, self.b, 1),
+            }
+        }
+    };
+}
+
 const Package = @import("../Package.zig");
 const Net_ID = enums.Net_ID;
 const Pin_ID = enums.Pin_ID;
