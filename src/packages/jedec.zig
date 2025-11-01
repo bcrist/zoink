@@ -14,8 +14,16 @@ pub fn MS_001D(comptime lead_count: comptime_int, comptime package_name: []const
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.DIP(data, .normal).fp,
+            .default_footprint = fp.DIP(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: DIL_Data = .{
             .package_name = package_name,
@@ -52,8 +60,16 @@ pub fn MS_010C(comptime lead_count: comptime_int, comptime package_name: []const
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.DIP(data, .normal).fp,
+            .default_footprint = fp.DIP(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: DIL_Data = .{
             .package_name = package_name,
@@ -89,8 +105,16 @@ pub fn MS_011B(comptime lead_count: comptime_int, comptime package_name: []const
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.DIP(data, .normal).fp,
+            .default_footprint = fp.DIP(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: DIL_Data = .{
             .package_name = package_name,
@@ -156,8 +180,16 @@ pub fn MS_015A(comptime lead_count: comptime_int, comptime row_spacing_mil: comp
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.DIL(data, .normal).fp,
+            .default_footprint = fp.DIL(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: DIL_Data = .{
             .package_name = package_name,
@@ -291,8 +323,16 @@ pub fn MS_026D(comptime lead_count: comptime_int, comptime width_mm: comptime_in
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -364,8 +404,16 @@ pub fn MS_024H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -414,8 +462,16 @@ pub fn MS_027A__MO_065A_077D_088A(comptime lead_count: comptime_int, comptime bo
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -459,8 +515,16 @@ pub fn MS_016A(comptime lead_count: comptime_int, comptime package_name: []const
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -503,8 +567,16 @@ pub fn MO_047B(comptime lead_count: comptime_int, comptime pin1: footprints.Pin1
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -544,7 +616,7 @@ pub fn MS_012G_02(comptime lead_count: comptime_int, comptime package_name: []co
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
         };
 
         pub const data: SMD_Data = .{
@@ -576,8 +648,16 @@ pub fn MO_046B(comptime lead_count: comptime_int, comptime package_name: []const
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -613,8 +693,16 @@ pub fn MS_013G(comptime lead_count: comptime_int, comptime package_name: []const
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -645,8 +733,16 @@ pub fn MO_059B(comptime lead_count: comptime_int, comptime package_name: []const
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -677,8 +773,16 @@ pub fn MO_126B(comptime lead_count: comptime_int, comptime package_name: []const
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -713,8 +817,16 @@ pub fn MO_150B(comptime lead_count: comptime_int, comptime package_name: []const
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -747,8 +859,16 @@ pub fn MO_118B(comptime lead_count: comptime_int, comptime package_name: []const
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -883,8 +1003,16 @@ pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
         
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -924,8 +1052,16 @@ pub fn MO_194B(comptime lead_count: comptime_int, comptime package_name: []const
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -951,8 +1087,17 @@ pub fn MO_194B(comptime lead_count: comptime_int, comptime package_name: []const
 pub fn MO_187F_AA(comptime with_heat_slug: bool, comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                0 => with_heat_slug,
+                1...8 => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -982,8 +1127,17 @@ pub fn MO_187F_AA(comptime with_heat_slug: bool, comptime package_name: []const 
 pub fn MO_187F_BA(comptime with_heat_slug: bool, comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                0 => with_heat_slug,
+                1...10 => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -1013,8 +1167,16 @@ pub fn MO_187F_BA(comptime with_heat_slug: bool, comptime package_name: []const 
 pub fn MO_187F_CA(comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...8 => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -1040,8 +1202,16 @@ pub fn MO_187F_CA(comptime package_name: []const u8) type {
 pub fn MO_187F_DA(comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...8 => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -1073,8 +1243,16 @@ pub fn MO_203E(comptime lead_count: comptime_int, comptime package_name: []const
     };
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -1093,6 +1271,7 @@ pub fn MO_203E(comptime lead_count: comptime_int, comptime package_name: []const
                 3 => &.{ 2, 4, 6 },
                 5 => &.{ 5 },
                 6, 8 => &.{},
+                else => unreachable,
             },
             .pin_pitch = if (lead_count == 8) .init_mm(0.5, 0) else .init_mm(0.65, 0),
             .pin_width = if (lead_count == 8) .init_mm_range(0.15, 0.27) else .init_mm_range(0.15, 0.30),
@@ -1127,8 +1306,16 @@ pub fn TO_236H__MO_193G(comptime lead_count: comptime_int, comptime package_name
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -1153,8 +1340,16 @@ pub fn TO_236H__MO_193G(comptime lead_count: comptime_int, comptime package_name
 
 pub const TO_253D = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.SOT(data, .normal).fp,
+        .default_footprint = fp.SOT(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...4 => true,
+            else => false,
+        };
+    }
 
     pub const data: SOT_Data = .{
         .package_name = "SOT143-4",
@@ -1198,8 +1393,16 @@ pub const TO_253D = struct {
 
 pub const TO_261AA = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.SOT(data, .normal).fp,
+        .default_footprint = fp.SOT(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...4 => true,
+            else => false,
+        };
+    }
 
     pub const data: SOT_Data = .{
         .package_name = "SOT223-4",
@@ -1243,8 +1446,16 @@ pub const TO_261AA = struct {
 
 pub const TO_261AB = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.SOT(data, .normal).fp,
+        .default_footprint = fp.SOT(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...5 => true,
+            else => false,
+        };
+    }
 
     pub const data: SOT_Data = .{
         .package_name = "SOT223-5",
@@ -1297,8 +1508,16 @@ pub const TO_261AB = struct {
 // FBGA-48: 6x8 balls, 6x8mm, 0.75mm pitch
 pub const MO_207AD = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.BGA(data, .normal).fp,
+        .default_footprint = fp.BGA(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: enums.Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...48 => true,
+            else => false,
+        };
+    }
 
     pub const data: BGA_Data = .{
         .package_name = "FBGA-48",
@@ -1312,6 +1531,7 @@ pub const MO_207AD = struct {
         .cols = 6,
         .row_pitch = .{ .nominal_um = 750, .tolerance_um = 0 },
         .col_pitch = .{ .nominal_um = 750, .tolerance_um = 0 },
+        .pin_name_format_func = kicad.format_pin_name(MO_207AD.Pin_ID),
     };
 
     pub const Pin_ID = enum (u8) {
@@ -1324,10 +1544,10 @@ pub const MO_207AD = struct {
         G1 = 37, G2 = 38, G3 = 39, G4 = 40, G5 = 41, G6 = 42,
         H1 = 43, H2 = 44, H3 = 45, H4 = 46, H5 = 47, H6 = 48,
 
-        pub fn from_generic(id: enums.Pin_ID) Pin_ID {
+        pub fn from_generic(id: enums.Pin_ID) MO_207AD.Pin_ID {
             return @enumFromInt(@intFromEnum(id));
         }
-        pub fn generic(self: Pin_ID) enums.Pin_ID {
+        pub fn generic(self: MO_207AD.Pin_ID) enums.Pin_ID {
             return @enumFromInt(@intFromEnum(self));
         }
     };
@@ -1819,8 +2039,17 @@ pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_si
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SMD(data, .normal).fp,
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                0 => has_heat_slug,
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,
@@ -1871,8 +2100,16 @@ pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_si
 pub fn TO_226G_AA(comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SIL(data, .normal).fp,
+            .default_footprint = fp.SIL(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...3 => true,
+                else => false,
+            };
+        }
 
         pub const data: SIL_Data = .{
             .package_name = package_name,
@@ -1895,8 +2132,16 @@ pub fn TO_226G_AA(comptime package_name: []const u8) type {
 pub fn TO_226G_AC(comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &fp.SIL(data, .normal).fp,
+            .default_footprint = fp.SIL(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...2 => true,
+                else => false,
+            };
+        }
 
         pub const data: SIL_Data = .{
             .package_name = package_name,
@@ -1925,6 +2170,8 @@ const SOT_Data = footprints.SOT_Data;
 const SMD_Data = footprints.SMD_Data;
 const fp = footprints;
 const footprints = @import("../footprints.zig");
+const Pin_ID = enums.Pin_ID;
 const enums = @import("../enums.zig");
+const kicad = @import("../kicad.zig");
 const Package = @import("../Package.zig");
 const std = @import("std");

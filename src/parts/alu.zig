@@ -117,6 +117,7 @@ pub fn L4C381(comptime Decoupler: type, comptime Package: type) type {
                 66 => self.a[13],
                 67 => self.a[14],
                 68 => self.a[15],
+                else => unreachable,
             };
         }
 

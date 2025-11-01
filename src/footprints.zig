@@ -49,9 +49,24 @@ pub const Dim = struct {
             .tolerance_um = @intFromFloat(@round(@abs(max - min) * 12700)),
         };
     }
+
+    pub fn min_um(self: Dim) usize {
+        return self.nominal_um - self.tolerance_um;
+    }
+
+    pub fn max_um(self: Dim) usize {
+        return self.nominal_um + self.tolerance_um;
+    }
 };
 
 pub const Rect = struct {
+    width: Dim,
+    height: Dim,
+};
+
+pub const Offset_Rect = struct {
+    x_um: isize,
+    y_um: isize,
     width: Dim,
     height: Dim,
 };
@@ -68,9 +83,11 @@ pub const Pin1 = enum {
     west_middle, // PLCC; for even number of pins, round to the south
 };
 
-fn mils_to_microns(mils: isize) isize {
-    return ((mils * 254) + 6) / 10;
-}
+pub const Pin1_Mark_Type = enum {
+    none,
+    arrow,
+    line,
+};
 
 /// Single inline packages, with pins extending directly beneath center of body.
 /// Pin 1 is the westmost pin.
@@ -108,25 +125,18 @@ pub const SIL_Data = struct {
         try writer.writeAll(self.package_name);
     }
 };
-pub fn SIL(comptime data: SIL_Data, comptime density: Density) type {
-    _ = density; // TODO use to control annular ring size & shape
-    //var pads: []Footprint.Pad = &.{};
+pub fn SIL(comptime data: SIL_Data, comptime density: Density) *const Footprint {
+    _ = density;
 
-    var pin: usize = 1;
-    for (0..1) |_| {
-        for (0 .. data.total_pins) |_| {
-            // TODO
-
-
-            pin += 1;
-        }
-    }
-
-    return struct {
-        pub const fp: Footprint = .{
-            .name = "SIL",
-        };
+    var result: Footprint = .{
+        .kind = .through_hole,
+        .name = data.package_name,
     };
+
+    _ = &result;
+    
+    const final_result = comptime result;
+    return &final_result;
 }
 
 /// Rectangular dual inline packages, with square leads/pads on the edges of 2 sides.
@@ -172,25 +182,18 @@ pub const DIL_Data = struct {
         try writer.writeAll(self.package_name);
     }
 };
-pub fn DIL(comptime data: DIL_Data, comptime density: Density) type {
-    _ = density; // TODO use to control annular ring size & shape
-    //var pads: []Footprint.Pad = &.{};
+pub fn DIL(comptime data: DIL_Data, comptime density: Density) *const Footprint {
+    _ = density;
 
-    var pin: usize = 1;
-    for (0..1) |_| {
-        for (0 .. data.total_pins / 2) |_| {
-            // TODO
-
-
-            pin += 1;
-        }
-    }
-
-    return struct {
-        pub const fp: Footprint = .{
-            .name = "DIL",
-        };
+    var result: Footprint = .{
+        .kind = .through_hole,
+        .name = data.package_name,
     };
+
+    _ = &result;
+    
+    const final_result = comptime result;
+    return &final_result;
 }
 
 
@@ -234,164 +237,279 @@ pub const SMD_Data = struct {
 
     // Optional exposed pad / thermal pad / heatsink
     heat_slug: ?Rect = null,
-    heat_slug_paste_area: ?Rect = null,
+    heat_slug_paste_areas: []const Offset_Rect = &.{},
 
     // Pin numbers (as they would be defined for a variant with no omitted pins) that do not physically exist.
     // Parts cann't reference omitted pins; they are not assigned pin numbers or Pin_IDs
     // This feature is used for SOT-23, some SOJ DRAM chips, etc.
     omitted_pins: []const usize = &.{},
 
+    pin_1_mark: Pin1_Mark_Type = .arrow,
+
     pub fn format(self: SMD_Data, writer: *std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
-pub fn SMD(comptime data: SMD_Data, comptime density: Density) type {
-    var pads: []Footprint.Pad = &.{};
+pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint {
+    @setEvalBranchQuota(100_000);
+    var result: Footprint = .{
+        .kind = .smd,
+        .name = data.package_name,
+    };
+
+    const body_w: f64 = @floatFromInt(data.body.width.nominal_um);
+    const body_h: f64 = @floatFromInt(data.body.height.nominal_um);
+    result.rects = &.{
+        .{
+            .start = .init_um(-body_w / 2, -body_h / 2),
+            .end = .init_um(body_w / 2, body_h / 2),
+            .layer = .fab_front,
+            .stroke = .{
+                .width = .init_mm(0.1),
+            },
+        },
+    };
 
     const pins_on_second_side = (data.total_pins / 2) - data.pins_on_first_side;
+
+    if (data.heat_slug) |heat_slug| {
+        result.pads = result.pads ++ .{
+            kicad.Pad {
+                .pin = @enumFromInt(0),
+                .kind = .smd,
+                .location = .origin,
+                .w = .{ .um = @intCast(heat_slug.width.nominal_um) },
+                .h = .{ .um = @intCast(heat_slug.height.nominal_um) },
+                .shape = .{ .rect = .{
+                    .round_amount = .{ .numer = 1, .denom = 4 },
+                    .chamfer_amount = .{},
+                    .top_left = .rounded,
+                    .top_right = .rounded,
+                    .bottom_left = .rounded,
+                    .bottom_right = .rounded,
+                }},
+                .layers = .initMany(if (data.heat_slug_paste_areas.len == 0) &.{
+                    .copper_front,
+                    .paste_front,
+                    .soldermask_front,
+                } else &.{
+                    .copper_front,
+                    .soldermask_front,
+                }),
+                .copper_layers = .all,
+                .teardrops = .{},
+            },
+        };
+
+        for (data.heat_slug_paste_areas) |area| {
+            result.pads = result.pads ++ .{
+                kicad.Pad {
+                    .pin = @enumFromInt(0),
+                    .kind = .stencil_aperture,
+                    .location = .{
+                        .x = .{ .um = area.x_um },
+                        .y = .{ .um = area.y_um },
+                    },
+                    .w = .{ .um = @intCast(area.width.nominal_um) },
+                    .h = .{ .um = @intCast(area.height.nominal_um) },
+                    .shape = .{ .rect = .{
+                        .round_amount = .{},
+                        .chamfer_amount = .{},
+                    }},
+                    .layers = .initOne(.paste_front),
+                    .copper_layers = .all,
+                    .teardrops = .{},
+                },
+            };
+        }
+    }
 
     switch (data.pin1) {
         .south_westmost => {
             var pin: usize = 1;
-            pads = add_smd_pads(pads, data, .south, pin, data.pins_on_first_side, density);
+            add_smd_pads(&result, data, .south, pin, data.pins_on_first_side, density);
             pin += data.pins_on_first_side;
-            pads = add_smd_pads(pads, data, .east, pin, pins_on_second_side, density);
+            add_smd_pads(&result, data, .east, pin, pins_on_second_side, density);
             pin += pins_on_second_side;
-            pads = add_smd_pads(pads, data, .north, pin, data.pins_on_first_side, density);
+            add_smd_pads(&result, data, .north, pin, data.pins_on_first_side, density);
             pin += data.pins_on_first_side;
-            pads = add_smd_pads(pads, data, .west, pin, pins_on_second_side, density);
+            add_smd_pads(&result, data, .west, pin, pins_on_second_side, density);
         },
         .west_middle => {
             var pin: usize = 1 + data.total_pins - data.pins_on_first_side / 2;
-            pads = add_smd_pads(pads, data, .west, pin, data.pins_on_first_side, density);
+            add_smd_pads(&result, data, .west, pin, data.pins_on_first_side, density);
             pin = 1 + (data.pins_on_first_side + 1) / 2;
-            pads = add_smd_pads(pads, data, .south, pin, pins_on_second_side, density);
+            add_smd_pads(&result, data, .south, pin, pins_on_second_side, density);
             pin += pins_on_second_side;
-            pads = add_smd_pads(pads, data, .east, pin, data.pins_on_first_side, density);
+            add_smd_pads(&result, data, .east, pin, data.pins_on_first_side, density);
             pin += data.pins_on_first_side;
-            pads = add_smd_pads(pads, data, .north, pin, pins_on_second_side, density);
+            add_smd_pads(&result, data, .north, pin, pins_on_second_side, density);
         },
     }
 
-    return struct {
-        pub const fp: Footprint = .{
-            .name = "SMD",
-        };
-    };
+    const final_result = comptime result;
+    return &final_result;
 }
 fn add_smd_pads(
-    comptime pads: []Footprint.Pad,
+    comptime result: *Footprint,
     comptime data: SMD_Data,
     comptime side: Side,
     comptime first_pin: usize,
     comptime pins_on_side: usize,
     comptime density: Density,
-) []Footprint.Pad {
-    _ = data;
-    _ = side;
-    _ = first_pin;
-    _ = density;
-
-    if (pins_on_side == 0) return pads;
-    const new_pads: []Footprint.Pad = &.{};
+) void {
+    if (pins_on_side == 0) return;
     comptime {
+        var xf: zm.Mat3 = switch (side) {
+            .west => rotate_90,
+            .east => rotate_270,
+            .north => rotate_180,
+            .south => .identity(),
+        };
 
-    // switch (side) {
-    //     .west => zgp.rotate(std.math.pi * 3.0 / 2.0),
-    //     .east => zgp.rotate(std.math.pi / 2.0),
-    //     .north => zgp.rotate(std.math.pi),
-    //     .south => {},
-    // }
+        const is_west_east = switch (side) {
+            .west, .east => true,
+            .north, .south => false,
+        };
 
-        // const is_west_east = switch (side) {
-        //     .west, .east => true,
-        //     .north, .south => false,
-        // };
+        const body_dim: f64 = @floatFromInt(if (is_west_east) data.body.width.nominal_um else data.body.height.nominal_um);
+        const overall_dim: f64 = @floatFromInt(if (is_west_east) data.overall.width.nominal_um else data.overall.height.nominal_um);
+        const overall_dim_max: f64 = @floatFromInt(if (is_west_east) data.overall.width.max_um() else data.overall.height.max_um());
+        const seating: f64 = @floatFromInt(data.pin_seating.nominal_um);
+        const pin_pitch: f64 = @floatFromInt(data.pin_pitch.nominal_um);
+        const max_pin_width: f64 = @floatFromInt(data.pin_width.max_um());
+        const pins_on_side_f: f64 = @floatFromInt(pins_on_side);
 
-        // const overall_dim: isize = @intCast(if (is_west_east) data.overall.width.nominal_um else data.overall.height.nominal_um);
-        // const seating: isize = @intCast(data.pin_seating.nominal_um);
-        // const pin_pitch: isize = @intCast(data.pin_pitch.nominal_um);
-        // const max_pin_width: isize = @intCast(data.pin_width.nominal_um + data.pin_width.tolerance_um);
-        // const pins_on_side_i: isize = @intCast(pins_on_side);
+        const pin_length = @max(seating, (overall_dim - body_dim) / 2);
 
-        // const pad_width = switch (density) {
-        //     .dense => max_pin_width,
-        // };
+        var pad_width = switch (density) {
+            .dense => max_pin_width,
+            .normal => max_pin_width * 9 / 8,
+            .loose => max_pin_width * 5 / 4,
+        };
+        if (pin_pitch > 200 and pad_width > pin_pitch - 100) {
+            pad_width = pin_pitch - 100;
+        }
 
-        // var pin_offset = -pin_pitch * (pins_on_side_i - 1) / 2;
-        // const side_origin = (seating - overall_dim) / 2;
+        const pad_length = switch (density) {
+            .dense => seating + (overall_dim_max - overall_dim) / 2,
+            .normal => seating + (overall_dim_max - overall_dim) / 2 + if (pins_on_side_f > 1 and pin_pitch > 0) 500 else 250,
+            .loose => seating + (overall_dim_max - overall_dim) / 2 + if (pins_on_side_f > 1 and pin_pitch > 0) 1500 else 500,
+        };
 
-        // for (0..pins_on_side) |po| {
-        //     var pad: Footprint.Pad = .{
-        //         .pin = @enumFromInt(pads.len + po + 1),
-        //         .kind = .smd,
-        //         .x = x,
-        //         .y = y,
-        //         .rot = switch (side) {
-        //             .west => Rotation.cw,
-        //             .east => Rotation.ccw,
-        //             .north => Rotation.flip,
-        //             .south => .{},
-        //         },
-        //         .w = w,
-        //         .h = h,
-        //         .shape = .{ .rect = .{
-        //             .round_amount = .{ .numer = 1, .denom = 4 },
-        //             .chamfer_amount = .{},
-        //             .top_left = .rounded,
-        //             .top_right = .rounded,
-        //             .bottom_left = .rounded,
-        //             .bottom_right = .rounded,
-        //         }},
-        //         .shape_offset_x = .{ .um = 0 },
-        //         .shape_offset_y = .{ .um = @intCast((seating - data.pin_width.nominal_um) / 2) },
-        //         .hole_w = .{ .um = 0 },
-        //         .hole_h = .{ .um = 0 },
-        //         .pad_to_die_length = .{ .um = 0 },
-        //         .layers = std.EnumSet(Layer).initMany(&.{
-        //             .copper_front,
-        //             .paste_front,
-        //             .soldermask_front,
-        //         }),
-        //         .copper_layers = .all,
-        //         .teardrops = .{},
-        //     };
+        const pin_offset = -pin_pitch * (pins_on_side_f - 1) / 2;
+        const side_origin = overall_dim / 2;
 
-            //defer zgp.translate(pin_pitch_mm, 0);
+        xf = xf.multiply(.translation(pin_offset, side_origin));
 
-            // var pin = first_pin + po;
-            // if (pin > data.total_pins) pin -= data.total_pins;
-            // if (pin == 1) {
-            //     try zgp.push_transform();
-            //     zgp.translate(0, -(seating_mm + pin_pitch_mm * 1.5) / 2);
+        for (0..pins_on_side) |po| {
+            var pin = first_pin + po;
+            if (pin > data.total_pins) pin -= data.total_pins;
+            defer xf = xf.multiply(.translation(pin_pitch, 0));
 
-            //     zgp.set_color_rgb(0.85, 0.85, 0.85);
+            if (std.mem.indexOfScalar(usize, data.omitted_pins, pin)) |_| {
+                continue;
+            }
 
-            //     try zgp.draw_triangle(
-            //         .{ .x = 0,               .y = pin_pitch_mm/2 },
-            //         .{ .x = -pin_pitch_mm/2, .y = -pin_pitch_mm/2 },
-            //         .{ .x = pin_pitch_mm/2,  .y = -pin_pitch_mm/2 }
-            //     );
+            result.rects = result.rects ++ .{
+                kicad.Rect {
+                    .start = .init_um_transformed(xf, -max_pin_width / 2, -pin_length ),
+                    .end = .init_um_transformed(xf, max_pin_width / 2, (overall_dim_max - overall_dim) / 2),
+                    .stroke = .{ .width = .zero },
+                    .fill =  true,
+                    .layer = .fab_front,
+                },
+            };
 
-            //     try zgp.pop_transform();
-            // }
-            // if (std.mem.indexOfScalar(usize, data.omitted_pins, pin)) |_| {
-            //     continue;
-            // }
+            const xf2 = xf.multiply(.translation(0, pad_length - seating - @min(pad_width, pad_length) / 2));
 
-            // try draw_rect(.{
-            //     .width = data.pin_width,
-            //     .height = .{
-            //         .nominal_um = data.pin_seating.nominal_um,
-            //         .tolerance_um = data.pin_seating.tolerance_um + switch (side) {
-            //             .east, .west => data.overall.width.tolerance_um,
-            //             .north, .south => data.overall.height.tolerance_um,
-            //         },
-            //     },
-            // }, pin_color, pin_tol_color);
-        // }
+            result.pads = result.pads ++ .{
+                kicad.Pad {
+                    .pin = @enumFromInt(pin),
+                    .kind = .smd,
+                    .location = .init_um_transformed(xf2, 0, 0),
+                    .rotation = switch (side) {
+                        .west => kicad.Rotation.cw,
+                        .east => kicad.Rotation.ccw,
+                        .north => kicad.Rotation.flip,
+                        .south => .{},
+                    },
+                    .w = .init_um(pad_width),
+                    .h = .init_um(pad_length),
+                    .shape = .{ .rect = .{
+                        .round_amount = .{ .numer = 1, .denom = 4 },
+                        .chamfer_amount = .{},
+                        .top_left = .rounded,
+                        .top_right = .rounded,
+                        .bottom_left = .rounded,
+                        .bottom_right = .rounded,
+                    }},
+                    .shape_offset = .{
+                        .x = .zero,
+                        .y = .init_um(-(pad_length - @min(pad_width, pad_length)) / 2),
+                    },
+                    .layers = std.EnumSet(Layer).initMany(&.{
+                        .copper_front,
+                        .paste_front,
+                        .soldermask_front,
+                    }),
+                    .copper_layers = .all,
+                    .teardrops = .{},
+                },
+            };
+            
+            if (pin == 1) switch (data.pin_1_mark) {
+                .none => {},
+                .arrow => {
+                    const scale = if (pin_pitch == 0) @min(1000, pad_width) else pin_pitch;
+
+                    const xf3 = xf2.multiply(.rotation(@as(f64, std.math.pi) / 5));
+                    const xf4 = xf3.multiply(.translation(0, @min(pad_width, pad_length) * 0.75 + @min(500, scale * 0.25)));
+
+                    result.polygons = result.polygons ++ .{
+                        kicad.Polygon {
+                            .points = &.{
+                                .init_um_transformed(xf4, 0,             0),
+                                .init_um_transformed(xf4, -scale * 0.4, scale),
+                                .init_um_transformed(xf4, scale * 0.4,  scale),
+                            },
+                            .stroke = .{
+                                .width = .init_mm(0.1),
+                            },
+                            .fill = true,
+                        },
+                    };
+                },
+                .line => {
+                    const scale_x = pad_width / 2 + 400;
+                    const scale_y = @min(pad_width, pad_length) / 2 + 400;
+
+                    if (pin_pitch == 0 or po == 0) {
+                        result.lines = result.lines ++ .{
+                            kicad.Line {
+                                .start = .init_um_transformed(xf2, -scale_x, -scale_y * 0.5),
+                                .end = .init_um_transformed(xf2, -scale_x, scale_y)
+                            },
+                        };
+                    }
+                    result.lines = result.lines ++ .{
+                        kicad.Line {
+                            .start = .init_um_transformed(xf2, -scale_x, scale_y),
+                            .end = .init_um_transformed(xf2, scale_x, scale_y)
+                        },
+                    };
+                    if (pin_pitch == 0 or po == pins_on_side - 1) {
+                        result.lines = result.lines ++ .{
+                            kicad.Line {
+                                .start = .init_um_transformed(xf2, scale_x, scale_y),
+                                .end = .init_um_transformed(xf2, scale_x, -scale_y * 0.5)
+                            },
+                        };
+                    }
+                },
+            };
+        }
     }
-    return pads ++ new_pads;
 }
 
 /// Rectangular SMD package with a small number of non-uniform square leads/pads, e.g. SOT-143, SOT-223, DPAK
@@ -411,13 +529,18 @@ pub const SOT_Data = struct {
         try writer.writeAll(self.package_name);
     }
 };
-pub fn SOT(comptime data: SOT_Data, comptime density: Density) type {
-    _ = data;
+pub fn SOT(comptime data: SOT_Data, comptime density: Density) *const Footprint {
     _ = density;
-    return struct {
-        pub const fp: Footprint = .{
-        };
+
+    var result: Footprint = .{
+        .kind = .smd,
+        .name = data.package_name,
     };
+
+    _ = &result;
+    
+    const final_result = comptime result;
+    return &final_result;
 }
 
 /// Rectangular PGA package with pins in a grid as used by PLCC-to-PGA adapters.
@@ -442,13 +565,18 @@ pub const PLCC_PGA_Data = struct {
         try writer.writeAll(self.package_name);
     }
 };
-pub fn PLCC_PGA(comptime data: PLCC_PGA_Data, comptime density: Density) type {
-    _ = data;
+pub fn PLCC_PGA(comptime data: PLCC_PGA_Data, comptime density: Density) *const Footprint {
     _ = density;
-    return struct {
-        pub const fp: Footprint = .{
-        };
+
+    var result: Footprint = .{
+        .kind = .through_hole,
+        .name = data.package_name,
     };
+
+    _ = &result;
+    
+    const final_result = comptime result;
+    return &final_result;
 }
 
 /// Rectangular PGA package with pins in a grid with uniform X/Y pitch
@@ -467,18 +595,25 @@ pub const PGA_Data = struct {
 
     include_pins: []const Grid_Region = &.{ .all },
     exclude_pins: []const Grid_Region = &.{},
+
+    pin_name_format_func: kicad.Pin_Name_Format_Func,
     
     pub fn format(self: PGA_Data, writer: std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
-pub fn PGA(comptime data: PGA_Data, comptime density: Density) type {
-    _ = data;
+pub fn PGA(comptime data: PGA_Data, comptime density: Density) *const Footprint {
     _ = density;
-    return struct {
-        pub const fp: Footprint = .{
-        };
+
+    var result: Footprint = .{
+        .kind = .through_hole,
+        .name = data.package_name,
     };
+
+    _ = &result;
+    
+    const final_result = comptime result;
+    return &final_result;
 }
 
 /// Rectangular BGA package with balls in a grid with uniform X/Y pitch
@@ -495,18 +630,25 @@ pub const BGA_Data = struct {
 
     include_balls: []const Grid_Region = &.{ .all },
     exclude_balls: []const Grid_Region = &.{},
+
+    pin_name_format_func: kicad.Pin_Name_Format_Func,
     
     pub fn format(self: BGA_Data, writer: std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
-pub fn BGA(comptime data: BGA_Data, comptime density: Density) type {
-    _ = data;
+pub fn BGA(comptime data: BGA_Data, comptime density: Density) *const Footprint {
     _ = density;
-    return struct {
-        pub const fp: Footprint = .{
-        };
+
+    var result: Footprint = .{
+        .kind = .smd,
+        .name = data.package_name,
     };
+
+    _ = &result;
+    
+    const final_result = comptime result;
+    return &final_result;
 }
 
 pub const Grid_Region = union (enum) {
@@ -614,9 +756,34 @@ pub const Grid_Region = union (enum) {
     }
 };
 
-const Rotation = @import("Rotation.zig");
-const Footprint = @import("Footprint.zig");
-const Layer = enums.Layer;
+const rotate_90: zm.Mat3 = .{
+    .data = .{
+        0, -1, 0,
+        1,  0, 0,
+        0,  0, 1,
+    },
+};
+
+const rotate_180: zm.Mat3 = .{
+    .data = .{
+        -1,  0, 0,
+         0, -1, 0,
+         0,  0, 1,
+    },
+};
+
+const rotate_270: zm.Mat3 = .{
+    .data = .{
+         0, 1, 0,
+        -1, 0, 0,
+         0, 0, 1,
+    },
+};
+
+const Footprint = kicad.Footprint;
+const Layer = kicad.Layer;
+const kicad = @import("kicad.zig");
 const Pin_ID = enums.Pin_ID;
 const enums = @import("enums.zig");
+const zm = @import("zm");
 const std = @import("std");

@@ -1,0 +1,5 @@
+merge_nets_for_overlapping_pads: bool = false, // TODO
+update_board_outline: bool = true,
+enable_courtyard_drc: bool = true,
+reset_property_attributes: bool = false,
+reset_footprints_outside_board: bool = true,

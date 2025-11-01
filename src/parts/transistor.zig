@@ -1,4 +1,4 @@
-const BJT_Pinout = enum {
+pub const BJT_Pinout = enum {
     bce,
     bec,
     cbe,
@@ -7,13 +7,13 @@ const BJT_Pinout = enum {
     ecb,
 };
 
-const BJT_Type = enum {
+pub const BJT_Type = enum {
     npn,
     pnp,
 };
 
 /// Note: the validation simulation is not sophisticated enough to accurately model BJTs, but it might be good enough in cases where the transistor is always in saturation or off.
-fn BJT(comptime bjt_type: BJT_Type, comptime Pkg: type, comptime pinout: BJT_Pinout) type {
+pub fn BJT(comptime bjt_type: BJT_Type, comptime Pkg: type, comptime pinout: BJT_Pinout) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
@@ -75,10 +75,10 @@ fn BJT(comptime bjt_type: BJT_Type, comptime Pkg: type, comptime pinout: BJT_Pin
                     const vbe = b.as_float() - e.as_float();
                     switch (bjt_type) {
                         .npn => if (vbe >= 0.6) {
-                            v.connect_nets(self.c, self.e, 50);
+                            try v.connect_nets(self.c, self.e, 50);
                         },
                         .pnp => if (vbe <= -0.6) {
-                            v.connect_nets(self.c, self.e, 50);
+                            try v.connect_nets(self.c, self.e, 50);
                         },
                     }
                 },
@@ -87,7 +87,7 @@ fn BJT(comptime bjt_type: BJT_Type, comptime Pkg: type, comptime pinout: BJT_Pin
     };
 }
 
-const FET_Pinout = enum {
+pub const FET_Pinout = enum {
     gds,
     gsd,
     dgs,
@@ -96,13 +96,13 @@ const FET_Pinout = enum {
     sdg,
 };
 
-const FET_Type = enum {
+pub const FET_Type = enum {
     n_channel,
     p_channel,
 };
 
 /// Note: the validation simulation is not sophisticated enough to accurately model FETs, but it might be good enough in cases where the transistor is always in saturation or off.
-fn FET(comptime fet_type: FET_Type, comptime Pkg: type, comptime pinout: FET_Pinout) type {
+pub fn FET(comptime fet_type: FET_Type, comptime Pkg: type, comptime pinout: FET_Pinout) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
@@ -166,10 +166,10 @@ fn FET(comptime fet_type: FET_Type, comptime Pkg: type, comptime pinout: FET_Pin
                     const vgs = g.as_float() - s.as_float();
                     switch (fet_type) {
                         .n_channel => if (vgs >= self.vgs_th) {
-                            v.connect_nets(self.d, self.s, self.rds_on);
+                            try v.connect_nets(self.d, self.s, self.rds_on);
                         },
                         .p_channel => if (vgs <= -self.vgs_th) {
-                            v.connect_nets(self.d, self.s, self.rds_on);
+                            try v.connect_nets(self.d, self.s, self.rds_on);
                         },
                     }
                 },

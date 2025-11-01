@@ -5,14 +5,23 @@ const Part = @This();
 
 pub const Base = struct {
     package: *const Package,
-    footprint: ?*const Footprint = null,
+    footprint: ?*const kicad.Footprint = null,
     prefix: enums.Prefix,
     designator: u16 = 0,
     name: []const u8 = "",
     value: []const u8 = "",
+    description: []const u8 = "",
+    layer: ?kicad.Layer = null,
+    location: ?kicad.Location = null,
+    rotation: ?kicad.Rotation = null,
+    locked: ?bool = null,
+    populate: bool = true,
+    include_in_bom: bool = true,
+    include_in_position_files: bool = true,
 };
 
 pub const VTable = struct {
+    pin_to_net: *const fn(base: *Part.Base, pin: Pin_ID) Net_ID,
     check_config: ?*const fn(base: *Part.Base, b: *Board) anyerror!void,
     finalize_power_nets: *const fn(base: *Part.Base, b: *Board) anyerror!void,
     validate: ?*const fn(base: *const Part.Base, v: *Validator, state: *anyopaque, mode: Validator.Update_Mode) anyerror!void,
@@ -20,6 +29,7 @@ pub const VTable = struct {
     validator_state_align: usize,
 
     pub fn init(comptime P: type) *const VTable {
+        @setEvalBranchQuota(100_000);
         const has_check_config = @hasDecl(P, "check_config");
         const has_validate = @hasDecl(P, "validate");
         comptime var Validator_State = void;
@@ -34,9 +44,14 @@ pub const VTable = struct {
         }
 
         const impl = struct {
+            pub fn pin_to_net(base: *Part.Base, pin: Pin_ID) Net_ID {
+                const part: *P = @fieldParentPtr("base", base);
+                return part.pin(pin);
+            }
+
             pub fn check_config(base: *Part.Base, b: *Board) !void {
                 const part: *P = @fieldParentPtr("base", base);
-                errdefer dump_pins(P, part.*, b, base, "");
+                errdefer dump_nets(P, part.*, b, base, "");
                 const func_info: std.builtin.Type.Fn = @typeInfo(@TypeOf(P.check_config)).@"fn";
                 if (func_info.params.len == 2) {
                     try part.check_config(b);
@@ -45,7 +60,7 @@ pub const VTable = struct {
                 }
             }
 
-            fn dump_pins(comptime T: type, value: T, b: *Board, base: *Part.Base, comptime prefix: []const u8) void {
+            fn dump_nets(comptime T: type, value: T, b: *Board, base: *Part.Base, comptime prefix: []const u8) void {
                 if (T == Part.Base or T == void) return;
                 if (T == Net_ID) {
                     std.log.err("{s}{s} = {s}", .{ base.name, prefix, b.net_name(value) });
@@ -55,25 +70,25 @@ pub const VTable = struct {
                 switch (@typeInfo(T)) {
                     .int, .float => {},
                     .@"struct" => |struct_info| inline for (struct_info.fields) |field_info| {
-                        dump_pins(field_info.type, @field(value, field_info.name), b, base, prefix ++ "." ++ field_info.name);
+                        dump_nets(field_info.type, @field(value, field_info.name), b, base, prefix ++ "." ++ field_info.name);
                     },
                     .@"union" => |union_info| inline for (union_info.fields) |field_info| {
                         if (value == @field(union_info.tag_type.?, field_info.name)) {
-                            dump_pins(field_info.type, @field(value, field_info.name), b, base, prefix ++ "." ++ field_info.name);
+                            dump_nets(field_info.type, @field(value, field_info.name), b, base, prefix ++ "." ++ field_info.name);
                         }
                     },
                     .pointer => |info| if (info.size == .slice) {
                         for (value) |item| {
-                            dump_pins(@TypeOf(item), item, b, base, prefix ++ "[?]");
+                            dump_nets(@TypeOf(item), item, b, base, prefix ++ "[?]");
                         }
                     },
                     .optional => |info| {
                         if (value) |v| {
-                            dump_pins(info.child, v, b, base, prefix);
+                            dump_nets(info.child, v, b, base, prefix);
                         }
                     },
                     .array => |info| inline for (0..info.len) |i| {
-                        dump_pins(info.child, value[i], b, base, std.fmt.comptimePrint("{s}[{}]", .{ prefix, i }));
+                        dump_nets(info.child, value[i], b, base, std.fmt.comptimePrint("{s}[{}]", .{ prefix, i }));
                     },
                     else => {},
                 }
@@ -115,6 +130,7 @@ pub const VTable = struct {
             }
 
             fn check_for_unset_nets(comptime T: type, value: T, base: *Part.Base, comptime prefix: []const u8) !void {
+                @setEvalBranchQuota(100_000);
                 if (T == Part.Base or T == void) return;
                 if (T == Net_ID) {
                     if (value == .unset) {
@@ -152,11 +168,13 @@ pub const VTable = struct {
             fn maybe_set_power_net_or_generate_decoupler(comptime Pwr: type, comptime power_net: Net_ID, net_ptr: *Net_ID, b: *Board) void {
                 if (power_net == .unset) {
                     if (@hasDecl(Pwr, "Decouple") and Pwr.Decouple != void) {
-                        const decoupler = b.part(Pwr.Decouple);
-                        decoupler.gnd = .gnd;
-                        decoupler.internal = b.unique_net("Vcc");
-                        decoupler.external = net_ptr.*;
-                        net_ptr.* = decoupler.internal;
+                        const internal_net = b.unique_net("Vcc");
+                        _ = b.part(Pwr.Decouple, b.fmt("Decoupler: {s}", .{ b.net_name(internal_net) }), .{
+                            .gnd = .gnd,
+                            .internal = internal_net,
+                            .external = net_ptr.*,
+                        });
+                        net_ptr.* = internal_net;
                     }
                     return;
                 }
@@ -164,11 +182,13 @@ pub const VTable = struct {
                 if (net_ptr.* != .unset) return;
 
                 if (@hasDecl(Pwr, "Decouple") and Pwr.Decouple != void and power_net != .gnd) {
-                    const decoupler = b.part(Pwr.Decouple);
-                    decoupler.gnd = .gnd;
-                    decoupler.internal = b.unique_net(@tagName(power_net));
-                    decoupler.external = power_net;
-                    net_ptr.* = decoupler.internal;
+                    const internal_net = b.unique_net(@tagName(power_net));
+                    _ = b.part(Pwr.Decouple, b.fmt("Decoupler: {s}", .{ b.net_name(internal_net) }), .{
+                        .gnd = .gnd,
+                        .internal = internal_net,
+                        .external = power_net,
+                    });
+                    net_ptr.* = internal_net;
                 } else {
                     net_ptr.* = power_net;
                 }
@@ -185,6 +205,7 @@ pub const VTable = struct {
             }
         };
         return &.{
+            .pin_to_net = impl.pin_to_net,
             .check_config = if (has_check_config) impl.check_config else null,
             .finalize_power_nets = impl.finalize_power_nets,
             .validate = if (has_validate) impl.validate else null,
@@ -209,9 +230,10 @@ pub fn identity_remap(comptime T: type, comptime n: usize) [n]T {
 const log = std.log.scoped(.zoink);
 
 const Net_ID = enums.Net_ID;
+const Pin_ID = enums.Pin_ID;
 const enums = @import("enums.zig");
-const Footprint = @import("Footprint.zig");
 const Package = @import("Package.zig");
+const kicad = @import("kicad.zig");
 const Validator = @import("Validator.zig");
 const Board = @import("Board.zig");
 const std = @import("std");

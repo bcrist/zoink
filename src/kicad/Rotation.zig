@@ -2,6 +2,7 @@ deg: isize = 0,
 
 const Rotation = @This();
 
+pub const none: Rotation = .{ .deg = 0 };
 pub const ccw: Rotation = .{ .deg = 90 };
 pub const ccw45: Rotation = .{ .deg = 45 };
 pub const cw: Rotation = .{ .deg = -90 };

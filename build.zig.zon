@@ -11,8 +11,8 @@
     },
     .dependencies = .{
         .sx = .{
-            .url = "git+https://github.com/bcrist/zig-sx#ba72271b89ec977abe63a2619d78275ad6327bdd",
-            .hash = "sx-1.1.6-0vgbao7JAADRoEBKC_iS9RBg2onrsLD-yeUiM_XuqStj",
+            .url = "git+https://github.com/bcrist/zig-sx#3b711131bba3d1884e6be9d1ba15d0769d4a54b2",
+            .hash = "sx-1.1.8-0vgbavzRAAAMCYztSRXLrwxYzRDU2Ml45KZXtPp5L9YO",
         },
         .lc4k = .{
             .url = "git+https://github.com/bcrist/zig-lc4k#3c208c07859f587ba4c86c490bef5396c9da5a46",
@@ -21,6 +21,10 @@
         .bit_helper = .{
             .url = "git+https://github.com/bcrist/zig-bithelper#01fe5f519f54ab42c649096573c45ddaa351e1d5",
             .hash = "bit_helper-1.0.1-C8c75iguAABAXw3jPh9pvNp-RPvblh1vV7MbQ1w99fFF",
+        },
+        .zm = .{
+            .url = "git+https://github.com/griush/zm?ref=0.4.0#06753254be28bec05ece164b37ffbbf9c2e50bde",
+            .hash = "zm-0.3.0-cLX-WdndAAA6qxep94FD9ltfmvZps_4C0f9XfWk14Cvt",
         },
     },
 }

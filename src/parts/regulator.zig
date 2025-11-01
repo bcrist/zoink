@@ -20,6 +20,7 @@ pub const AP62300TWU = struct {
             4 => self.feedback,
             5 => self.enable,
             6 => self.bootstrap,
+            else => unreachable,
         };
     }
 };
@@ -43,6 +44,7 @@ pub fn Linear_5pin(comptime Pkg: type) type {
                 3 => self.enable,
                 4 => .no_connect,
                 5 => self.v_out,
+                else => unreachable,
             };
         }
     };

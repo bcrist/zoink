@@ -11,8 +11,16 @@
 // Outer ring of 36 balls
 pub const csBGA56 = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.BGA(data, .normal).fp,
+        .default_footprint = fp.BGA(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: enums.Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...56 => true,
+            else => false,
+        };
+    }
 
     pub const data: BGA_Data = .{
         .package_name = "csBGA-56",
@@ -36,6 +44,7 @@ pub const csBGA56 = struct {
                 .thickness = 1,
             }},
         },
+        .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
     pub const Pin_ID = enum (u8) {
@@ -67,8 +76,16 @@ pub const csBGA56 = struct {
 // 8x8 grid, 0.5mm pitch
 pub const csBGA64 = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.BGA(data, .normal).fp,
+        .default_footprint = fp.BGA(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: enums.Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...64 => true,
+            else => false,
+        };
+    }
 
     pub const data: BGA_Data = .{
         .package_name = "csBGA-64",
@@ -82,6 +99,7 @@ pub const csBGA64 = struct {
         .cols = 8,
         .row_pitch = .{ .nominal_um = 500, .tolerance_um = 0 },
         .col_pitch = .{ .nominal_um = 500, .tolerance_um = 0 },
+        .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
     pub const Pin_ID = enum (u8) {
@@ -111,8 +129,16 @@ pub const csBGA64 = struct {
 // 8x8 grid, 0.4mm pitch
 pub const ucBGA64 = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.BGA(data, .normal).fp,
+        .default_footprint = fp.BGA(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: enums.Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...64 => true,
+            else => false,
+        };
+    }
 
     pub const data: BGA_Data = .{
         .package_name = "ucBGA-64",
@@ -126,6 +152,7 @@ pub const ucBGA64 = struct {
         .cols = 8,
         .row_pitch = .{ .nominal_um = 400, .tolerance_um = 0 },
         .col_pitch = .{ .nominal_um = 400, .tolerance_um = 0 },
+        .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
     pub const Pin_ID = enum (u8) {
@@ -156,8 +183,16 @@ pub const ucBGA64 = struct {
 // Inner 8x8 grid unpopulated
 pub const csBGA132 = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.BGA(data, .normal).fp,
+        .default_footprint = fp.BGA(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: enums.Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...132 => true,
+            else => false,
+        };
+    }
 
     pub const data: BGA_Data = .{
         .package_name = "csBGA-132",
@@ -177,6 +212,7 @@ pub const csBGA132 = struct {
                 .thickness = 3,
             }},
         },
+        .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
     pub const Pin_ID = enum (u8) {
@@ -213,8 +249,16 @@ pub const csBGA132 = struct {
 // Inner diamond unpopulated
 pub const ucBGA132 = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.BGA(data, .normal).fp,
+        .default_footprint = fp.BGA(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: enums.Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...132 => true,
+            else => false,
+        };
+    }
 
     pub const data: BGA_Data = .{
         .package_name = "ucBGA-132",
@@ -245,6 +289,7 @@ pub const ucBGA132 = struct {
                 .mirror = .all,
             }},
         },
+        .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
     pub const Pin_ID = enum (u8) {
@@ -278,8 +323,16 @@ pub const ucBGA132 = struct {
 // 12x12 grid, 0.5mm pitch
 pub const csBGA144 = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.BGA(data, .normal).fp,
+        .default_footprint = fp.BGA(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: enums.Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...144 => true,
+            else => false,
+        };
+    }
 
     pub const data: BGA_Data = .{
         .package_name = "csBGA-144",
@@ -293,6 +346,7 @@ pub const csBGA144 = struct {
         .cols = 12,
         .row_pitch = .{ .nominal_um = 500, .tolerance_um = 0 },
         .col_pitch = .{ .nominal_um = 500, .tolerance_um = 0 },
+        .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
     pub const Pin_ID = enum (u8) {
@@ -323,6 +377,7 @@ const SOT_Data = footprints.SOT_Data;
 const SMD_Data = footprints.SMD_Data;
 const fp = footprints;
 const footprints = @import("../footprints.zig");
+const kicad = @import("../kicad.zig");
 const enums = @import("../enums.zig");
 const Package = @import("../Package.zig");
 const std = @import("std");

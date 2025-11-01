@@ -1356,6 +1356,7 @@ pub fn x138(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 14 => self.y[1],
                 15 => self.y[0],
                 16 => @field(self.pwr, @tagName(pwr)),
+                else => unreachable,
             };
         }
 

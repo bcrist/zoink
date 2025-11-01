@@ -2,9 +2,37 @@ um: isize,
 
 const Micron = @This();
 
+pub const zero: Micron = .{ .um = 0 };
+
+pub fn init_um(nominal: f64) Micron {
+    return .{ .um = @intFromFloat(@round(nominal)) };
+}
+
+pub fn init_mm(nominal: f64) Micron {
+    return .{ .um = @intFromFloat(@round(nominal * 1000)) };
+}
+
+pub fn init_mil(nominal: f64) Micron {
+    return .{ .um = @intFromFloat(@round(nominal * 25.4)) };
+}
+
+pub fn init_inches(nominal: f64) Micron {
+    return .{ .um = @intFromFloat(@round(nominal * 25400)) };
+}
+
 pub fn mm(self: Micron, comptime F: type) F {
     const um: F = @floatFromInt(self.um);
     return um / 1000;
+}
+
+pub fn mil(self: Micron, comptime F: type) F {
+    const um: F = @floatFromInt(self.um);
+    return um / 25.4;
+}
+
+pub fn inches(self: Micron, comptime F: type) F {
+    const um: F = @floatFromInt(self.um);
+    return um / 25400;
 }
 
 pub fn formatNumber(self: Micron, writer: *std.io.Writer, options: std.fmt.Number) !void {

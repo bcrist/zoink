@@ -33,6 +33,7 @@ pub fn EMC1702(comptime Decoupler: type) type {
                 10 => self.threshold_sel,
                 11 => self.@"sense-",
                 12 => self.@"sense+",
+                else => std.debug.panic("EMC1702 does not have pin {}", .{ @intFromEnum(pin_id) }),
             };
         }
 
@@ -59,6 +60,7 @@ pub fn Linear_5pin(comptime Pkg: type) type {
                 3 => self.enable,
                 4 => .no_connect,
                 5 => self.v_out,
+                else => unreachable,
             };
         }
     };
@@ -70,3 +72,4 @@ const Part = @import("../Part.zig");
 const power = @import("../power.zig");
 const enums = @import("../enums.zig");
 const pkg = @import("../packages.zig");
+const std = @import("std");

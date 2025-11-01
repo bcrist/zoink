@@ -1,7 +1,15 @@
 pub const BGA151 = struct {
     pub const pkg: Package = .{
-        .default_footprint = &fp.BGA(data, .normal).fp,
+        .default_footprint = fp.BGA(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: enums.Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...151 => true,
+            else => false,
+        };
+    }
 
     pub const data: BGA_Data = .{
         .package_name = "BMC-151",
@@ -66,6 +74,7 @@ pub const BGA151 = struct {
             .{ .individual = .{ .row = 3, .col = 0, .mirror = .both } },
             .{ .individual = .{ .row = 4, .col = 0, .mirror = .both } },
         },
+        .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
     pub const Pin_ID = enum (u8) {
@@ -102,6 +111,7 @@ pub const BGA151 = struct {
 
 const BGA_Data = footprints.BGA_Data;
 const fp = footprints;
+const kicad = @import("../kicad.zig");
 const footprints = @import("../footprints.zig");
 const enums = @import("../enums.zig");
 const Package = @import("../Package.zig");

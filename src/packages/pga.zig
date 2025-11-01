@@ -2,8 +2,16 @@
 pub fn PLCC(comptime rows: comptime_int, comptime cols: comptime_int, comptime package_name: []const u8) type {
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = &footprints.PLCC_PGA(data, .normal).fp,
+            .default_footprint = fp.PLCC_PGA(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: enums.Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...(2 * (rows + cols)) => true,
+                else => false,
+            };
+        }
 
         pub const data: PLCC_PGA_Data = .{
             .package_name = package_name,
@@ -22,8 +30,16 @@ pub fn PLCC(comptime rows: comptime_int, comptime cols: comptime_int, comptime p
 
 pub const PGA68 = struct {
     pub const pkg: Package = .{
-        .default_footprint = &footprints.PGA(data, .normal).fp,
+        .default_footprint = fp.PGA(data, .normal),
+        .has_pin = has_pin,
     };
+
+    pub fn has_pin(pin: enums.Pin_ID) bool {
+        return switch (@intFromEnum(pin)) {
+            1...68 => true,
+            else => false,
+        };
+    }
 
     pub const data: PGA_Data = .{
         .package_name = "PGA-68 (11x11)",
@@ -49,6 +65,7 @@ pub const PGA68 = struct {
                 .height = 1,
             }},
         },
+        .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
     pub const Pin_ID = enum (u8) {
@@ -73,8 +90,9 @@ pub const PGA68 = struct {
     };
 };
 
-const PGA_Data = footprints.PGA_Data;
-const PLCC_PGA_Data = footprints.PLCC_PGA_Data;
-const footprints = @import("../footprints.zig");
+const PGA_Data = fp.PGA_Data;
+const PLCC_PGA_Data = fp.PLCC_PGA_Data;
+const fp = @import("../footprints.zig");
+const kicad = @import("../kicad.zig");
 const enums = @import("../enums.zig");
 const Package = @import("../Package.zig");
