@@ -77,77 +77,75 @@ pub fn nudge(self: *Bounding_Box, rnd: std.Random) void {
 }
 
 pub fn check_and_resolve_intersection(self: *Bounding_Box, other: *Bounding_Box, rnd: std.Random) bool {
-    const inf = std.math.inf(f64);
-    const increase_x = if (self.min[0] >= other.min[0] and self.min[0] <= other.max[0]) other.max[0] - self.min[0] + 1 else inf;
-    const decrease_x = if (self.max[0] >= other.min[0] and self.max[0] <= other.max[0]) self.max[0] - other.min[0] + 1 else inf;
-    const increase_y = if (self.min[1] >= other.min[1] and self.min[1] <= other.max[1]) other.max[1] - self.min[1] + 1 else inf;
-    const decrease_y = if (self.max[1] >= other.min[1] and self.max[1] <= other.max[1]) self.max[1] - other.min[1] + 1 else inf;
-    const min_x = @min(increase_x, decrease_x);
-    const min_y = @min(increase_y, decrease_y);
-    const min = @min(min_x, min_y);
+    if (self.max[0] < other.min[0]) return false;
+    if (self.min[0] > other.max[0]) return false;
+    if (self.max[1] < other.min[1]) return false;
+    if (self.min[1] > other.max[1]) return false;
 
-    if (min_x != inf and min_y != inf) {
-        const self_area = self.area();
-        const other_area = other.area();
-        if (increase_x == min) {
-            self.unapplied_offset[0] += min * self_area / (self_area + other_area);
-            other.unapplied_offset[0] -= min * other_area / (self_area + other_area);
-        } else if (decrease_x == min) {
-            self.unapplied_offset[0] -= min * self_area / (self_area + other_area);
-            other.unapplied_offset[0] += min * other_area / (self_area + other_area);
-        } else if (increase_y == min) {
-            self.unapplied_offset[1] += min * self_area / (self_area + other_area);
-            other.unapplied_offset[1] -= min * other_area / (self_area + other_area);
-        } else {
-            std.debug.assert(decrease_y == min);
-            self.unapplied_offset[1] -= min * self_area / (self_area + other_area);
-            other.unapplied_offset[1] += min * other_area / (self_area + other_area);
-        }
-        self.nudge(rnd);
-        other.nudge(rnd);
-        return true;
+    const increase_x = other.max[0] - self.min[0] + 1;
+    const decrease_x = self.max[0] - other.min[0] + 1;
+    const increase_y = other.max[1] - self.min[1] + 1;
+    const decrease_y = self.max[1] - other.min[1] + 1;
+    const min = @min(increase_x, decrease_x, increase_y, decrease_y);
+
+    const self_area = self.area();
+    const other_area = other.area();
+    if (increase_x == min) {
+        self.unapplied_offset[0] += min * other_area / (self_area + other_area);
+        other.unapplied_offset[0] -= min * self_area / (self_area + other_area);
+    } else if (decrease_x == min) {
+        self.unapplied_offset[0] -= min * other_area / (self_area + other_area);
+        other.unapplied_offset[0] += min * self_area / (self_area + other_area);
+    } else if (increase_y == min) {
+        self.unapplied_offset[1] += min * other_area / (self_area + other_area);
+        other.unapplied_offset[1] -= min * self_area / (self_area + other_area);
+    } else {
+        std.debug.assert(decrease_y == min);
+        self.unapplied_offset[1] -= min * other_area / (self_area + other_area);
+        other.unapplied_offset[1] += min * self_area / (self_area + other_area);
     }
-
-    return false;
+    self.nudge(rnd);
+    other.nudge(rnd);
+    return true;
 }
 
 pub fn check_and_resolve_intersection_static(self: *Bounding_Box, other: Bounding_Box, rnd: std.Random) bool {
-    const inf = std.math.inf(f64);
-    const increase_x = if (self.min[0] >= other.min[0] and self.min[0] <= other.max[0]) other.max[0] - self.min[0] + 1 else inf;
-    const decrease_x = if (self.max[0] >= other.min[0] and self.max[0] <= other.max[0]) self.max[0] - other.min[0] + 1 else inf;
-    const increase_y = if (self.min[1] >= other.min[1] and self.min[1] <= other.max[1]) other.max[1] - self.min[1] + 1 else inf;
-    const decrease_y = if (self.max[1] >= other.min[1] and self.max[1] <= other.max[1]) self.max[1] - other.min[1] + 1 else inf;
-    const min_x = @min(increase_x, decrease_x);
-    const min_y = @min(increase_y, decrease_y);
-    const min = @min(min_x, min_y);
+    if (self.max[0] < other.min[0]) return false;
+    if (self.min[0] > other.max[0]) return false;
+    if (self.max[1] < other.min[1]) return false;
+    if (self.min[1] > other.max[1]) return false;
 
-    if (min_x != inf and min_y != inf) {
-        if (decrease_x == min) {
-            self.unapplied_offset[0] -= min;
-        } else if (increase_x == min) {
-            self.unapplied_offset[0] += min;
-        } else if (decrease_y == min) {
-            self.unapplied_offset[1] -= min;
-        } else {
-            std.debug.assert(increase_y == min);
-            self.unapplied_offset[1] += min;
-        }
-        self.nudge(rnd);
-        return true;
+    const increase_x = other.max[0] - self.min[0] + 1;
+    const decrease_x = self.max[0] - other.min[0] + 1;
+    const increase_y = other.max[1] - self.min[1] + 1;
+    const decrease_y = self.max[1] - other.min[1] + 1;
+    const min = @min(increase_x, decrease_x, increase_y, decrease_y);
+
+    if (decrease_x == min) {
+        self.unapplied_offset[0] -= min;
+    } else if (increase_x == min) {
+        self.unapplied_offset[0] += min;
+    } else if (decrease_y == min) {
+        self.unapplied_offset[1] -= min;
     } else {
-        var moved = false;
-        if (self.offset[0] < -100) {
-            self.unapplied_offset[0] = -self.offset[0] - 50;
-            moved = true;
-        }
-        if (self.offset[1] < -100) {
-            self.unapplied_offset[1] = -self.offset[1] - 50;
-            moved = true;
-        }
-        return moved;
+        std.debug.assert(increase_y == min);
+        self.unapplied_offset[1] += min;
     }
+    self.nudge(rnd);
+    return true;
+}
 
-    return false;
+pub fn check_and_resolve_extreme_distance(self: *Bounding_Box) bool {
+    var moved = false;
+    if (self.offset[0] < -100) {
+        self.unapplied_offset[0] = -self.offset[0] - 50;
+        moved = true;
+    }
+    if (self.offset[1] < -100) {
+        self.unapplied_offset[1] = -self.offset[1] - 50;
+        moved = true;
+    }
+    return moved;
 }
 
 pub fn apply_offset(self: *Bounding_Box) void {

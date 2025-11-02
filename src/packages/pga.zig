@@ -16,8 +16,8 @@ pub fn PLCC(comptime rows: comptime_int, comptime cols: comptime_int, comptime p
         pub const data: PLCC_PGA_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mm(1.27 * (cols - 1) + 5.3, 0.5),
-                .height = .init_mm(1.27 * (rows - 1) + 5.3, 0.5),
+                .width  = .init_mil(50 * (cols - 1) + 413, 15),
+                .height = .init_mil(50 * (rows - 1) + 413, 15),
             },
             .max_z = .init_mm(7.7, 0.2),
             .pin_diameter = .init_inches_range(0.01, 0.02),

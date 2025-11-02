@@ -361,13 +361,28 @@ pub fn Connector(comptime n: comptime_int, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
             .package = if (Pkg == void) undefined else &Pkg.pkg,
-            .prefix = .U,
+            .prefix = .J,
         },
 
         p: [n]Net_ID = @splat(.unset),
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return self.p[@intFromEnum(pin_id)];
+        }
+    };
+}
+
+pub fn Dummy(comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = if (Pkg == void) undefined else &Pkg.pkg,
+            .prefix = .G,
+        },
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            _ = self;
+            _ = pin_id;
+            return .no_connect;
         }
     };
 }

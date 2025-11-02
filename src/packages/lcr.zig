@@ -29,6 +29,7 @@ pub fn _1206(comptime max_z_um: comptime_int, comptime package_name: []const u8)
             .pin_width = .{ .nominal_um = 1600, .tolerance_um = 150 },
             .pin_seating = .{ .nominal_um = 500, .tolerance_um = 250 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -64,6 +65,7 @@ pub fn _0805(comptime max_z_um: comptime_int, package_name: []const u8) type {
             .pin_width = .{ .nominal_um = 1250, .tolerance_um = 100 },
             .pin_seating = .{ .nominal_um = 400, .tolerance_um = 200 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -99,6 +101,7 @@ pub fn _0603(comptime max_z_um: comptime_int, comptime package_name: []const u8)
             .pin_width = .{ .nominal_um = 800, .tolerance_um = 100 },
             .pin_seating = .{ .nominal_um = 300, .tolerance_um = 150 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -134,6 +137,7 @@ pub fn _0402(comptime max_z_um: comptime_int, comptime package_name: []const u8)
             .pin_width = .{ .nominal_um = 500, .tolerance_um = 50 },
             .pin_seating = .{ .nominal_um = 250, .tolerance_um = 100 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -169,6 +173,7 @@ pub fn _0201(comptime max_z_um: comptime_int, comptime package_name: []const u8)
             .pin_width = .{ .nominal_um = 300, .tolerance_um = 30 },
             .pin_seating = .{ .nominal_um = 150, .tolerance_um = 50 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -204,6 +209,7 @@ pub fn K1206(comptime max_z_um: comptime_int, comptime package_name: []const u8)
             .pin_width = .{ .nominal_um = 1600, .tolerance_um = 150 },
             .pin_seating = .{ .nominal_um = 500, .tolerance_um = 250 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -239,6 +245,7 @@ pub fn K0805(comptime max_z_um: comptime_int, package_name: []const u8) type {
             .pin_width = .{ .nominal_um = 1250, .tolerance_um = 100 },
             .pin_seating = .{ .nominal_um = 400, .tolerance_um = 200 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -274,6 +281,7 @@ pub fn K0603(comptime max_z_um: comptime_int, comptime package_name: []const u8)
             .pin_width = .{ .nominal_um = 800, .tolerance_um = 100 },
             .pin_seating = .{ .nominal_um = 300, .tolerance_um = 150 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -309,6 +317,7 @@ pub fn K0402(comptime max_z_um: comptime_int, comptime package_name: []const u8)
             .pin_width = .{ .nominal_um = 500, .tolerance_um = 50 },
             .pin_seating = .{ .nominal_um = 250, .tolerance_um = 100 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -344,6 +353,7 @@ pub fn K0201(comptime max_z_um: comptime_int, comptime package_name: []const u8)
             .pin_width = .{ .nominal_um = 300, .tolerance_um = 30 },
             .pin_seating = .{ .nominal_um = 150, .tolerance_um = 50 },
             .pin_1_mark = .none,
+            .body_mark = .filled,
         };
     };
 }
@@ -380,6 +390,7 @@ pub const taiyo_yuden = struct {
             .pin_width = .init_mm(3.8, 0.2),
             .pin_seating = .init_mm(1.4, 0.1),
             .pin_1_mark = .none,
+            .body_mark = .sides,
         };
     };
 };

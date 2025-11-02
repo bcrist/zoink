@@ -87,7 +87,8 @@ pub const PLCC_84M = jedec.MO_047B(84, .west_middle, "PLCC-84M");
 pub const PLCC_100M = jedec.MO_047B(100, .west_middle, "PLCC-100M");
 pub const PLCC_124M = jedec.MO_047B(124, .west_middle, "PLCC-124M");
 
-pub const PLCC_32_PGA = pga.PLCC(9, 7, "PLCC-32 (PGA Socket)");
+pub const PLCC_32_PGA = pga.PLCC(7, 9, "PLCC-32 (PGA Socket)");
+pub const PLCC_20M_PGA = pga.PLCC(5, 5, "PLCC-20M (PGA Socket)");
 pub const PLCC_28M_PGA = pga.PLCC(7, 7, "PLCC-28M (PGA Socket)");
 pub const PLCC_44M_PGA = pga.PLCC(11, 11, "PLCC-44M (PGA Socket)");
 pub const PLCC_52M_PGA = pga.PLCC(13, 13, "PLCC-52M (PGA Socket)");

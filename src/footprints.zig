@@ -83,12 +83,6 @@ pub const Pin1 = enum {
     west_middle, // PLCC; for even number of pins, round to the south
 };
 
-pub const Pin1_Mark_Type = enum {
-    none,
-    arrow,
-    line,
-};
-
 /// Single inline packages, with pins extending directly beneath center of body.
 /// Pin 1 is the westmost pin.
 /// The west/southwest/south side of the body may have a notch to indicate pin 1.
@@ -244,7 +238,8 @@ pub const SMD_Data = struct {
     // This feature is used for SOT-23, some SOJ DRAM chips, etc.
     omitted_pins: []const usize = &.{},
 
-    pin_1_mark: Pin1_Mark_Type = .arrow,
+    pin_1_mark: ?Pin1_Mark_Type = null,
+    body_mark: ?Body_Mark_Type = null,
 
     pub fn format(self: SMD_Data, writer: *std.io.Writer) !void {
         try writer.writeAll(self.package_name);
@@ -257,20 +252,23 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint 
         .name = data.package_name,
     };
 
-    const body_w: f64 = @floatFromInt(data.body.width.nominal_um);
-    const body_h: f64 = @floatFromInt(data.body.height.nominal_um);
+    const pins_on_second_side = (data.total_pins / 2) - data.pins_on_first_side;
+
+    const courtyard_w: f64 = @floatFromInt(data.overall.width.max_um() + data.max_z.max_um() / 4);
+    const courtyard_h: f64 = @floatFromInt(data.overall.height.max_um() + data.max_z.max_um() / 4);
+
     result.rects = &.{
         .{
-            .start = .init_um(-body_w / 2, -body_h / 2),
-            .end = .init_um(body_w / 2, body_h / 2),
-            .layer = .fab_front,
+            .start = .init_um(-courtyard_w / 2, -courtyard_h / 2),
+            .end = .init_um(courtyard_w / 2, courtyard_h / 2),
+            .layer = .courtyard_front,
             .stroke = .{
-                .width = .init_mm(0.1),
+                .width = .init_mm(0.01),
             },
-        },
+        }
     };
 
-    const pins_on_second_side = (data.total_pins / 2) - data.pins_on_first_side;
+    generate_body_and_courtyard(&result, data.body_mark orelse if (pins_on_second_side == 0) .sides else .outline, data.body, @floatFromInt(data.overall.height.nominal_um - data.pin_seating.max_um() * 2 - 100));
 
     if (data.heat_slug) |heat_slug| {
         result.pads = result.pads ++ .{
@@ -280,22 +278,8 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint 
                 .location = .origin,
                 .w = .{ .um = @intCast(heat_slug.width.nominal_um) },
                 .h = .{ .um = @intCast(heat_slug.height.nominal_um) },
-                .shape = .{ .rect = .{
-                    .round_amount = .{ .numer = 1, .denom = 4 },
-                    .chamfer_amount = .{},
-                    .top_left = .rounded,
-                    .top_right = .rounded,
-                    .bottom_left = .rounded,
-                    .bottom_right = .rounded,
-                }},
-                .layers = .initMany(if (data.heat_slug_paste_areas.len == 0) &.{
-                    .copper_front,
-                    .paste_front,
-                    .soldermask_front,
-                } else &.{
-                    .copper_front,
-                    .soldermask_front,
-                }),
+                .shape = .default_rounded,
+                .layers = if (data.heat_slug_paste_areas.len == 0) smd_layers else smd_layers_no_paste,
                 .copper_layers = .all,
                 .teardrops = .{},
             },
@@ -312,10 +296,7 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint 
                     },
                     .w = .{ .um = @intCast(area.width.nominal_um) },
                     .h = .{ .um = @intCast(area.height.nominal_um) },
-                    .shape = .{ .rect = .{
-                        .round_amount = .{},
-                        .chamfer_amount = .{},
-                    }},
+                    .shape = .square,
                     .layers = .initOne(.paste_front),
                     .copper_layers = .all,
                     .teardrops = .{},
@@ -393,8 +374,8 @@ fn add_smd_pads(
 
         const pad_length = switch (density) {
             .dense => seating + (overall_dim_max - overall_dim) / 2,
-            .normal => seating + (overall_dim_max - overall_dim) / 2 + if (pins_on_side_f > 1 and pin_pitch > 0) 500 else 250,
-            .loose => seating + (overall_dim_max - overall_dim) / 2 + if (pins_on_side_f > 1 and pin_pitch > 0) 1500 else 500,
+            .normal => seating + (overall_dim_max - overall_dim) / 2 + if (pins_on_side > 1 and pin_pitch > 0) 500 else 250,
+            .loose => seating + (overall_dim_max - overall_dim) / 2 + if (pins_on_side > 1 and pin_pitch > 0) 1500 else 500,
         };
 
         const pin_offset = -pin_pitch * (pins_on_side_f - 1) / 2;
@@ -436,78 +417,27 @@ fn add_smd_pads(
                     },
                     .w = .init_um(pad_width),
                     .h = .init_um(pad_length),
-                    .shape = .{ .rect = .{
-                        .round_amount = .{ .numer = 1, .denom = 4 },
-                        .chamfer_amount = .{},
-                        .top_left = .rounded,
-                        .top_right = .rounded,
-                        .bottom_left = .rounded,
-                        .bottom_right = .rounded,
-                    }},
+                    .shape = .default_rounded,
                     .shape_offset = .{
                         .x = .zero,
                         .y = .init_um(-(pad_length - @min(pad_width, pad_length)) / 2),
                     },
-                    .layers = std.EnumSet(Layer).initMany(&.{
-                        .copper_front,
-                        .paste_front,
-                        .soldermask_front,
-                    }),
+                    .layers = smd_layers,
                     .copper_layers = .all,
                     .teardrops = .{},
                 },
             };
             
-            if (pin == 1) switch (data.pin_1_mark) {
-                .none => {},
-                .arrow => {
-                    const scale = if (pin_pitch == 0) @min(1000, pad_width) else pin_pitch;
-
-                    const xf3 = xf2.multiply(.rotation(@as(f64, std.math.pi) / 5));
-                    const xf4 = xf3.multiply(.translation(0, @min(pad_width, pad_length) * 0.75 + @min(500, scale * 0.25)));
-
-                    result.polygons = result.polygons ++ .{
-                        kicad.Polygon {
-                            .points = &.{
-                                .init_um_transformed(xf4, 0,             0),
-                                .init_um_transformed(xf4, -scale * 0.4, scale),
-                                .init_um_transformed(xf4, scale * 0.4,  scale),
-                            },
-                            .stroke = .{
-                                .width = .init_mm(0.1),
-                            },
-                            .fill = true,
-                        },
-                    };
-                },
-                .line => {
-                    const scale_x = pad_width / 2 + 400;
-                    const scale_y = @min(pad_width, pad_length) / 2 + 400;
-
-                    if (pin_pitch == 0 or po == 0) {
-                        result.lines = result.lines ++ .{
-                            kicad.Line {
-                                .start = .init_um_transformed(xf2, -scale_x, -scale_y * 0.5),
-                                .end = .init_um_transformed(xf2, -scale_x, scale_y)
-                            },
-                        };
-                    }
-                    result.lines = result.lines ++ .{
-                        kicad.Line {
-                            .start = .init_um_transformed(xf2, -scale_x, scale_y),
-                            .end = .init_um_transformed(xf2, scale_x, scale_y)
-                        },
-                    };
-                    if (pin_pitch == 0 or po == pins_on_side - 1) {
-                        result.lines = result.lines ++ .{
-                            kicad.Line {
-                                .start = .init_um_transformed(xf2, scale_x, scale_y),
-                                .end = .init_um_transformed(xf2, scale_x, -scale_y * 0.5)
-                            },
-                        };
-                    }
-                },
-            };
+            if (pin == 1) {
+                generate_pin1_mark(result, data.pin_1_mark orelse .arrow, .{
+                    .pad_origin = xf2,
+                    .pin_pitch = pin_pitch,
+                    .pad_width = pad_width,
+                    .pad_length = pad_length,
+                    .is_first_pin_on_side = pin_pitch == 0 or po == 0,
+                    .is_last_pin_on_side = pin_pitch == 0 or po == pins_on_side - 1,
+                });
+            }
         }
     }
 }
@@ -525,20 +455,150 @@ pub const SOT_Data = struct {
         seating: Dim, // portion of length that lies flat against the seating plane
     },
 
+    density_scaling: f64 = 1,
+
+    pin_1_mark: ?Pin1_Mark_Type = null,
+    body_mark: ?Body_Mark_Type = null,
+
     pub fn format(self: SOT_Data, writer: *std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
 pub fn SOT(comptime data: SOT_Data, comptime density: Density) *const Footprint {
-    _ = density;
-
+    @setEvalBranchQuota(100_000);
     var result: Footprint = .{
         .kind = .smd,
         .name = data.package_name,
     };
 
-    _ = &result;
-    
+    var overall_min_x: f64 = @floatFromInt(data.body.width.max_um() / 2);
+    var overall_max_x: f64 = @floatFromInt(data.body.width.max_um() / 2);
+    var overall_min_y: f64 = @floatFromInt(data.body.height.max_um() / 2);
+    var overall_max_y: f64 = @floatFromInt(data.body.height.max_um() / 2);
+    const max_z: f64 = @floatFromInt(data.max_z.max_um());
+
+    overall_min_x *= -1;
+    overall_min_y *= -1;
+
+    for (data.pins) |pin| {
+        switch (pin.side) {
+            .north => {
+                const end: f64 = @floatFromInt(data.body.height.max_um() / 2 + pin.length.max_um());
+                overall_min_y = @min(overall_min_y, -end);
+            },
+            .south => {
+                const end: f64 = @floatFromInt(data.body.height.max_um() / 2 + pin.length.max_um());
+                overall_max_y = @max(overall_max_y, end);
+            },
+            .west => {
+                const end: f64 = @floatFromInt(data.body.width.max_um() / 2 + pin.length.max_um());
+                overall_min_x = @min(overall_min_x, -end);
+            },
+            .east => {
+                const end: f64 = @floatFromInt(data.body.width.max_um() / 2 + pin.length.max_um());
+                overall_max_x = @max(overall_max_x, end);
+            },
+        }
+    }
+
+    result.rects = &.{
+        .{
+            .start = .init_um(overall_min_x - max_z / 4, overall_min_y - max_z / 4),
+            .end = .init_um(overall_max_x + max_z / 4, overall_max_y + max_z / 4),
+            .layer = .courtyard_front,
+            .stroke = .{
+                .width = .init_mm(0.01),
+            },
+        }
+    };
+
+    generate_body_and_courtyard(&result, data.body_mark orelse .outline, data.body, std.math.inf(f64));
+
+    for (1.., data.pins) |pin_number, pin| {
+        var xf: zm.Mat3 = switch (pin.side) {
+            .west => rotate_90,
+            .east => rotate_270,
+            .north => rotate_180,
+            .south => .identity(),
+        };
+
+        const is_west_east = switch (pin.side) {
+            .west, .east => true,
+            .north, .south => false,
+        };
+
+        const body_dim: f64 = @floatFromInt(if (is_west_east) data.body.width.nominal_um else data.body.height.nominal_um);
+        const nom_seating: f64 = @floatFromInt(pin.seating.nominal_um);
+        const max_seating: f64 = @floatFromInt(pin.seating.max_um());
+        const max_pin_width: f64 = @floatFromInt(pin.width.max_um());
+        const max_pin_length: f64 = @floatFromInt(pin.length.max_um());
+        const nom_pin_length: f64 = @floatFromInt(pin.length.nominal_um);
+
+        const pad_width = switch (density) {
+            .dense => max_pin_width,
+            .normal => max_pin_width * data.density_scaling * 5 / 4,
+            .loose => max_pin_width * data.density_scaling * 3 / 2,
+        };
+
+        const pad_length = switch (density) {
+            .dense => max_seating,
+            .normal => max_seating + 500 * data.density_scaling,
+            .loose => max_seating + 1000 * data.density_scaling,
+        };
+
+        const pin_offset: f64 = @floatFromInt(pin.position_um);
+        const side_origin = body_dim / 2;
+
+        xf = xf.multiply(.translation(pin_offset, side_origin));
+
+        result.rects = result.rects ++ .{
+            kicad.Rect {
+                .start = .init_um_transformed(xf, -max_pin_width / 2, 0 ),
+                .end = .init_um_transformed(xf, max_pin_width / 2, max_pin_length),
+                .stroke = .{ .width = .zero },
+                .fill =  true,
+                .layer = .fab_front,
+            },
+        };
+
+        const xf2 = xf.multiply(.translation(0, nom_pin_length - nom_seating + pad_length - @min(pad_width, pad_length) / 2));
+
+        result.pads = result.pads ++ .{
+            kicad.Pad {
+                .pin = @enumFromInt(pin_number),
+                .kind = .smd,
+                .location = .init_um_transformed(xf2, 0, 0),
+                .rotation = switch (pin.side) {
+                    .west => kicad.Rotation.cw,
+                    .east => kicad.Rotation.ccw,
+                    .north => kicad.Rotation.flip,
+                    .south => .{},
+                },
+                .w = .init_um(pad_width),
+                .h = .init_um(pad_length),
+                .shape = .default_rounded,
+                .shape_offset = .{
+                    .x = .zero,
+                    .y = .init_um(-(pad_length - @min(pad_width, pad_length)) / 2),
+                },
+                .layers = smd_layers,
+                .copper_layers = .all,
+                .teardrops = .{},
+            },
+        };
+        
+        if (pin_number == 1) {
+            generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
+                .pad_origin = xf2,
+                .pad_width = pad_width,
+                .pad_length = pad_length,
+                .pin_pitch = 0,
+                .is_first_pin_on_side = data.pins.len < 2 or data.pins[data.pins.len - 1].side != pin.side,
+                .is_last_pin_on_side = data.pins.len < 2 or data.pins[pin_number].side != pin.side,
+            });
+        }
+    }
+
     const final_result = comptime result;
     return &final_result;
 }
@@ -548,10 +608,13 @@ pub fn SOT(comptime data: SOT_Data, comptime density: Density) *const Footprint 
 /// The four corners of the grid are not populated.
 /// Pin_ID assignment:
 ///     * Pin 1 is always on the west side, in the middle row, or the row above it.
-///         * If `(plcc_rows + plcc_cols + 2) * 2` is divisible by 16, then pin 1 is in the row above it, and is in the "inner ring"
+///         * If `(plcc_rows * 2 + plcc_cols * 2) % 16 != 4` then pin 1 is in the row above it, and is in the "inner ring"
 ///         * Otherwise pin 1 is in the middle row, and part of the "outer ring"
 ///     * Assignment proceeds counter-clockwise, visiting the pin in the outer ring before the inner one.
 ///     * When reaching a corner, *both* outer pins is visited before the inner one
+/// 
+/// Ref:
+/// https://www.mouser.com/datasheet/2/273/144-259668.pdf
 pub const PLCC_PGA_Data = struct {
     package_name: []const u8,
     body: Rect,
@@ -560,20 +623,121 @@ pub const PLCC_PGA_Data = struct {
     pin_length: Dim,
     plcc_rows: usize,
     plcc_cols: usize,
+
+    pin_1_mark: ?Pin1_Mark_Type = null,
+    body_mark: ?Body_Mark_Type = null,
     
     pub fn format(self: PLCC_PGA_Data, writer: std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
 pub fn PLCC_PGA(comptime data: PLCC_PGA_Data, comptime density: Density) *const Footprint {
-    _ = density;
-
+    @setEvalBranchQuota(100_000);
     var result: Footprint = .{
         .kind = .through_hole,
         .name = data.package_name,
     };
 
-    _ = &result;
+    const hole_diameter: f64 = switch (density) {
+        .dense => @floatFromInt(data.pin_diameter.max_um() + 200),
+        .normal => @floatFromInt(data.pin_diameter.max_um() + 300),
+        .loose => @floatFromInt(data.pin_diameter.max_um() + 350),
+    };
+
+    const pad_diameter: f64 = switch (density) {
+        .dense => hole_diameter + 200,
+        .normal => hole_diameter + 300,
+        .loose => hole_diameter + 400,
+    };
+
+
+    const total_pins = (data.plcc_rows + data.plcc_cols) * 2;
+    const pin_pitch: f64 = @floatFromInt(Dim.init_mil(100, 0).nominal_um);
+
+    generate_body_and_courtyard(&result, data.body_mark orelse .outline, data.body, std.math.inf(f64));
+
+    var first_pin: usize = total_pins - (data.plcc_rows - 3) / 2;
+
+    for ([_]Side { .west, .south, .east, .north }) |side| {
+        const pairs = switch (side) {
+            .north, .south => (data.plcc_cols - 1) / 2,
+            .west, .east => (data.plcc_rows - 1) / 2,
+        };
+        defer {
+            first_pin = first_pin + pairs * 2 + 1;
+            if (first_pin > total_pins) first_pin -= total_pins;
+        }
+
+        const y_offset: f64 = switch (side) {
+            .north, .south => @as(f64, @floatFromInt(data.plcc_rows - 1)) / 4,
+            .west, .east => @as(f64, @floatFromInt(data.plcc_cols - 1)) / 4,
+        };
+
+        var xf: zm.Mat3 = switch (side) {
+            .west => rotate_90,
+            .east => rotate_270,
+            .north => rotate_180,
+            .south => .identity(),
+        };
+
+        xf = xf.multiply(.translation(-pin_pitch * @as(f64, @floatFromInt(pairs)) / 2, pin_pitch * y_offset));
+
+        for (0..pairs) |pair| {
+            var outer_pin = first_pin + pair * 2;
+            var inner_pin = outer_pin + 1;
+            if (outer_pin > total_pins) outer_pin -= total_pins;
+            if (inner_pin > total_pins) inner_pin -= total_pins;
+
+            defer xf = xf.multiply(.translation(pin_pitch, 0));
+
+            result.pads = result.pads ++ .{
+                kicad.Pad {
+                    .pin = @enumFromInt(outer_pin),
+                    .kind = .through_hole,
+                    .location = .init_um_transformed(xf, 0, pin_pitch),
+                    .w = .init_um(pad_diameter),
+                    .h = .init_um(pad_diameter),
+                    .hole_w = .init_um(hole_diameter),
+                    .hole_h = .init_um(hole_diameter),
+                    .shape = if (outer_pin == 1) .default_chamfered else .oval,
+                    .layers = through_hole_layers,
+                    .copper_layers = .connected_and_outside_only,
+                    .teardrops = .{},
+                },
+                kicad.Pad {
+                    .pin = @enumFromInt(inner_pin),
+                    .kind = .through_hole,
+                    .location = .init_um_transformed(xf, 0, 0),
+                    .w = .init_um(pad_diameter),
+                    .h = .init_um(pad_diameter),
+                    .hole_w = .init_um(hole_diameter),
+                    .hole_h = .init_um(hole_diameter),
+                    .shape = if (inner_pin == 1) .default_chamfered else .oval,
+                    .layers = through_hole_layers,
+                    .copper_layers = .connected_and_outside_only,
+                    .teardrops = .{},
+                },
+            };
+        }
+        
+        var pin = first_pin + pairs * 2;
+        if (pin > total_pins) pin -= total_pins;
+        result.pads = result.pads ++ .{
+            kicad.Pad {
+                .pin = @enumFromInt(pin),
+                .kind = .through_hole,
+                .location = .init_um_transformed(xf, 0, pin_pitch),
+                .w = .init_um(pad_diameter),
+                .h = .init_um(pad_diameter),
+                .hole_w = .init_um(hole_diameter),
+                .hole_h = .init_um(hole_diameter),
+                .shape = .oval,
+                .layers = through_hole_layers,
+                .copper_layers = .connected_and_outside_only,
+                .teardrops = .{},
+            },
+        };
+    }
     
     const final_result = comptime result;
     return &final_result;
@@ -650,6 +814,139 @@ pub fn BGA(comptime data: BGA_Data, comptime density: Density) *const Footprint 
     const final_result = comptime result;
     return &final_result;
 }
+
+
+pub const Body_Mark_Type = enum {
+    none,
+    sides,
+    outline,
+    filled,
+};
+fn generate_body_and_courtyard(result: *Footprint, mark: Body_Mark_Type, body: Rect, max_filled_height: f64) void {
+    const body_w: f64 = @floatFromInt(body.width.nominal_um);
+    const body_h: f64 = @floatFromInt(body.height.nominal_um);
+
+    result.rects = result.rects ++ .{
+        kicad.Rect {
+            .start = .init_um(-body_w / 2, -body_h / 2),
+            .end = .init_um(body_w / 2, body_h / 2),
+            .layer = .fab_front,
+            .stroke = .{
+                .width = .init_mm(0.1),
+            },
+        },
+    };
+
+    switch (mark) {
+        .none => {},
+        .sides => {
+            const outline_w: f64 = @floatFromInt(body.width.max_um() + 400);
+            const outline_h: f64 = @floatFromInt(body.height.max_um() + 400);
+            result.lines = result.lines ++ .{
+                kicad.Line {
+                    .start = .init_um(-outline_w / 2, -outline_h / 2),
+                    .end = .init_um(-outline_w / 2, outline_h / 2),
+                },
+                kicad.Line {
+                    .start = .init_um(outline_w / 2, -outline_h / 2),
+                    .end = .init_um(outline_w / 2, outline_h / 2),
+                },
+            };
+        },
+        .outline => {
+            const outline_w: f64 = @floatFromInt(body.width.max_um() + 400);
+            const outline_h: f64 = @floatFromInt(body.height.max_um() + 400);
+            result.rects = result.rects ++ .{
+                kicad.Rect {
+                    .start = .init_um(-outline_w / 2, -outline_h / 2),
+                    .end = .init_um(outline_w / 2, outline_h / 2),
+                },
+            };
+        },
+        .filled => {
+            const fill_w: f64 = @floatFromInt(body.width.max_um() - 100);
+            const fill_h1: f64 = @floatFromInt(body.height.max_um() - 100);
+            const fill_h = @min(fill_h1, max_filled_height);
+            result.rects = result.rects ++ .{
+                kicad.Rect {
+                    .start = .init_um(-fill_w / 2, -fill_h / 2),
+                    .end = .init_um(fill_w / 2, fill_h / 2),
+                    .fill = true,
+                    .stroke = .{
+                        .width = .init_mm(0.1),
+                    },
+                },
+            };
+        },
+    }
+}
+
+pub const Pin1_Mark_Type = enum {
+    none,
+    arrow,
+    line,
+};
+const Pin1_Mark_Extra = struct {
+    pad_origin: zm.Mat3, // if pad_length > pad_width, this should be pad_width/2 from the end of the pad.  Otherwise it should be the center of the pad.
+    pin_pitch: f64,
+    pad_width: f64,
+    pad_length: f64,
+    is_first_pin_on_side: bool,
+    is_last_pin_on_side: bool,
+};
+fn generate_pin1_mark(result: *Footprint, mark: Pin1_Mark_Type, extra: Pin1_Mark_Extra) void {
+    switch (mark) {
+        .none => {},
+        .arrow => {
+            const scale = if (extra.pin_pitch == 0) @min(1000, extra.pad_width) else extra.pin_pitch;
+
+            const xf = extra.pad_origin.multiply(.rotation(@as(f64, std.math.pi) / 5));
+            const xf2 = xf.multiply(.translation(0, @min(extra.pad_width, extra.pad_length) * 0.75 + @min(500, scale * 0.25)));
+
+            result.polygons = result.polygons ++ .{
+                kicad.Polygon {
+                    .points = &.{
+                        .init_um_transformed(xf2, 0,             0),
+                        .init_um_transformed(xf2, -scale * 0.4, scale),
+                        .init_um_transformed(xf2, scale * 0.4,  scale),
+                    },
+                    .stroke = .{
+                        .width = .init_mm(0.1),
+                    },
+                    .fill = true,
+                },
+            };
+        },
+        .line => {
+            const scale_x = extra.pad_width / 2 + 400;
+            const scale_y = @min(extra.pad_width, extra.pad_length) / 2 + 400;
+
+            if (extra.is_first_pin_on_side) {
+                result.lines = result.lines ++ .{
+                    kicad.Line {
+                        .start = .init_um_transformed(extra.pad_origin, -scale_x, -scale_y * 0.5),
+                        .end = .init_um_transformed(extra.pad_origin, -scale_x, scale_y)
+                    },
+                };
+            }
+            result.lines = result.lines ++ .{
+                kicad.Line {
+                    .start = .init_um_transformed(extra.pad_origin, -scale_x, scale_y),
+                    .end = .init_um_transformed(extra.pad_origin, scale_x, scale_y)
+                },
+            };
+            if (extra.is_last_pin_on_side) {
+                result.lines = result.lines ++ .{
+                    kicad.Line {
+                        .start = .init_um_transformed(extra.pad_origin, scale_x, scale_y),
+                        .end = .init_um_transformed(extra.pad_origin, scale_x, -scale_y * 0.5)
+                    },
+                };
+            }
+        },
+    }
+}
+
 
 pub const Grid_Region = union (enum) {
     all,
@@ -755,6 +1052,24 @@ pub const Grid_Region = union (enum) {
         }
     }
 };
+
+const smd_layers: std.EnumSet(Layer) = .initMany(&.{
+    .copper_front,
+    .soldermask_front,
+    .paste_front,
+});
+
+const smd_layers_no_paste: std.EnumSet(Layer) = .initMany(&.{
+    .copper_front,
+    .soldermask_front,
+});
+
+const through_hole_layers: std.EnumSet(Layer) = .initMany(&.{
+    .copper_front,
+    .copper_back,
+    .soldermask_front,
+    .soldermask_back,
+});
 
 const rotate_90: zm.Mat3 = .{
     .data = .{

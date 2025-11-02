@@ -62,6 +62,35 @@ pub const Shape = union (enum) {
         ratio: Ratio,
         symetry_axis: enum { x, y },
     },
+
+    pub const square: Shape = .{ .rect = .{
+        .chamfer_amount = .{},
+        .round_amount = .{},
+    }};
+
+    pub const default_rounded: Shape = .{ .rect = .{
+        .round_amount = .{
+            .numer = 1,
+            .denom = 4,
+        },
+        .chamfer_amount = .{},
+        .top_left = .rounded,
+        .top_right = .rounded,
+        .bottom_left = .rounded,
+        .bottom_right = .rounded,
+    }};
+
+    pub const default_chamfered: Shape = .{ .rect = .{
+        .chamfer_amount = .{
+            .numer = 1,
+            .denom = 8,
+        },
+        .round_amount = .{},
+        .top_left = .chamfered,
+        .top_right = .chamfered,
+        .bottom_left = .chamfered,
+        .bottom_right = .chamfered,
+    }};
 };
 
 pub const Corner_Shape = enum {
@@ -225,7 +254,7 @@ pub fn read(r: *sx.Reader) !?Pad {
             }
             try r.ignore_remaining_expression();
 
-        } else if (try r.expression("chamfer_rratio")) {
+        } else if (try r.expression("chamfer_ratio")) {
             if (self.shape == .rect) {
                 self.shape.rect.chamfer_amount = .{
                     .numer = @intCast(Micron.init_mm(try r.require_any_float(f64)).um),
@@ -363,7 +392,7 @@ pub fn write(self: Pad, w: *sx.Writer, b: *Board, p: Part, format_pin_name: Pin_
                 try w.float(info.round_amount.mul(.init_mm(1)).mm(f64));
                 try w.close();
                 if (info.top_left == .chamfered or info.top_right == .chamfered or info.bottom_left == .chamfered or info.bottom_right == .chamfered) {
-                    try w.expression("chamfer_rratio");
+                    try w.expression("chamfer_ratio");
                     try w.float(info.chamfer_amount.mul(.init_mm(1)).mm(f64));
                     try w.close();
 

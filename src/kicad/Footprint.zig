@@ -156,10 +156,6 @@ pub fn write(self: Footprint, w: *sx.Writer, b: *Board, p: Part, options: Writer
     for (self.circles) |circle| try circle.write(w, "fp_circle");
     for (self.arcs) |arc| try arc.write(w, "fp_arc");
 
-//             (layer "F.SilkS")
-//             (layer "F.CrtYd")
-//             (layer "F.Fab")
-
     for (self.pads) |pad| try pad.write(w, b, p, self.format_pin_name);
 
     try w.expression("embedded_fonts");

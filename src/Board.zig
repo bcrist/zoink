@@ -248,6 +248,13 @@ pub fn finish_configuration(self: *Board, temp: std.mem.Allocator) !void {
     }
 }
 
+pub fn get_dimensions(self: *Board) Dimensions {
+    return self.dimensions orelse .{
+        .width = .init_mm(100),
+        .height = .init_mm(100),
+    };
+}
+
 pub fn generate_or_update_kicad_pcb_file(self: *Board, temp: std.mem.Allocator, path: []const u8, options: kicad.Writer_Options) !void {
     const prev_contents = std.fs.cwd().readFileAlloc(temp, path, 1_000_000_000) catch |err| switch (err) {
         error.FileNotFound => try temp.alloc(u8, 0),
@@ -625,12 +632,17 @@ fn update_footprints(self: *Board, r: *sx.Reader, w: *sx.Writer, options: kicad.
     var temp: std.heap.ArenaAllocator = .init(self.gpa);
     defer temp.deinit();
 
+    const dimensions = self.get_dimensions();
+
     while (try kicad.Footprint.read(r, temp.allocator())) |existing_fp| {
         defer _ = temp.reset(.retain_capacity);
         if (existing_fp.uuid.to_hash()) |hash| {
             if (self.part_lookup.get(hash)) |part_index| {
-                if (options.reset_footprints_outside_board and (existing_fp.location.x.um < 0 or existing_fp.location.y.um < 0)) {
-                    continue;
+                if (options.reset_footprints_outside_board) {
+                    if (existing_fp.location.x.um < 0) continue;
+                    if (existing_fp.location.y.um < 0) continue;
+                    if (existing_fp.location.x.um > dimensions.width.um) continue;
+                    if (existing_fp.location.y.um > dimensions.height.um) continue;
                 }
                 log.info("Updating existing footprint: {f}", .{ existing_fp.uuid });
                 try written_footprints.put(self.gpa, hash, {});
@@ -654,10 +666,10 @@ fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, maybe_writ
     const board_outline: Bounding_Box = .{
         .hash = 0,
         .min = @splat(0),
-        .max = if (self.dimensions) |dim| .{
-            dim.width.mm(f64),
-            dim.height.mm(f64),
-        } else @splat(100),
+        .max = .{
+            self.get_dimensions().width.mm(f64),
+            self.get_dimensions().height.mm(f64),
+        },
     };
 
     for (self.part_lookup.keys(), self.part_lookup.values()) |hash, part_index| {
@@ -708,7 +720,7 @@ fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, maybe_writ
         }
 
         for (bounding_boxes.items) |*bb| {
-            if (bb.check_and_resolve_intersection_static(board_outline, rnd)) {
+            if (bb.check_and_resolve_intersection_static(board_outline, rnd) or bb.check_and_resolve_extreme_distance()) {
                 found_intersection = true;
             }
         }
@@ -990,11 +1002,8 @@ fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Loc
     }
 }
 
-fn write_board_outline(b: *Board, w: *sx.Writer) !void {
-    const dimensions: Board.Dimensions = b.dimensions orelse .{
-        .width = .init_mm(100),
-        .height = .init_mm(100),
-    };
+fn write_board_outline(self: *Board, w: *sx.Writer) !void {
+    const dimensions = self.get_dimensions();
     const stroke: kicad.Stroke_Style = .{
         .width = .init_mm(0.01),
     };
