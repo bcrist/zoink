@@ -209,7 +209,7 @@ pub fn SIL(comptime data: SIL_Data, comptime density: Density) *const Footprint 
                             
             if (pin == 1) {
                 generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
-                    .pad_origin = xf.multiply(.translation(0, overall_height / 2)),
+                    .pad_origin = xf.multiply(.translation(0, pad_length / 2 - @min(pad_width, pad_length) / 2)),
                     .pin_pitch = pin_pitch,
                     .pad_width = pad_width,
                     .pad_length = pad_length,
@@ -371,7 +371,7 @@ pub fn DIL(comptime data: DIL_Data, comptime density: Density) *const Footprint 
                             
             if (pin == 1) {
                 generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
-                    .pad_origin = xf,
+                    .pad_origin = xf.multiply(.translation(0, pad_length / 2 - @min(pad_width, pad_length) / 2)),
                     .pin_pitch = pin_pitch,
                     .pad_width = pad_width,
                     .pad_length = pad_length,
@@ -1215,7 +1215,7 @@ pub const Body_Mark_Type = enum {
     outline,
     filled,
 };
-fn generate_body_and_outline(result: *Footprint, mark: Body_Mark_Type, body: Rect, max_filled_height: f64) void {
+pub fn generate_body_and_outline(result: *Footprint, mark: Body_Mark_Type, body: Rect, max_filled_height: f64) void {
     const body_w: f64 = @floatFromInt(body.width.nominal_um);
     const body_h: f64 = @floatFromInt(body.height.nominal_um);
 
@@ -1287,7 +1287,7 @@ const Pin1_Mark_Extra = struct {
     is_first_pin_on_side: bool,
     is_last_pin_on_side: bool,
 };
-fn generate_pin1_mark(result: *Footprint, mark: Pin1_Mark_Type, extra: Pin1_Mark_Extra) void {
+pub fn generate_pin1_mark(result: *Footprint, mark: Pin1_Mark_Type, extra: Pin1_Mark_Extra) void {
     switch (mark) {
         .none => {},
         .arrow => {
@@ -1451,18 +1451,18 @@ pub const Grid_Region = union (enum) {
     }
 };
 
-const smd_layers: std.EnumSet(Layer) = .initMany(&.{
+pub const smd_layers: std.EnumSet(Layer) = .initMany(&.{
     .copper_front,
     .soldermask_front,
     .paste_front,
 });
 
-const smd_layers_no_paste: std.EnumSet(Layer) = .initMany(&.{
+pub const smd_layers_no_paste: std.EnumSet(Layer) = .initMany(&.{
     .copper_front,
     .soldermask_front,
 });
 
-const through_hole_layers: std.EnumSet(Layer) = layers: {
+pub const through_hole_layers: std.EnumSet(Layer) = layers: {
     @setEvalBranchQuota(2000);
     break :layers .initMany(&.{
         .copper_front,
@@ -1502,7 +1502,12 @@ const through_hole_layers: std.EnumSet(Layer) = layers: {
     });
 };
 
-const rotate_90: zm.Mat3 = .{
+pub const npth_layers: std.EnumSet(Layer) = .initMany(&.{
+    .soldermask_front,
+    .soldermask_back,
+});
+
+pub const rotate_90: zm.Mat3 = .{
     .data = .{
         0, -1, 0,
         1,  0, 0,
@@ -1510,7 +1515,7 @@ const rotate_90: zm.Mat3 = .{
     },
 };
 
-const rotate_180: zm.Mat3 = .{
+pub const rotate_180: zm.Mat3 = .{
     .data = .{
         -1,  0, 0,
          0, -1, 0,
@@ -1518,7 +1523,7 @@ const rotate_180: zm.Mat3 = .{
     },
 };
 
-const rotate_270: zm.Mat3 = .{
+pub const rotate_270: zm.Mat3 = .{
     .data = .{
          0, 1, 0,
         -1, 0, 0,

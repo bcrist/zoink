@@ -1,3 +1,5 @@
+pub const jae = @import("parts/jae.zig");
+
 pub const _74 = @import("parts/74x.zig");
 
 pub const SN74LVC00AD   = _74.x00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
@@ -364,7 +366,11 @@ pub fn Connector(comptime n: comptime_int, comptime Pkg: type) type {
             .prefix = .J,
         },
 
-        p: [n]Net_ID = @splat(.unset),
+        p: [n + 1]Net_ID = initial: {
+            var nets: [n + 1]Net_ID = @splat(.unset);
+            nets[0] = .no_connect; // heat slug assumed unused
+            break :initial nets;
+        },
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return self.p[@intFromEnum(pin_id)];

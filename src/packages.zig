@@ -1,6 +1,7 @@
 pub const jedec = @import("packages/jedec.zig");
 pub const lcr = @import("packages/lcr.zig");
 pub const pga = @import("packages/pga.zig");
+pub const jae = @import("packages/jae.zig");
 
 pub const DIP8 = jedec.MS_001D(8, "DIP-8");
 pub const DIP14 = jedec.MS_001D(14, "DIP-14");
