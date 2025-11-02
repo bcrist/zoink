@@ -44,7 +44,7 @@ pub const BGA151 = struct {
             }},
             .{ .cols = .{
                 .dist_from_left = 5,
-                .row_count = 1,
+                .col_count = 1,
                 .mirror = .we,
             }},
             .{ .corners = .{
