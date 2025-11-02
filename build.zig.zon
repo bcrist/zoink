@@ -1,6 +1,6 @@
 .{
     .name = .zoink,
-    .version = "0.0.4",
+    .version = "0.1.0",
     .minimum_zig_version = "0.15.1",
     .fingerprint = 0x701de67035fe779a,
     .paths = .{

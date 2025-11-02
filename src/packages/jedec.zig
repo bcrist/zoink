@@ -14,7 +14,7 @@ pub fn MS_001D(comptime lead_count: comptime_int, comptime package_name: []const
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = fp.DIP(data, .normal),
+            .default_footprint = fp.DIL(data, .normal),
             .has_pin = has_pin,
         };
 
@@ -60,7 +60,7 @@ pub fn MS_010C(comptime lead_count: comptime_int, comptime package_name: []const
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = fp.DIP(data, .normal),
+            .default_footprint = fp.DIL(data, .normal),
             .has_pin = has_pin,
         };
 
@@ -105,7 +105,7 @@ pub fn MS_011B(comptime lead_count: comptime_int, comptime package_name: []const
 
     return struct {
         pub const pkg: Package = .{
-            .default_footprint = fp.DIP(data, .normal),
+            .default_footprint = fp.DIL(data, .normal),
             .has_pin = has_pin,
         };
 
@@ -2125,6 +2125,7 @@ pub fn TO_226G_AA(comptime package_name: []const u8) type {
             .pin_width_above_seating = .init_inches_range(0.015, 0.03),
             .pin_thickness = .init_inches_range(0.014, 0.020),
             .pin_length = .init_inches_range(0.4, 1),
+            .body_mark = .none,
         };
     };
 }
@@ -2157,6 +2158,7 @@ pub fn TO_226G_AC(comptime package_name: []const u8) type {
             .pin_width_above_seating = .init_inches_range(0.015, 0.03),
             .pin_thickness = .init_inches_range(0.014, 0.020),
             .pin_length = .init_inches_range(0.4, 1),
+            .body_mark = .none,
         };
     };
 }

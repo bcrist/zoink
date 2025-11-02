@@ -99,7 +99,7 @@ pub const SIL_Data = struct {
 
     body: Rect,
     max_z: Dim,
-    body_thickness: Dim, // leadframe assumed to be placed half thickness from top of body (max_z)
+    body_thickness: Dim,
 
     // Note this also includes any omitted pins, so the actual physical number of pins (and logical max pin number) may be less.
     total_pins: usize,
@@ -115,19 +115,110 @@ pub const SIL_Data = struct {
     // This feature is mainly used for delay lines and transformers.
     omitted_pins: []const usize = &.{},
 
+    pin_1_mark: ?Pin1_Mark_Type = null,
+    body_mark: ?Body_Mark_Type = null,
+
     pub fn format(self: SIL_Data, writer: *std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
 pub fn SIL(comptime data: SIL_Data, comptime density: Density) *const Footprint {
-    _ = density;
-
+    @setEvalBranchQuota(100_000);
     var result: Footprint = .{
         .kind = .through_hole,
         .name = data.package_name,
     };
 
-    _ = &result;
+    const max_pin_width: f64 = @floatFromInt(data.pin_width.max_um());
+    const max_pin_thickness: f64 = @floatFromInt(data.pin_thickness.max_um());
+    const min_hole_diameter: f64 = @sqrt(max_pin_width * max_pin_width + max_pin_thickness * max_pin_thickness);
+    const pin_pitch: f64 = @floatFromInt(data.pin_pitch.nominal_um);
+
+    const hole_diameter: f64 = switch (density) {
+        .dense => min_hole_diameter,
+        .normal => min_hole_diameter + if (pin_pitch <= 1300) 40 else 120,
+        .loose => min_hole_diameter + if (pin_pitch <= 1300) 40 else if (pin_pitch <= 1600) 120 else 200,
+    };
+
+    var pad_width: f64 = switch (density) {
+        .dense => hole_diameter + 200,
+        .normal => hole_diameter + 300,
+        .loose => hole_diameter + 400,
+    };
+    if (pin_pitch > 0) {
+        pad_width = @min(pin_pitch - 200, pad_width);
+    }
+
+    const pad_length: f64 = switch (density) {
+        .dense => pad_width + 500,
+        .normal => pad_width + 1000,
+        .loose => pad_width + 2000,
+    };
+
+    const overall_width: f64 = @floatFromInt(data.body.width.max_um());
+    const overall_height: f64 = @floatFromInt(data.body.height.max_um());
+
+    const courtyard_expansion: f64 = switch (density) {
+        .dense => 100,
+        .normal => 250,
+        .loose => 500,
+    };
+
+    result.rects = &.{
+        .{
+            .start = .init_um(-overall_width / 2 - courtyard_expansion, -overall_height / 2 - courtyard_expansion),
+            .end = .init_um(overall_width / 2 + courtyard_expansion, overall_height / 2 + courtyard_expansion),
+            .layer = .courtyard_front,
+            .stroke = .{
+                .width = .init_mm(0.01),
+            },
+        }
+    };
+
+    generate_body_and_outline(&result, data.body_mark orelse .outline, data.body, std.math.inf(f64));
+
+    const xf_base: zm.Mat3 = .translation(-pin_pitch * @as(f64, @floatFromInt(data.total_pins - 1)) / 2, 0);
+
+    var pins: [data.total_pins]bool = @splat(true);
+    for (data.omitted_pins) |pin| {
+        pins[pin - 1] = false;
+    }
+
+    var pin: usize = 1;
+    for (0..data.total_pins) |raw_pin| {
+        if (pins[raw_pin]) {
+            defer pin += 1;
+
+            const xf: zm.Mat3 = xf_base.multiply(.translation(pin_pitch * @as(f64, @floatFromInt(raw_pin)), 0));
+
+            result.pads = result.pads ++ .{
+                kicad.Pad {
+                    .pin = @enumFromInt(pin),
+                    .kind = .through_hole,
+                    .location = .init_um_transformed(xf, 0, 0),
+                    .w = .init_um(pad_width),
+                    .h = .init_um(pad_length),
+                    .hole_w = .init_um(hole_diameter),
+                    .hole_h = .init_um(hole_diameter),
+                    .shape = if (pin == 1) .default_chamfered else .oval,
+                    .layers = through_hole_layers,
+                    .copper_layers = .connected_and_outside_only,
+                    .teardrops = .{},
+                },
+            };
+                            
+            if (pin == 1) {
+                generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
+                    .pad_origin = xf.multiply(.translation(0, overall_height / 2)),
+                    .pin_pitch = pin_pitch,
+                    .pad_width = pad_width,
+                    .pad_length = pad_length,
+                    .is_first_pin_on_side = true,
+                    .is_last_pin_on_side = data.total_pins == 1 or pin_pitch == 0,
+                });
+            }
+        }
+    }
     
     const final_result = comptime result;
     return &final_result;
@@ -172,19 +263,124 @@ pub const DIL_Data = struct {
     // This feature is mainly used for delay lines and transformers.
     omitted_pins: []const usize = &.{},
 
+    pin_1_mark: ?Pin1_Mark_Type = null,
+    body_mark: ?Body_Mark_Type = null,
+
     pub fn format(self: DIL_Data, writer: *std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
 pub fn DIL(comptime data: DIL_Data, comptime density: Density) *const Footprint {
-    _ = density;
-
+    @setEvalBranchQuota(100_000);
     var result: Footprint = .{
         .kind = .through_hole,
         .name = data.package_name,
     };
 
-    _ = &result;
+    const max_pin_width: f64 = @floatFromInt(data.pin_width.max_um());
+    const max_pin_thickness: f64 = @floatFromInt(data.pin_thickness.max_um());
+    const min_hole_diameter: f64 = @sqrt(max_pin_width * max_pin_width + max_pin_thickness * max_pin_thickness);
+    const pin_pitch: f64 = @floatFromInt(data.pin_pitch.nominal_um);
+    const row_spacing: f64 = @floatFromInt(data.row_spacing.nominal_um);
+
+    const hole_diameter: f64 = switch (density) {
+        .dense => min_hole_diameter,
+        .normal => min_hole_diameter + if (pin_pitch <= 1300) 40 else 120,
+        .loose => min_hole_diameter + if (pin_pitch <= 1300) 40 else if (pin_pitch <= 1600) 120 else 200,
+    };
+
+    var pad_width: f64 = switch (density) {
+        .dense => hole_diameter + 200,
+        .normal => hole_diameter + 300,
+        .loose => hole_diameter + 400,
+    };
+    if (pin_pitch > 0) {
+        pad_width = @min(pin_pitch - 200, pad_width);
+    }
+
+    var pad_length: f64 = switch (density) {
+        .dense => pad_width + 500,
+        .normal => pad_width + 1000,
+        .loose => pad_width + 2000,
+    };
+    if (row_spacing > 0) {
+        pad_length = @min(row_spacing - 200, pad_length);
+    }
+
+    const overall_width: f64 = @floatFromInt(data.overall.width.max_um());
+    const overall_height: f64 = @floatFromInt(data.overall.height.max_um());
+
+    const courtyard_expansion: f64 = switch (density) {
+        .dense => 100,
+        .normal => 250,
+        .loose => 500,
+    };
+
+    result.rects = &.{
+        .{
+            .start = .init_um(-overall_width / 2 - courtyard_expansion, -overall_height / 2 - courtyard_expansion),
+            .end = .init_um(overall_width / 2 + courtyard_expansion, overall_height / 2 + courtyard_expansion),
+            .layer = .courtyard_front,
+            .stroke = .{
+                .width = .init_mm(0.01),
+            },
+        }
+    };
+
+    generate_body_and_outline(&result, data.body_mark orelse .sides, data.body, std.math.inf(f64));
+
+    const pins_per_side = data.total_pins / 2;
+
+    var xf_base: zm.Mat3 = .translation(-pin_pitch * @as(f64, @floatFromInt(pins_per_side - 1)) / 2, row_spacing / 2);
+
+    var pins: [data.total_pins]bool = @splat(true);
+    for (data.omitted_pins) |pin| {
+        pins[pin - 1] = false;
+    }
+
+    var pin: usize = 1;
+    var x_offset: usize = 0;
+    for (0 .. data.total_pins) |raw_pin| {
+        defer x_offset += 1;
+
+        if (raw_pin == pins_per_side) {
+            xf_base = rotate_180.multiply(xf_base);
+            x_offset = 0;
+        }
+
+        if (pins[raw_pin]) {
+            defer pin += 1;
+
+            const xf: zm.Mat3 = xf_base.multiply(.translation(pin_pitch * @as(f64, @floatFromInt(x_offset)), 0));
+
+            result.pads = result.pads ++ .{
+                kicad.Pad {
+                    .pin = @enumFromInt(pin),
+                    .kind = .through_hole,
+                    .location = .init_um_transformed(xf, 0, 0),
+                    .w = .init_um(pad_width),
+                    .h = .init_um(pad_length),
+                    .hole_w = .init_um(hole_diameter),
+                    .hole_h = .init_um(hole_diameter),
+                    .shape = if (pin == 1) .default_chamfered else .oval,
+                    .layers = through_hole_layers,
+                    .copper_layers = .connected_and_outside_only,
+                    .teardrops = .{},
+                },
+            };
+                            
+            if (pin == 1) {
+                generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
+                    .pad_origin = xf,
+                    .pin_pitch = pin_pitch,
+                    .pad_width = pad_width,
+                    .pad_length = pad_length,
+                    .is_first_pin_on_side = true,
+                    .is_last_pin_on_side = data.total_pins == 1 or pin_pitch == 0,
+                });
+            }
+        }
+    }
     
     const final_result = comptime result;
     return &final_result;
