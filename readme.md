@@ -40,15 +40,37 @@ You can write zig tests that does a basic simulation of your circuit and assert 
 
 For examples of writing behavior tests, see the various files in the `test` folder.
 
+### Exporting to KiCAD/pcbnew
+Once you're ready to start routing your board, you can have Zoink generate a `.kicad_pcb` file with the `generate_or_update_kicad_pcb_file` method.  A typical program to do this looks like this:
+```zig
+fn configure(b: *zoink.Board) !void {
+    // set up components & netlist...
+}
+
+pub fn main() !void {
+    const gpa = std.heap.smp_allocator;
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    var b: zoink.Board = .{ .arena = arena.allocator(), .gpa = gpa };
+    defer b.deinit();
+
+    try configure(&b);
+    try b.finish_configuration(gpa);
+
+    try b.generate_or_update_kicad_pcb_file(gpa, "path/to/board.kicad_pcb", .{});
+}
+
+const zoink = @import("zoink");
+const std = @import("std");
+```
+
+The generated file can be routed/edited in pcbnew, and if you discover that parts need to be added, removed, or changed, you can rerun the generator.  It will update any changes to the footprints, part names & values, etc, but will preserve all the miscellaneous board settings, all traces and zones, and the locations and orientations of footprints.  The third parameter to `generate_or_update_kicad_pcb_file` allows some configuration of exactly what gets updated.
 
 ## Planned Features
-* Programmatic package footprint generation
-* Definition of board edges & filled zones in Zig code
-* Board component placement in Zig code
-* Export to KiCAD/pcbnew board file
+* Definition of filled zones in Zig code
 
 ## Stretch Goals / Brainstorm Area
-* Integration with [Zig-LC4k](https://github.com/bcrist/Zig-LC4k)
 * Constraint-based component placement
 * Code-assisted routing
 * Default trace widths by net
