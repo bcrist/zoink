@@ -3,12 +3,12 @@ gpa: std.mem.Allocator,
 
 dimensions: ?Dimensions = null,
 
-bus_lookup: std.StringArrayHashMapUnmanaged([]const Net_ID) = .{},
-net_lookup: std.StringArrayHashMapUnmanaged(Net_ID) = .{},
-net_names: std.ArrayListUnmanaged([]const u8) = .{},
+bus_lookup: std.StringArrayHashMapUnmanaged([]const Net_ID) = .empty,
+net_lookup: std.StringArrayHashMapUnmanaged(Net_ID) = .empty,
+net_names: std.ArrayListUnmanaged([]const u8) = .empty,
 
-part_lookup: std.AutoArrayHashMapUnmanaged(u64, usize) = .{},
-parts: std.ArrayListUnmanaged(Part) = .{},
+part_lookup: std.AutoArrayHashMapUnmanaged(u64, usize) = .empty,
+parts: std.ArrayListUnmanaged(Part) = .empty,
 
 const Board = @This();
 
@@ -29,8 +29,8 @@ pub fn deinit(self: *Board) void {
 }
 
 pub fn net_name(self: *const Board, net_id: Net_ID) []const u8 {
-    if (net_id == .unset) return "";
-    if (net_id.is_power() or net_id == .no_connect) return @tagName(net_id);
+    if (net_id == .no_connect) return "";
+    if (net_id.is_power() or net_id == .unset) return @tagName(net_id);
     const idx = @intFromEnum(net_id);
     if (idx >= self.net_names.items.len) return "";
     return self.net_names.items[idx];
@@ -190,6 +190,18 @@ pub fn part(self: *Board, comptime Type: type, name: []const u8, init: Type) *Ty
     return ptr;
 }
 
+pub fn get_part(self: *Board, name: []const u8) ?Part {
+    const hash = std.hash.Wyhash.hash(0x057c11, name);
+    if (self.part_lookup.get(hash)) |part_index| {
+        return self.parts.items[part_index];
+    }
+    return null;
+}
+
+pub fn get_decouplers(self: *Board, comptime Type: type, p: *Type, buf: []Part) []const Part {
+    return Part.VTable.init(Type).get_or_generate_decouplers(&p.base, self, buf);
+}
+
 pub fn finish_configuration(self: *Board, temp: std.mem.Allocator) !void {
     { // call check_config functions
         // This process may add new parts, so we can't assume self.parts.items will be stable
@@ -208,7 +220,9 @@ pub fn finish_configuration(self: *Board, temp: std.mem.Allocator) !void {
         var i: usize = self.parts.items.len;
         while (i > 0) {
             i -= 1;
-            try self.parts.items[i].finalize_power_nets(self);
+            const p = self.parts.items[i];
+            _ = p.vt.get_or_generate_decouplers(p.base, self, &.{});
+            try p.vt.check_for_unset_nets(p.base);
         }
     }
 
@@ -302,6 +316,15 @@ pub fn generate_or_update_kicad_pcb(self: *Board, temp: std.mem.Allocator, write
 }
 
 pub fn generate_kicad_pcb(self: *Board, w: *sx.Writer, options: kicad.Writer_Options) !void {
+    var remap: Net_Remap = .init(self.gpa);
+    defer remap.deinit();
+
+    if (options.merge_nets_for_overlapping_pads) {
+        try remap.merge_overlapping_pad_nets(self);
+    }
+
+    try remap.generate_mapping(self);
+
     try w.expression_expanded("kicad_pcb");
         try w.expression("version");
         try w.int(20241229, 10);
@@ -331,9 +354,10 @@ pub fn generate_kicad_pcb(self: *Board, w: *sx.Writer, options: kicad.Writer_Opt
 
         try write_layers(w);
         try write_setup(w);
-        try self.write_nets(w);
 
-        try self.write_footprints(w, options);
+        try remap.write_nets(w);
+
+        try self.write_footprints(w, &remap, options);
 
         try self.write_board_outline(w);
 
@@ -345,6 +369,13 @@ pub fn generate_kicad_pcb(self: *Board, w: *sx.Writer, options: kicad.Writer_Opt
 
 
 fn update_kicad_pcb(self: *Board, r: *sx.Reader, w: *sx.Writer, options: kicad.Writer_Options) !void {
+    var remap: Net_Remap = .init(self.gpa);
+    defer remap.deinit();
+
+    if (options.merge_nets_for_overlapping_pads) {
+        try remap.merge_overlapping_pad_nets(self);
+    }
+
     try r.require_expression("kicad_pcb");
     try w.expression_expanded("kicad_pcb");
 
@@ -371,17 +402,39 @@ fn update_kicad_pcb(self: *Board, r: *sx.Reader, w: *sx.Writer, options: kicad.W
 
     try copy_until_expr(r, w, &.{ "net", "footprint" });
 
-    while (try r.expression("net")) try r.ignore_remaining_expression();
-    try self.write_nets(w);
+    while (try r.expression("net")) {
+        const net_id = try r.require_any_int(usize, 10);
+        const kicad_net_name = (try r.any_string()) orelse "";
+        try remap.add_old_kicad_id(net_id, kicad_net_name);
+        try r.require_close();
+    }
 
-    try copy_until_expr(r, w, &.{ "footprint" });
+    try remap.generate_mapping(self);
+    try remap.write_nets(w);
 
-    try self.update_footprints(r, w, options);
+    try copy_until_expr(r, w, &.{
+        "footprint",
+        "segment",
+        "via",
+        "zone",
+        "gr_line",
+        "gr_arc",
+        "gr_rect",
+    });
+
+    try self.update_footprints(r, &remap, w, options);
 
     if (options.update_board_outline) {
         try self.write_board_outline(w);
         while (true) {
-            try copy_until_expr(r, w, &.{ "gr_line", "gr_arc", "gr_rect" });
+            try copy_until_expr(r, w, &.{
+                "gr_line",
+                "gr_arc",
+                "gr_rect",
+                "segment",
+                "via",
+                "zone",
+            });
             if (try kicad.Line.read(r, "gr_line")) |line| {
                 if ((line.uuid.raw | 0x7) != 0x00000000_8888_8888_8888_000000000007) {
                     try line.write(w, "gr_line");
@@ -394,6 +447,26 @@ fn update_kicad_pcb(self: *Board, r: *sx.Reader, w: *sx.Writer, options: kicad.W
                 if ((rect.uuid.raw | 0x7) != 0x00000000_8888_8888_8888_000000000007) {
                     try rect.write(w, "gr_rect");
                 }
+            } else if (try r.any_expression()) |expr| {
+                // segment, via, or zone
+                try w.expression_expanded(expr);
+
+                try copy_until_expr(r, w, &.{ "net" });
+
+                if (try r.expression("net")) {
+                    const old_net_id = try r.require_any_int(usize, 10);
+                    try r.require_close();
+                    if (remap.convert_kicad_id(old_net_id)) |new_net_id| {
+                        try w.expression("net");
+                        try w.int(new_net_id, 10);
+                        try w.close();
+                    }
+                }
+
+                try copy_until_end_of_expr(r, w);
+
+                try r.require_close();
+                try w.close();
             } else break;
         }
     } else {
@@ -600,32 +673,14 @@ fn write_stackup_layer(w: *sx.Writer, name: []const u8, layer_type: []const u8, 
     try w.close();
 }
 
-fn write_nets(self: *Board, w: *sx.Writer) !void {
-    for (std.enums.values(Net_ID)) |net_id| {
-        if (net_id == .no_connect) continue;
-        try w.expression("net");
-        try w.int(net_id.kicad_net_id(), 10);
-        try w.string_quoted(self.net_name(net_id));
-        try w.close();
-    }
-    for (0.., self.net_names.items) |i, name| {
-        if (i == 0) continue;
-        const net_id: Net_ID = @enumFromInt(i);
-        try w.expression("net");
-        try w.int(net_id.kicad_net_id(), 10);
-        try w.string_quoted(name);
-        try w.close();
-    }
-}
-
-fn write_footprints(self: *Board, w: *sx.Writer, options: kicad.Writer_Options) !void {
+fn write_footprints(self: *Board, w: *sx.Writer, remap: *const Net_Remap, options: kicad.Writer_Options) !void {
     var temp: std.heap.ArenaAllocator = .init(self.gpa);
     defer temp.deinit();
 
-    try self.write_new_footprints(&temp, null, w, options);
+    try self.write_new_footprints(&temp, remap, null, w, options);
 }
 
-fn update_footprints(self: *Board, r: *sx.Reader, w: *sx.Writer, options: kicad.Writer_Options) !void {
+fn update_footprints(self: *Board, r: *sx.Reader, remap: *const Net_Remap, w: *sx.Writer, options: kicad.Writer_Options) !void {
     var written_footprints: std.AutoHashMapUnmanaged(u64, void) = .empty;
     defer written_footprints.deinit(self.gpa);
 
@@ -647,7 +702,7 @@ fn update_footprints(self: *Board, r: *sx.Reader, w: *sx.Writer, options: kicad.
                 log.info("Updating existing footprint: {f}", .{ existing_fp.uuid });
                 try written_footprints.put(self.gpa, hash, {});
                 const p = self.parts.items[part_index];
-                try self.write_footprint(hash, p, .origin, existing_fp, temp.allocator(), w, options);
+                try self.write_footprint(hash, p, .origin, existing_fp, temp.allocator(), w, remap, options);
             } else {
                 log.warn("Deleting obsolete footprint: {f}", .{ existing_fp.uuid });
             }
@@ -656,10 +711,10 @@ fn update_footprints(self: *Board, r: *sx.Reader, w: *sx.Writer, options: kicad.
         }
     }
 
-    try self.write_new_footprints(&temp, &written_footprints, w, options);
+    try self.write_new_footprints(&temp, remap, &written_footprints, w, options);
 }
 
-fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, maybe_written_footprints: ?*std.AutoHashMapUnmanaged(u64, void), w: *sx.Writer, options: kicad.Writer_Options) !void {
+fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, remap: *const Net_Remap, maybe_written_footprints: ?*std.AutoHashMapUnmanaged(u64, void), w: *sx.Writer, options: kicad.Writer_Options) !void {
     var bounding_boxes: std.ArrayList(Bounding_Box) = .empty;
     defer bounding_boxes.deinit(self.gpa);
 
@@ -678,7 +733,7 @@ fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, maybe_writ
         const p = self.parts.items[part_index];
         if (p.base.footprint) |base_fp| {
             if (p.base.location) |loc| {
-                try self.write_footprint(hash, p, loc, null, temp.allocator(), w, options);
+                try self.write_footprint(hash, p, loc, null, temp.allocator(), w, remap, options);
             } else {
                 try bounding_boxes.append(self.gpa, .init_from_footprint(base_fp.*, hash));
             }
@@ -741,11 +796,11 @@ fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, maybe_writ
         defer _ = temp.reset(.retain_capacity);
         const part_index = self.part_lookup.get(bb.hash) orelse unreachable;
         const p = self.parts.items[part_index];
-        try self.write_footprint(bb.hash, p, .init_mm(bb.offset[0], bb.offset[1]), null, temp.allocator(), w, options);
+        try self.write_footprint(bb.hash, p, .init_mm(bb.offset[0], bb.offset[1]), null, temp.allocator(), w, remap, options);
     }
 }
 
-fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Location, existing_fp: ?kicad.Footprint, arena: std.mem.Allocator, w: *sx.Writer, options: kicad.Writer_Options) !void {
+fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Location, existing_fp: ?kicad.Footprint, arena: std.mem.Allocator, w: *sx.Writer, remap: *const Net_Remap, options: kicad.Writer_Options) !void {
     var designator_buf: [64]u8 = undefined;
     var designator = std.io.Writer.fixed(&designator_buf);
     try designator.print("{t}{}", .{ p.base.prefix, p.base.designator });
@@ -996,7 +1051,7 @@ fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Loc
 
         fp.properties = properties.items;
 
-        try fp.write(w, self, p, options);
+        try fp.write(w, self, p, remap, options);
     } else {
         log.err("No footprint specified for part: {s}", .{ p.base.name });
     }
@@ -1156,6 +1211,7 @@ fn write_board_outline(self: *Board, w: *sx.Writer) !void {
 
 const log = std.log.scoped(.zoink);
 
+const Net_Remap = @import("Net_Remap.zig");
 const Bounding_Box = @import("Bounding_Box.zig");
 const kicad = @import("kicad.zig");
 const Part = @import("Part.zig");

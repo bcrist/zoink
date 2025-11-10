@@ -15,8 +15,8 @@ fn Single_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels
                 2 => self.a,
                 3 => self.pwr.gnd,
                 4 => self.y,
-                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -33,6 +33,238 @@ fn Single_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels
                 .nets_only => {
                     const a = @intFromBool(v.read_logic(self.a, levels));
                     try v.drive_logic(self.y, if (invert) !a else a, levels);
+                },
+            }
+        }
+    };
+}
+
+fn Dual_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: usize) type {
+    const invert_array: [2]bool = .{
+        (invert & 1) != 0,
+        (invert & 2) != 0,
+    };
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        logic: union (enum) {
+            bus: Bus_Impl,
+            individual: [2]Individual_Impl,
+        } = .{ .bus = .{} },
+        remap: [2]u1 = .{ 0, 1 },
+
+        const Bus_Impl = struct {
+            a: [2]Net_ID = @splat(.unset),
+            y: [2]Net_ID = @splat(.unset),
+        };
+
+        const Individual_Impl = struct {
+            a: Net_ID = .unset,
+            y: Net_ID = .unset,
+        };
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_logical_bufs: [2]bool = @splat(false);
+            for (self.remap) |logical| {
+                mapped_logical_bufs[logical] = true;
+            }
+            for (0.., mapped_logical_bufs) |logical_buf, mapped| {
+                if (!mapped) {
+                    log.err("{s}: No physical buffer assigned to logical buffer {}", .{ @typeName(@This()), logical_buf });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (self.logic) {
+                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    2 => self.pwr.gnd,
+                    5 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl.a[self.remap[0]],
+                    6 => impl.y[self.remap[0]],
+
+                    3 => impl.a[self.remap[1]],
+                    4 => impl.y[self.remap[1]],
+
+                    else => unreachable,
+                },
+                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    2 => self.pwr.gnd,
+                    5 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl[self.remap[0]].a,
+                    6 => impl[self.remap[0]].y,
+
+                    3 => impl[self.remap[1]].a,
+                    4 => impl[self.remap[1]].y,
+
+                    else => unreachable,
+                },
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => switch (self.logic) {
+                    .bus => |impl| {
+                        try v.expect_valid(impl.a, levels);
+                        const a = v.read_bus(impl.a, levels);
+                        try v.expect_output_valid(impl.y, a ^ invert, levels);
+                    },
+                    .individual => |impl| for (0.., impl) |n, buf| {
+                        try v.expect_valid(buf.a, levels);
+                        const a = v.read_logic(buf.a, levels);
+                        try v.expect_output_valid(buf.y, a != invert_array[n], levels);
+                    },
+                },
+                .nets_only => switch (self.logic) {
+                    .bus => |impl| {
+                        const a = v.read_bus(impl.a, levels);
+                        try v.drive_bus(impl.y, a ^ invert, levels);
+                    },
+                    .individual => |impl| for (0.., impl) |n, buf| {
+                        const a = v.read_logic(buf.a, levels);
+                        try v.drive_logic(buf.y, a != invert_array[n], levels);
+                    },
+                },
+            }
+        }
+    };
+}
+
+fn Hex_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, invert: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        logic: union (enum) {
+            bus: Bus_Impl,
+            individual: [6]Individual_Impl,
+        } = .{ .bus = .{} },
+        remap: [6]u3 = .{ 0, 1, 2, 3, 4, 5 },
+
+        const Bus_Impl = struct {
+            a: [6]Net_ID = @splat(.unset),
+            y: [6]Net_ID = @splat(.unset),
+        };
+
+        const Individual_Impl = struct {
+            a: Net_ID = .unset,
+            y: Net_ID = .unset,
+        };
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_logical_gates: [6]bool = @splat(false);
+            for (self.remap) |logical| {
+                mapped_logical_gates[logical] = true;
+            }
+            for (0.., mapped_logical_gates) |logical_gate, mapped| {
+                if (!mapped) {
+                    log.err("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
+        fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (self.logic) {
+                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    7 => self.pwr.gnd,
+                    14 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl.a[self.remap[0]],
+                    2 => impl.y[self.remap[0]],
+
+                    3 => impl.a[self.remap[1]],
+                    4 => impl.y[self.remap[1]],
+
+                    5 => impl.a[self.remap[2]],
+                    6 => impl.y[self.remap[2]],
+
+                    9 => impl.a[self.remap[3]],
+                    8 => impl.y[self.remap[3]],
+
+                    11 => impl.a[self.remap[4]],
+                    10 => impl.y[self.remap[4]],
+
+                    13 => impl.a[self.remap[5]],
+                    12 => impl.y[self.remap[5]],
+
+                    else => unreachable,
+                },
+                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    7 => self.pwr.gnd,
+                    14 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl[self.remap[0]].a,
+                    2 => impl[self.remap[0]].y,
+
+                    3 => impl[self.remap[1]].a,
+                    4 => impl[self.remap[1]].y,
+
+                    5 => impl[self.remap[2]].a,
+                    6 => impl[self.remap[2]].y,
+
+                    9 => impl[self.remap[3]].a,
+                    8 => impl[self.remap[3]].y,
+
+                    11 => impl[self.remap[4]].a,
+                    10 => impl[self.remap[4]].y,
+
+                    13 => impl[self.remap[5]].a,
+                    12 => impl[self.remap[5]].y,
+
+                    else => unreachable,
+                },
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => switch (self.logic) {
+                    .bus => |impl| {
+                        try v.expect_valid(impl.a, levels);
+                        var a = v.read_bus(impl.a, levels);
+                        if (invert) a = ~a;
+                        try v.expect_output_valid(impl.y, a, levels);
+                    },
+                    .individual => |impl| for (impl) |gate| {
+                        try v.expect_valid(gate.a, levels);
+                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        if (invert) a = !a;
+                        try v.expect_output_valid(gate.y, a, levels);
+                    },
+                },
+                .nets_only => switch (self.logic) {
+                    .bus => |impl| {
+                        var a = v.read_bus(impl.a, levels);
+                        if (invert) a = ~a;
+                        try v.drive_bus(impl.y, a, levels);
+                    },
+                    .individual => |impl| for (impl) |gate| {
+                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        if (invert) a = !a;
+                        try v.drive_logic(gate.y, a, levels);
+                    },
                 },
             }
         }
@@ -57,8 +289,8 @@ fn Single_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: 
                 2 => self.a,
                 3 => self.pwr.gnd,
                 4 => self.y,
-                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -80,6 +312,303 @@ fn Single_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: 
                 },
             }
         }
+    };
+}
+
+fn Dual_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        logic: union (enum) {
+            bus: Bus_Impl,
+            individual: [2]Individual_Impl,
+        } = .{ .bus = .{} },
+        remap: [4]u2 = .{ 0, 1 },
+        
+        const Bus_Impl = struct {
+            a: [2]Net_ID = @splat(.unset),
+            b: [2]Net_ID = @splat(.unset),
+            y: [2]Net_ID = @splat(.unset),
+        };
+
+        const Individual_Impl = struct {
+            a: Net_ID = .unset,
+            b: Net_ID = .unset,
+            y: Net_ID = .unset,
+        };
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_logical_gates: [2]bool = @splat(false);
+            for (self.remap) |logical| {
+                mapped_logical_gates[logical] = true;
+            }
+            for (0.., mapped_logical_gates) |logical_gate, mapped| {
+                if (!mapped) {
+                    log.err("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (self.logic) {
+                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    4 => self.pwr.gnd,
+                    8 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl.a[self.remap[0]],
+                    2 => impl.b[self.remap[0]],
+                    7 => impl.y[self.remap[0]],
+
+                    5 => impl.a[self.remap[1]],
+                    6 => impl.b[self.remap[1]],
+                    3 => impl.y[self.remap[1]],
+
+                    else => unreachable,
+                },
+                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    4 => self.pwr.gnd,
+                    8 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl[self.remap[0]].a,
+                    2 => impl[self.remap[0]].b,
+                    7 => impl[self.remap[0]].y,
+
+                    5 => impl[self.remap[1]].a,
+                    6 => impl[self.remap[1]].b,
+                    3 => impl[self.remap[1]].y,
+
+                    else => unreachable,
+                },
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => switch (self.logic) {
+                    .bus => |impl| {
+                        try v.expect_valid(impl.a, levels);
+                        try v.expect_valid(impl.b, levels);
+                        const a = v.read_bus(impl.a, levels);
+                        const b = v.read_bus(impl.b, levels);
+                        try v.expect_output_valid(impl.y, func(a, b), levels);
+                    },
+                    .individual => |impl| for (impl) |gate| {
+                        try v.expect_valid(gate.a, levels);
+                        try v.expect_valid(gate.b, levels);
+                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        const b = @intFromBool(v.read_logic(gate.b, levels));
+                        try v.expect_output_valid(gate.y, func(a, b) != 0, levels);
+                    },
+                },
+                .nets_only => switch (self.logic) {
+                    .bus => |impl| {
+                        const a = v.read_bus(impl.a, levels);
+                        const b = v.read_bus(impl.b, levels);
+                        try v.drive_bus(impl.y, func(a, b), levels);
+                    },
+                    .individual => |impl| for (impl) |gate| {
+                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        const b = @intFromBool(v.read_logic(gate.b, levels));
+                        try v.drive_logic(gate.y, func(a, b) != 0, levels);
+                    },
+                },
+            }
+        }
+    };
+}
+
+const Quad_Gate_Pinout = enum {
+    aby,
+    yab, // mainly just 74x02, but also used by some quad gate open-collector chips
+};
+fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, pinout: Quad_Gate_Pinout, func: *const fn(a: usize, b: usize) usize) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        logic: union (enum) {
+            bus: Bus_Impl,
+            individual: [4]Individual_Impl,
+        } = .{ .bus = .{} },
+        remap: [4]u2 = .{ 0, 1, 2, 3 },
+
+        const Bus_Impl = struct {
+            a: [4]Net_ID = @splat(.unset),
+            b: [4]Net_ID = @splat(.unset),
+            y: [4]Net_ID = @splat(.unset),
+        };
+
+        const Individual_Impl = struct {
+            a: Net_ID = .unset,
+            b: Net_ID = .unset,
+            y: Net_ID = .unset,
+        };
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_logical_gates: [4]bool = @splat(false);
+            for (self.remap) |logical| {
+                mapped_logical_gates[logical] = true;
+            }
+            for (0.., mapped_logical_gates) |logical_gate, mapped| {
+                if (!mapped) {
+                    log.err("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (pinout) {
+                .aby => switch (self.logic) {
+                    .bus => |impl| switch (@intFromEnum(pin_id)) {
+                        0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                        7 => self.pwr.gnd,
+                        14 => @field(self.pwr, @tagName(pwr)),
+
+                        1 => impl.a[self.remap[0]],
+                        2 => impl.b[self.remap[0]],
+                        3 => impl.y[self.remap[0]],
+
+                        4 => impl.a[self.remap[1]],
+                        5 => impl.b[self.remap[1]],
+                        6 => impl.y[self.remap[1]],
+
+                        9 => impl.a[self.remap[2]],
+                        10 => impl.b[self.remap[2]],
+                        8 => impl.y[self.remap[2]],
+
+                        12 => impl.a[self.remap[3]],
+                        13 => impl.b[self.remap[3]],
+                        11 => impl.y[self.remap[3]],
+
+                        else => unreachable,
+                    },
+                    .individual => |impl| switch (@intFromEnum(pin_id)) {
+                        0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                        7 => self.pwr.gnd,
+                        14 => @field(self.pwr, @tagName(pwr)),
+
+                        1 => impl[self.remap[0]].a,
+                        2 => impl[self.remap[0]].b,
+                        3 => impl[self.remap[0]].y,
+
+                        4 => impl[self.remap[1]].a,
+                        5 => impl[self.remap[1]].b,
+                        6 => impl[self.remap[1]].y,
+
+                        9 => impl[self.remap[2]].a,
+                        10 => impl[self.remap[2]].b,
+                        8 => impl[self.remap[2]].y,
+
+                        12 => impl[self.remap[3]].a,
+                        13 => impl[self.remap[3]].b,
+                        11 => impl[self.remap[3]].y,
+
+                        else => unreachable,
+                    },
+                },
+                .yab => switch (self.logic) {
+                    .bus => |impl| switch (@intFromEnum(pin_id)) {
+                        0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                        7 => self.pwr.gnd,
+                        14 => @field(self.pwr, @tagName(pwr)),
+
+                        1 => impl.y[self.remap[0]],
+                        2 => impl.a[self.remap[0]],
+                        3 => impl.b[self.remap[0]],
+
+                        4 => impl.y[self.remap[1]],
+                        5 => impl.a[self.remap[1]],
+                        6 => impl.b[self.remap[1]],
+
+                        10 => impl.y[self.remap[2]],
+                        8 => impl.a[self.remap[2]],
+                        9 => impl.b[self.remap[2]],
+
+                        13 => impl.y[self.remap[3]],
+                        11 => impl.a[self.remap[3]],
+                        12 => impl.b[self.remap[3]],
+
+                        else => unreachable,
+                    },
+                    .individual => |impl| switch (@intFromEnum(pin_id)) {
+                        0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                        7 => self.pwr.gnd,
+                        14 => @field(self.pwr, @tagName(pwr)),
+
+                        1 => impl[self.remap[0]].y,
+                        2 => impl[self.remap[0]].a,
+                        3 => impl[self.remap[0]].b,
+
+                        4 => impl[self.remap[1]].y,
+                        5 => impl[self.remap[1]].a,
+                        6 => impl[self.remap[1]].b,
+
+                        10 => impl[self.remap[2]].y,
+                        8 => impl[self.remap[2]].a,
+                        9 => impl[self.remap[2]].b,
+
+                        13 => impl[self.remap[3]].y,
+                        11 => impl[self.remap[3]].a,
+                        12 => impl[self.remap[3]].b,
+
+                        else => unreachable,
+                    },
+                },
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => switch (self.logic) {
+                    .bus => |impl| {
+                        try v.expect_valid(impl.a, levels);
+                        try v.expect_valid(impl.b, levels);
+                        const a = v.read_bus(impl.a, levels);
+                        const b = v.read_bus(impl.b, levels);
+                        try v.expect_output_valid(impl.y, func(a, b), levels);
+                    },
+                    .individual => |impl| for (impl) |gate| {
+                        try v.expect_valid(gate.a, levels);
+                        try v.expect_valid(gate.b, levels);
+                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        const b = @intFromBool(v.read_logic(gate.b, levels));
+                        try v.expect_output_valid(gate.y, func(a, b) != 0, levels);
+                    },
+                },
+                .nets_only => switch (self.logic) {
+                    .bus => |impl| {
+                        const a = v.read_bus(impl.a, levels);
+                        const b = v.read_bus(impl.b, levels);
+                        try v.drive_bus(impl.y, func(a, b), levels);
+                    },
+                    .individual => |impl| for (impl) |gate| {
+                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        const b = @intFromBool(v.read_logic(gate.b, levels));
+                        try v.drive_logic(gate.y, func(a, b) != 0, levels);
+                    },
+                },
+            }
+        }
+
     };
 }
 
@@ -179,263 +708,6 @@ fn Single_3in_Mux_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime 
     };
 }
 
-fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
-    return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
-
-        pwr: power.Single(pwr, Decoupler) = .{},
-        logic: union (enum) {
-            bus: Quad_Gate2_Impl,
-            gates: [4]Gate2_Impl,
-        } = .{ .bus = .{} },
-        remap: [4]u2 = .{ 0, 1, 2, 3 },
-
-        const Quad_Gate2_Impl = struct {
-            a: [4]Net_ID = @splat(.unset),
-            b: [4]Net_ID = @splat(.unset),
-            y: [4]Net_ID = @splat(.unset),
-        };
-
-        const Gate2_Impl = struct {
-            a: Net_ID = .unset,
-            b: Net_ID = .unset,
-            y: Net_ID = .unset,
-        };
-
-        pub fn check_config(self: @This()) !void {
-            var mapped_logical_gates: [4]bool = @splat(false);
-            for (self.remap) |logical| {
-                mapped_logical_gates[logical] = true;
-            }
-            for (0.., mapped_logical_gates) |logical_gate, mapped| {
-                if (!mapped) {
-                    log.err("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
-                    return error.InvalidRemap;
-                }
-            }
-        }
-
-        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (self.logic) {
-                .bus => |impl| switch (@intFromEnum(pin_id)) {
-                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
-
-                    7 => self.pwr.gnd,
-                    14 => @field(self.pwr, @tagName(pwr)),
-
-                    1 => impl.a[self.remap[0]],
-                    2 => impl.b[self.remap[0]],
-                    3 => impl.y[self.remap[0]],
-
-                    4 => impl.a[self.remap[1]],
-                    5 => impl.b[self.remap[1]],
-                    6 => impl.y[self.remap[1]],
-
-                    10 => impl.a[self.remap[2]],
-                    9 => impl.b[self.remap[2]],
-                    8 => impl.y[self.remap[2]],
-
-                    13 => impl.a[self.remap[3]],
-                    12 => impl.b[self.remap[3]],
-                    11 => impl.y[self.remap[3]],
-
-                    else => unreachable,
-                },
-                .gates => |impl| switch (@intFromEnum(pin_id)) {
-                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
-
-                    7 => self.pwr.gnd,
-                    14 => @field(self.pwr, @tagName(pwr)),
-
-                    1 => impl[self.remap[0]].a,
-                    2 => impl[self.remap[0]].b,
-                    3 => impl[self.remap[0]].y,
-
-                    4 => impl[self.remap[1]].a,
-                    5 => impl[self.remap[1]].b,
-                    6 => impl[self.remap[1]].y,
-
-                    10 => impl[self.remap[2]].a,
-                    9 => impl[self.remap[2]].b,
-                    8 => impl[self.remap[2]].y,
-
-                    13 => impl[self.remap[3]].a,
-                    12 => impl[self.remap[3]].b,
-                    11 => impl[self.remap[3]].y,
-
-                    else => unreachable,
-                },
-            };
-        }
-
-        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
-            switch (mode) {
-                .reset => {},
-                .commit => switch (self.logic) {
-                    .bus => |impl| {
-                        try v.expect_valid(impl.a, levels);
-                        try v.expect_valid(impl.b, levels);
-                        const a = v.read_bus(impl.a, levels);
-                        const b = v.read_bus(impl.b, levels);
-                        try v.expect_output_valid(impl.y, func(a, b), levels);
-                    },
-                    .gates => |impl| for (impl) |gate| {
-                        try v.expect_valid(gate.a, levels);
-                        try v.expect_valid(gate.b, levels);
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
-                        const b = @intFromBool(v.read_logic(gate.b, levels));
-                        try v.expect_output_valid(gate.y, func(a, b) != 0, levels);
-                    },
-                },
-                .nets_only => switch (self.logic) {
-                    .bus => |impl| {
-                        const a = v.read_bus(impl.a, levels);
-                        const b = v.read_bus(impl.b, levels);
-                        try v.drive_bus(impl.y, func(a, b), levels);
-                    },
-                    .gates => |impl| for (impl) |gate| {
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
-                        const b = @intFromBool(v.read_logic(gate.b, levels));
-                        try v.drive_logic(gate.y, func(a, b) != 0, levels);
-                    },
-                },
-            }
-        }
-
-    };
-}
-
-fn Hex_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, invert: bool) type {
-    return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
-
-        pwr: power.Single(pwr, Decoupler) = .{},
-        logic: union (enum) {
-            bus: Hex_Buf_Impl,
-            gates: [6]Buf_Impl,
-        } = .{ .bus = .{} },
-        remap: [6]u3 = .{ 0, 1, 2, 3, 4, 5 },
-
-        const Hex_Buf_Impl = struct {
-            a: [6]Net_ID = @splat(.unset),
-            y: [6]Net_ID = @splat(.unset),
-        };
-
-        const Buf_Impl = struct {
-            a: Net_ID = .unset,
-            y: Net_ID = .unset,
-        };
-
-        pub fn check_config(self: @This()) !void {
-            var mapped_logical_gates: [6]bool = @splat(false);
-            for (self.remap) |logical| {
-                mapped_logical_gates[logical] = true;
-            }
-            for (0.., mapped_logical_gates) |logical_gate, mapped| {
-                if (!mapped) {
-                    log.err("{s}: No physical gate assigned to logical gate {}", .{ @typeName(@This()), logical_gate });
-                    return error.InvalidRemap;
-                }
-            }
-        }
-
-        fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (self.logic) {
-                .bus => |impl| switch (@intFromEnum(pin_id)) {
-                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
-
-                    7 => self.pwr.gnd,
-                    14 => @field(self.pwr, @tagName(pwr)),
-
-                    1 => impl.a[self.remap[0]],
-                    2 => impl.y[self.remap[0]],
-
-                    3 => impl.a[self.remap[1]],
-                    4 => impl.y[self.remap[1]],
-
-                    5 => impl.a[self.remap[2]],
-                    6 => impl.y[self.remap[2]],
-
-                    9 => impl.a[self.remap[3]],
-                    8 => impl.y[self.remap[3]],
-
-                    11 => impl.a[self.remap[4]],
-                    10 => impl.y[self.remap[4]],
-
-                    13 => impl.a[self.remap[5]],
-                    12 => impl.y[self.remap[5]],
-
-                    else => unreachable,
-                },
-                .gates => |impl| switch (@intFromEnum(pin_id)) {
-                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
-
-                    7 => self.pwr.gnd,
-                    14 => @field(self.pwr, @tagName(pwr)),
-
-                    1 => impl[self.remap[0]].a,
-                    2 => impl[self.remap[0]].y,
-
-                    3 => impl[self.remap[1]].a,
-                    4 => impl[self.remap[1]].y,
-
-                    5 => impl[self.remap[2]].a,
-                    6 => impl[self.remap[2]].y,
-
-                    9 => impl[self.remap[3]].a,
-                    8 => impl[self.remap[3]].y,
-
-                    11 => impl[self.remap[4]].a,
-                    10 => impl[self.remap[4]].y,
-
-                    13 => impl[self.remap[5]].a,
-                    12 => impl[self.remap[5]].y,
-
-                    else => unreachable,
-                },
-            };
-        }
-
-        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
-            switch (mode) {
-                .reset => {},
-                .commit => switch (self.logic) {
-                    .bus => |impl| {
-                        try v.expect_valid(impl.a, levels);
-                        var a = v.read_bus(impl.a, levels);
-                        if (invert) a = ~a;
-                        try v.expect_output_valid(impl.y, a, levels);
-                    },
-                    .gates => |impl| for (impl) |gate| {
-                        try v.expect_valid(gate.a, levels);
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
-                        if (invert) a = !a;
-                        try v.expect_output_valid(gate.y, a, levels);
-                    },
-                },
-                .nets_only => switch (self.logic) {
-                    .bus => |impl| {
-                        var a = v.read_bus(impl.a, levels);
-                        if (invert) a = ~a;
-                        try v.drive_bus(impl.y, a, levels);
-                    },
-                    .gates => |impl| for (impl) |gate| {
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
-                        if (invert) a = !a;
-                        try v.drive_logic(gate.y, a, levels);
-                    },
-                },
-            }
-        }
-    };
-}
-
 fn and_gate(a: usize, b: usize) usize {
     return a & b;
 }
@@ -491,82 +763,116 @@ fn mux157_gate(a: usize, b: usize, c: usize) usize {
 
 /// Quad 2-in NAND
 pub fn x00(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, nand_gate);
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, .aby, nand_gate);
 }
-
 /// Single 2-in NAND
 pub fn x1G00(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Gate(pwr, Decoupler, levels, Pkg, nand_gate);
 }
+/// Dual 2-in NAND
+pub fn x2G00(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Gate(pwr, Decoupler, levels, Pkg, nand_gate);
+}
 
 /// Quad 2-in NOR
 pub fn x02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, nor_gate);
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, .yab, nor_gate);
 }
-
 /// Single 2-in NOR
 pub fn x1G02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Gate(pwr, Decoupler, levels, Pkg, nor_gate);
+}
+/// Single 2-in NOR
+pub fn x2G02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Gate(pwr, Decoupler, levels, Pkg, nor_gate);
 }
 
 /// Hex inverter
 pub fn x04(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Hex_Buffer(pwr, Decoupler, levels, Pkg, true);
 }
-
 /// Single inverter
 pub fn x1G04(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Buffer(pwr, Decoupler, levels, Pkg, true);
 }
+/// Dual inverter
+pub fn x2G04(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0b00);
+}
 
 /// Quad 2-in AND
 pub fn x08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, and_gate);
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, .aby, and_gate);
 }
-
 /// Single 2-in AND
 pub fn x1G08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Gate(pwr, Decoupler, levels, Pkg, and_gate);
+}
+/// Dual 2-in AND
+pub fn x2G08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Gate(pwr, Decoupler, levels, Pkg, and_gate);
 }
 
 /// Hex inverter, ST inputs
 pub fn x14(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Hex_Buffer(pwr, Decoupler, levels, Pkg, true);
 }
-
 /// Single inverter, ST inputs
 pub fn x1G14(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Buffer(pwr, Decoupler, levels, Pkg, true);
+}
+/// Dual inverter, ST inputs
+pub fn x2G14(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0b11);
 }
 
 /// Single buffer, ST inputs
 pub fn x1G17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Buffer(pwr, Decoupler, levels, Pkg, false);
 }
+/// Dual buffer, ST inputs
+pub fn x2G17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0b00);
+}
 
 /// Quad 2-in OR
 pub fn x32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, or_gate);
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, .aby, or_gate);
 }
-
 /// Single 2-in OR
 pub fn x1G32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Gate(pwr, Decoupler, levels, Pkg, or_gate);
+}
+/// Dual 2-in OR
+pub fn x2G32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Gate(pwr, Decoupler, levels, Pkg, or_gate);
 }
 
 /// Single buffer
 pub fn x1G34(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Buffer(pwr, Decoupler, levels, Pkg, false);
 }
+/// Dual buffer
+pub fn x2G34(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0x00);
+}
+
+// Single buffer & Single inverter (AUP/AXP families)
+pub fn x2G3404(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0b10);
+}
 
 /// Quad 2-in XOR
 pub fn x86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
+    return Quad_Gate(pwr, Decoupler, levels, Pkg, .aby, xor_gate);
 }
-
 /// Single 2-in XOR
 pub fn x1G86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
+}
+/// Dual 2-in XOR
+pub fn x2G86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
 }
 
 /// Single 3-in NAND
@@ -746,7 +1052,7 @@ pub fn x1G19(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
     return Single_1_2_Demux(pwr, Decoupler, levels, Pkg, false);
 }
 
-/// Single 1:3 decoder
+/// Single 2:3 decoder
 pub fn x1G29(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
@@ -826,7 +1132,7 @@ pub fn x1G29(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
     };
 }
 
-/// Single 1:4 decoder
+/// Single 2:4 decoder
 pub fn x1G139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
@@ -889,8 +1195,8 @@ fn Single_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: t
                 2 => self.a,
                 3 => self.pwr.gnd,
                 4 => self.y,
-                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -903,13 +1209,13 @@ fn Single_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: t
                     try v.expect_valid(self.a, levels);
                     if (!v.read_logic(self.n_oe, levels)) {
                         const a = v.read_logic(self.a, levels);
-                        v.expect_output_valid(self.y, if (invert) !a else a, levels);
+                        try v.expect_output_valid(self.y, if (invert) !a else a, levels);
                     }
                 },
                 .nets_only => {
                     if (!v.read_logic(self.n_oe, levels)) {
                         const a = v.read_logic(self.a, levels);
-                        v.drive_logic(self.y, if (invert) !a else a, levels);
+                        try v.drive_logic(self.y, if (invert) !a else a, levels);
                     }
                 },
             }
@@ -935,8 +1241,8 @@ fn Single_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: 
                 2 => self.a,
                 3 => self.pwr.gnd,
                 4 => self.y,
-                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -949,14 +1255,264 @@ fn Single_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: 
                     try v.expect_valid(self.a, levels);
                     if (v.read_logic(self.oe, levels)) {
                         const a = v.read_logic(self.a, levels);
-                        v.expect_output_valid(self.y, if (invert) !a else a, levels);
+                        try v.expect_output_valid(self.y, if (invert) !a else a, levels);
                     }
                 },
                 .nets_only => {
                     if (v.read_logic(self.oe, levels)) {
                         const a = v.read_logic(self.a, levels);
-                        v.drive_logic(self.y, if (invert) !a else a, levels);
+                        try v.drive_logic(self.y, if (invert) !a else a, levels);
                     }
+                },
+            }
+        }
+    };
+}
+
+fn Dual_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        logic: union (enum) {
+            bus: Bus_Impl,
+            individual: [2]Individual_Impl,
+        },
+        remap: [2]u1 = .{ 0, 1 },
+
+        const Bus_Impl = struct {
+            a: [2]Net_ID = @splat(.unset),
+            y: [2]Net_ID = @splat(.unset),
+            n_oe: [2]Net_ID = @splat(.unset),
+        };
+        const Individual_Impl = struct {
+            a: Net_ID = .unset,
+            y: Net_ID = .unset,
+            n_oe: Net_ID = .unset,
+        };
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (self.logic) {
+                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    4 => self.pwr.gnd,
+                    8 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl.n_oe[0],
+                    2 => impl.a[0],
+                    6 => impl.y[0],
+
+                    7 => impl.n_oe[1],
+                    5 => impl.a[1],
+                    3 => impl.y[1],
+
+                    else => unreachable,
+                },
+                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    4 => self.pwr.gnd,
+                    8 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl[0].n_oe,
+                    2 => impl[0].a,
+                    6 => impl[0].y,
+
+                    7 => impl[1].n_oe,
+                    5 => impl[1].a,
+                    3 => impl[1].y,
+                    
+                    else => unreachable,
+                },
+            };
+        }
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_logical_bufs: [2]bool = @splat(false);
+            for (self.remap) |logical| {
+                mapped_logical_bufs[logical] = true;
+            }
+            for (0.., mapped_logical_bufs) |logical_buf, mapped| {
+                if (!mapped) {
+                    log.err("{s}: No physical buffer assigned to logical buffer {}", .{ @typeName(@This()), logical_buf });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => switch (self.logic) {
+                    .bus => |impl| {
+                        try v.expect_valid(impl.n_oe, levels);
+                        try v.expect_valid(impl.a, levels);
+                        const oe = v.read_logic(impl.n_oe, levels);
+                        if (0 == (oe & 1)) {
+                            const a = v.read_logic(impl.a[0], levels);
+                            try v.expect_output_valid(impl.y[0], if (invert) !a else a, levels);
+                        }
+                        if (0 == (oe & 2)) {
+                            const a = v.read_logic(impl.a[1], levels);
+                            try v.expect_output_valid(impl.y[1], if (invert) !a else a, levels);
+                        }
+                    },
+                    .individual => |impl| for (impl) |buf| {
+                        try v.expect_valid(buf.n_oe, levels);
+                        try v.expect_valid(buf.a, levels);
+                        if (!v.read_logic(buf.n_oe, levels)) {
+                            const a = v.read_logic(buf.a, levels);
+                            try v.expect_output_valid(buf.y, if (invert) !a else a, levels);
+                        }
+                    },
+                },
+                .nets_only => switch (self.logic) {
+                    .bus => |impl| {
+                        const oe = v.read_logic(impl.n_oe, levels);
+                        if (0 == (oe & 1)) {
+                            const a = v.read_logic(impl.a[0], levels);
+                            try v.drive_logic(impl.y[0], if (invert) !a else a, levels);
+                        }
+                        if (0 == (oe & 2)) {
+                            const a = v.read_logic(impl.a[1], levels);
+                            try v.drive_logic(impl.y[1], if (invert) !a else a, levels);
+                        }
+                    },
+                    .individual => |impl| for (impl) |buf| {
+                        if (!v.read_logic(buf.n_oe, levels)) {
+                            const a = v.read_logic(buf.a, levels);
+                            try v.drive_logic(buf.y, if (invert) !a else a, levels);
+                        }
+                    },
+                },
+            }
+        }
+    };
+}
+
+fn Dual_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        logic: union (enum) {
+            bus: Bus_Impl,
+            individual: [2]Individual_Impl,
+        },
+        remap: [2]u1 = .{ 0, 1 },
+
+        const Bus_Impl = struct {
+            a: [2]Net_ID = @splat(.unset),
+            y: [2]Net_ID = @splat(.unset),
+            oe: [2]Net_ID = @splat(.unset),
+        };
+        const Individual_Impl = struct {
+            a: Net_ID = .unset,
+            y: Net_ID = .unset,
+            oe: Net_ID = .unset,
+        };
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (self.logic) {
+                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    4 => self.pwr.gnd,
+                    8 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl.oe[0],
+                    2 => impl.a[0],
+                    6 => impl.y[0],
+
+                    7 => impl.oe[1],
+                    5 => impl.a[1],
+                    3 => impl.y[1],
+
+                    else => unreachable,
+                },
+                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    4 => self.pwr.gnd,
+                    8 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl[0].oe,
+                    2 => impl[0].a,
+                    6 => impl[0].y,
+
+                    7 => impl[1].oe,
+                    5 => impl[1].a,
+                    3 => impl[1].y,
+                    
+                    else => unreachable,
+                },
+            };
+        }
+
+        pub fn check_config(self: @This()) !void {
+            var mapped_logical_bufs: [2]bool = @splat(false);
+            for (self.remap) |logical| {
+                mapped_logical_bufs[logical] = true;
+            }
+            for (0.., mapped_logical_bufs) |logical_buf, mapped| {
+                if (!mapped) {
+                    log.err("{s}: No physical buffer assigned to logical buffer {}", .{ @typeName(@This()), logical_buf });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {},
+                .commit => switch (self.logic) {
+                    .bus => |impl| {
+                        try v.expect_valid(impl.oe, levels);
+                        try v.expect_valid(impl.a, levels);
+                        const oe = v.read_logic(impl.oe, levels);
+                        if (0 != (oe & 1)) {
+                            const a = v.read_logic(impl.a[0], levels);
+                            try v.expect_output_valid(impl.y[0], if (invert) !a else a, levels);
+                        }
+                        if (0 != (oe & 2)) {
+                            const a = v.read_logic(impl.a[1], levels);
+                            try v.expect_output_valid(impl.y[1], if (invert) !a else a, levels);
+                        }
+                    },
+                    .individual => |impl| for (impl) |buf| {
+                        try v.expect_valid(buf.oe, levels);
+                        try v.expect_valid(buf.a, levels);
+                        if (v.read_logic(buf.oe, levels)) {
+                            const a = v.read_logic(buf.a, levels);
+                            try v.expect_output_valid(buf.y, if (invert) !a else a, levels);
+                        }
+                    },
+                },
+                .nets_only => switch (self.logic) {
+                    .bus => |impl| {
+                        const oe = v.read_logic(impl.oe, levels);
+                        if (0 != (oe & 1)) {
+                            const a = v.read_logic(impl.a[0], levels);
+                            try v.drive_logic(impl.y[0], if (invert) !a else a, levels);
+                        }
+                        if (0 != (oe & 2)) {
+                            const a = v.read_logic(impl.a[1], levels);
+                            try v.drive_logic(impl.y[1], if (invert) !a else a, levels);
+                        }
+                    },
+                    .individual => |impl| for (impl) |buf| {
+                        if (v.read_logic(buf.oe, levels)) {
+                            const a = v.read_logic(buf.a, levels);
+                            try v.drive_logic(buf.y, if (invert) !a else a, levels);
+                        }
+                    },
                 },
             }
         }
@@ -966,13 +1522,20 @@ fn Single_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: 
 pub fn x1G125(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Tristate_Driver_Active_Low(pwr, Decoupler, levels, Pkg, false);
 }
+pub fn x2G125(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Tristate_Driver_Active_Low(pwr, Decoupler, levels, Pkg, false);
+}
 pub fn x1G126(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Tristate_Driver_Active_High(pwr, Decoupler, levels, Pkg, false);
+}
+pub fn x2G126(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_Tristate_Driver_Active_High(pwr, Decoupler, levels, Pkg, false);
 }
 pub fn x1G240(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_Tristate_Driver_Active_Low(pwr, Decoupler, levels, Pkg, true);
 }
 
+/// a.k.a. x2G74
 pub fn x1G74(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
@@ -1080,8 +1643,8 @@ fn Single_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 2 => self.clk,
                 3 => self.pwr.gnd,
                 4 => self.q,
-                5 => if (Pkg.data.total_pins == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.total_pins == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
+                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -1117,11 +1680,144 @@ fn Single_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
     };
 }
 
+fn Dual_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        pwr: power.Single(pwr, Decoupler) = .{},
+        logic: union (enum) {
+            bus: Bus_Impl,
+            individual: [2]Individual_Impl,
+        },
+        remap: [2]u1 = .{ 0, 1 },
+
+        const Bus_Impl = struct {
+            clk: [2]Net_ID = @splat(.unset),
+            d: [2]Net_ID = @splat(.unset),
+            q: [2]Net_ID = @splat(.unset),
+        };
+
+        const Individual_Impl = struct {
+            clk: Net_ID = .unset,
+            d: Net_ID = .unset,
+            q: Net_ID = .unset,
+        };
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (self.logic) {
+                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    4 => self.pwr.gnd,
+                    8 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl[0].clk,
+                    2 => impl[0].d,
+                    7 => impl[0].q,
+
+                    5 => impl[1].clk,
+                    6 => impl[1].d,
+                    3 => impl[1].q,
+
+                    else => unreachable,
+                },
+                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                    0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                    4 => self.pwr.gnd,
+                    8 => @field(self.pwr, @tagName(pwr)),
+
+                    1 => impl.clk[0],
+                    2 => impl.d[0],
+                    7 => impl.q[0],
+
+                    5 => impl.clk[1],
+                    6 => impl.d[1],
+                    3 => impl.q[1],
+
+                    else => unreachable,
+                },
+            };
+        }
+        
+        pub fn check_config(self: @This()) !void {
+            var mapped_logical_gates: [2]bool = @splat(false);
+            for (self.remap) |logical| {
+                mapped_logical_gates[logical] = true;
+            }
+            for (0.., mapped_logical_gates) |logical_gate, mapped| {
+                if (!mapped) {
+                    log.err("{s}: No physical register assigned to logical register {}", .{ @typeName(@This()), logical_gate });
+                    return error.InvalidRemap;
+                }
+            }
+        }
+
+        const Validator_State = struct {
+            clk: [2]bool,
+            q: [2]bool,
+        };
+
+        pub fn validate(self: @This(), v: *Validator, state: *Validator_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.q = @splat(false);
+                    state.clk = @splat(true);
+                },
+                .commit => switch (self.logic) {
+                    .individual => |impl| for (0.., impl) |n, reg| {
+                        try v.expect_valid(reg.d, levels);
+                        try v.expect_valid(reg.clk, levels);
+                        try v.expect_output_valid(reg.q, state.q[n], levels);
+
+                        const new_clk = v.read_logic(reg.clk, levels);
+                        if (new_clk and !state.clk[n]) {
+                            const d = v.read_logic(reg.d, levels);
+                            state.q[n] = if (invert) !d else d;
+                        }
+                        state.clk[n] = new_clk;
+                    },
+                    .bus => |impl| {
+                        try v.expect_valid(impl.d, levels);
+                        try v.expect_valid(impl.clk, levels);
+                        for (0..2) |n| {
+                            try v.expect_output_valid(impl.q[n], state.q[n], levels);
+                            const new_clk = v.read_logic(impl.clk[n], levels);
+                            if (new_clk and !state.clk[n]) {
+                                const d = v.read_logic(impl.d[n], levels);
+                                state.q[n] = if (invert) !d else d;
+                            }
+                            state.clk[n] = new_clk;
+                        }
+                    },
+                },
+                .nets_only => switch (self.logic) {
+                    .individual => |impl| for (0.., impl) |n, reg| {
+                        try v.drive_logic(reg.q, state.q[n], levels);
+                    },
+                    .bus => |impl| for (0..2) |n| {
+                        try v.drive_logic(impl.q[n], state.q[n], levels);
+                    },
+                },
+            }
+        }
+    };
+}
+
 pub fn x1G79(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_DFF(pwr, Decoupler, levels, Pkg, false);
 }
+pub fn x2G79(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_DFF(pwr, Decoupler, levels, Pkg, false);
+}
 pub fn x1G80(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
     return Single_DFF(pwr, Decoupler, levels, Pkg, true);
+}
+pub fn x2G80(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Dual_DFF(pwr, Decoupler, levels, Pkg, true);
 }
 
 /// Single DFF with async clear
@@ -1309,18 +2005,10 @@ pub fn x1G373(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
     };
 }
 
-// TODO x2G00
-// TODO x2G08
-// TODO x2G32
-// TODO x2G86
-// TODO x2G04
-// TODO x2G34
-// TODO x2G3404 // only AUP/AXP
-// TODO x2G74
-// TODO x2G79
-// TODO x2G80
 // TODO x2G100
 // TODO x2G101
+// TODO x2G157
+// TODO x2G241
 
 // 3:8 decoder/demux
 pub fn x138(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
@@ -1837,8 +2525,7 @@ pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
     };
 }
 
-/// 8b buffer, tri-state (dual OE)
-pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn Octal_Line_Driver(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
@@ -1904,20 +2591,31 @@ pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     try v.expect_valid(self.n_oe, levels);
                     const oe = v.read_bus(self.n_oe, levels);
                     if (oe == 0) {
-                        const a = v.read_bus(self.a, levels);
+                        var a = v.read_bus(self.a, levels);
+                        if (invert) a = a ^ 0xFF;
                         try v.expect_output_valid(self.y, a, levels);
                     }
                 },
                 .nets_only => {
                     const oe = v.read_bus(self.n_oe, levels);
                     if (oe == 0) {
-                        const a = v.read_bus(self.a, levels);
+                        var a = v.read_bus(self.a, levels);
+                        if (invert) a = a ^ 0xFF;
                         try v.drive_bus(self.y, a, levels);
                     }
                 },
             }
         }
     };
+}
+
+/// 8b inverter, tri-state (dual OE)
+pub fn x540(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Octal_Line_Driver(pwr, Decoupler, levels, Pkg, true);
+}
+/// 8b buffer, tri-state (dual OE)
+pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+    return Octal_Line_Driver(pwr, Decoupler, levels, Pkg, false);
 }
 
 /// 8b transparent latch, tri-state

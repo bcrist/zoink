@@ -294,7 +294,7 @@ pub fn read(r: *sx.Reader) !?Pad {
     return self;
 }
 
-pub fn write(self: Pad, w: *sx.Writer, b: *Board, p: Part, format_pin_name: Pin_Name_Format_Func) !void {
+pub fn write(self: Pad, w: *sx.Writer, b: *Board, p: Part, remap: *const Net_Remap, format_pin_name: Pin_Name_Format_Func) !void {
     try w.expression("pad");
     try w.print_quoted("{f}", .{
         Pin_Name_Formatter{
@@ -408,10 +408,11 @@ pub fn write(self: Pad, w: *sx.Writer, b: *Board, p: Part, format_pin_name: Pin_
         else => {},
     }
 
-    const net = p.vt.pin_to_net(p.base, self.pin);
+    const net = remap.get_merged_net(p.vt.pin_to_net(p.base, self.pin));
+    const net_name = b.net_name(net);
     try w.expression("net");
-    try w.int(net.kicad_net_id(), 10);
-    try w.string_quoted(b.net_name(net));
+    try w.int(remap.get_kicad_id_from_name(net_name), 10);
+    try w.string_quoted(net_name);
     try w.close();
 
     if (self.pad_to_die_length.um > 0) {
@@ -434,6 +435,7 @@ const Pin_ID = enums.Pin_ID;
 const Net_ID = enums.Net_ID;
 const kicad = @import("../kicad.zig");
 const enums = @import("../enums.zig");
+const Net_Remap = @import("../Net_Remap.zig");
 const Board = @import("../Board.zig");
 const Part = @import("../Part.zig");
 const Uuid = @import("Uuid.zig");

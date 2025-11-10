@@ -42,6 +42,10 @@ pub fn dst_mm(self: Location, other: Location) f64 {
     return @sqrt(dx * dx + dy * dy);
 }
 
+pub fn eql(self: Location, other: Location) bool {
+    return self.x.eql(other.x) and self.y.eql(other.y);
+}
+
 pub fn read(r: *sx.Reader, expr: []const u8, maybe_rotation: ?*Rotation) !?Location {
     if (!try r.expression(expr)) return null;
 

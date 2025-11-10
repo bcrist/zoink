@@ -7,7 +7,7 @@ pub const ccw: Rotation = .{ .deg = 90 };
 pub const ccw45: Rotation = .{ .deg = 45 };
 pub const cw: Rotation = .{ .deg = -90 };
 pub const cw45: Rotation = .{ .deg = -45 };
-pub const flip: Rotation = .{ .deg = 180 };
+pub const _180: Rotation = .{ .deg = 180 };
 
 pub fn formatNumber(self: Rotation, options: std.fmt.Number, writer: *std.io.Writer) !void {
     var buf: [32]u8 = undefined;

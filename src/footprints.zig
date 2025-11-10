@@ -440,6 +440,10 @@ pub const SMD_Data = struct {
     pub fn format(self: SMD_Data, writer: *std.io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
+
+    pub fn num_pads(self: SMD_Data) usize {
+        return self.total_pins - self.omitted_pins.len;
+    }
 };
 pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint {
     @setEvalBranchQuota(100_000);
@@ -501,42 +505,40 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint 
         }
     }
 
-    switch (data.pin1) {
-        .south_westmost => {
-            var pin: usize = 1;
-            add_smd_pads(&result, data, .south, pin, data.pins_on_first_side, density);
-            pin += data.pins_on_first_side;
-            add_smd_pads(&result, data, .east, pin, pins_on_second_side, density);
-            pin += pins_on_second_side;
-            add_smd_pads(&result, data, .north, pin, data.pins_on_first_side, density);
-            pin += data.pins_on_first_side;
-            add_smd_pads(&result, data, .west, pin, pins_on_second_side, density);
+    var side: Side, const first_pin: usize = switch (data.pin1) {
+        .south_westmost => .{ .south, 1 },
+        .west_middle => res: {
+            std.debug.assert(data.omitted_pins.len == 0);
+            break :res .{ .west, 1 + data.total_pins - data.pins_on_first_side / 2 };
         },
-        .west_middle => {
-            var pin: usize = 1 + data.total_pins - data.pins_on_first_side / 2;
-            add_smd_pads(&result, data, .west, pin, data.pins_on_first_side, density);
-            pin = 1 + (data.pins_on_first_side + 1) / 2;
-            add_smd_pads(&result, data, .south, pin, pins_on_second_side, density);
-            pin += pins_on_second_side;
-            add_smd_pads(&result, data, .east, pin, data.pins_on_first_side, density);
-            pin += data.pins_on_first_side;
-            add_smd_pads(&result, data, .north, pin, pins_on_second_side, density);
-        },
-    }
+    };
+    
+    var first_raw_pin_on_side = first_pin;
+    var next_real_pin = first_pin;
 
-    const final_result = comptime result;
-    return &final_result;
-}
-fn add_smd_pads(
-    comptime result: *Footprint,
-    comptime data: SMD_Data,
-    comptime side: Side,
-    comptime first_pin: usize,
-    comptime pins_on_side: usize,
-    comptime density: Density,
-) void {
-    if (pins_on_side == 0) return;
-    comptime {
+    for (0..4) |sides_done| {
+        const raw_pins_on_side = switch (sides_done) {
+            0, 2 => data.pins_on_first_side,
+            1, 3 => pins_on_second_side,
+            else => unreachable,
+        };
+
+        defer {
+            side = switch (side) {
+                .south => .east,
+                .east => .north,
+                .north => .west,
+                .west => .south,
+            };
+
+            first_raw_pin_on_side += raw_pins_on_side;
+            if (first_raw_pin_on_side > data.total_pins) {
+                first_raw_pin_on_side -= data.total_pins;
+            }
+        }
+
+        if (raw_pins_on_side == 0) continue;
+        
         var xf: zm.Mat3 = switch (side) {
             .west => rotate_90,
             .east => rotate_270,
@@ -555,7 +557,7 @@ fn add_smd_pads(
         const seating: f64 = @floatFromInt(data.pin_seating.nominal_um);
         const pin_pitch: f64 = @floatFromInt(data.pin_pitch.nominal_um);
         const max_pin_width: f64 = @floatFromInt(data.pin_width.max_um());
-        const pins_on_side_f: f64 = @floatFromInt(pins_on_side);
+        const pins_on_side_f: f64 = @floatFromInt(raw_pins_on_side);
 
         const pin_length = @max(seating, (overall_dim - body_dim) / 2);
 
@@ -570,8 +572,8 @@ fn add_smd_pads(
 
         const pad_length = switch (density) {
             .dense => seating + (overall_dim_max - overall_dim) / 2,
-            .normal => seating + (overall_dim_max - overall_dim) / 2 + if (pins_on_side > 1 and pin_pitch > 0) 500 else 250,
-            .loose => seating + (overall_dim_max - overall_dim) / 2 + if (pins_on_side > 1 and pin_pitch > 0) 1500 else 500,
+            .normal => seating + (overall_dim_max - overall_dim) / 2 + if (raw_pins_on_side > 1 and pin_pitch > 0) 500 else 250,
+            .loose => seating + (overall_dim_max - overall_dim) / 2 + if (raw_pins_on_side > 1 and pin_pitch > 0) 1500 else 500,
         };
 
         const pin_offset = -pin_pitch * (pins_on_side_f - 1) / 2;
@@ -579,14 +581,17 @@ fn add_smd_pads(
 
         xf = xf.multiply(.translation(pin_offset, side_origin));
 
-        for (0..pins_on_side) |po| {
-            var pin = first_pin + po;
+        for (0..raw_pins_on_side) |po| {
+            var pin = first_raw_pin_on_side + po;
             if (pin > data.total_pins) pin -= data.total_pins;
             defer xf = xf.multiply(.translation(pin_pitch, 0));
 
             if (std.mem.indexOfScalar(usize, data.omitted_pins, pin)) |_| {
                 continue;
             }
+
+            const real_pin = next_real_pin;
+            next_real_pin += 1;
 
             result.rects = result.rects ++ .{
                 kicad.Rect {
@@ -602,13 +607,13 @@ fn add_smd_pads(
 
             result.pads = result.pads ++ .{
                 kicad.Pad {
-                    .pin = @enumFromInt(pin),
+                    .pin = @enumFromInt(real_pin),
                     .kind = .smd,
                     .location = .init_um_transformed(xf2, 0, 0),
                     .rotation = switch (side) {
                         .west => kicad.Rotation.cw,
                         .east => kicad.Rotation.ccw,
-                        .north => kicad.Rotation.flip,
+                        .north => kicad.Rotation._180,
                         .south => .{},
                     },
                     .w = .init_um(pad_width),
@@ -625,17 +630,20 @@ fn add_smd_pads(
             };
             
             if (pin == 1) {
-                generate_pin1_mark(result, data.pin_1_mark orelse .arrow, .{
+                generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
                     .pad_origin = xf2,
                     .pin_pitch = pin_pitch,
                     .pad_width = pad_width,
                     .pad_length = pad_length,
                     .is_first_pin_on_side = pin_pitch == 0 or po == 0,
-                    .is_last_pin_on_side = pin_pitch == 0 or po == pins_on_side - 1,
+                    .is_last_pin_on_side = pin_pitch == 0 or po == raw_pins_on_side - 1,
                 });
             }
         }
     }
+
+    const final_result = comptime result;
+    return &final_result;
 }
 
 /// Rectangular SMD package with a small number of non-uniform square leads/pads, e.g. SOT-143, SOT-223, DPAK
@@ -767,7 +775,7 @@ pub fn SOT(comptime data: SOT_Data, comptime density: Density) *const Footprint 
                 .rotation = switch (pin.side) {
                     .west => kicad.Rotation.cw,
                     .east => kicad.Rotation.ccw,
-                    .north => kicad.Rotation.flip,
+                    .north => kicad.Rotation._180,
                     .south => .{},
                 },
                 .w = .init_um(pad_width),

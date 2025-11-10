@@ -23,7 +23,8 @@ pub const Base = struct {
 pub const VTable = struct {
     pin_to_net: *const fn(base: *Part.Base, pin: Pin_ID) Net_ID,
     check_config: ?*const fn(base: *Part.Base, b: *Board) anyerror!void,
-    finalize_power_nets: *const fn(base: *Part.Base, b: *Board) anyerror!void,
+    check_for_unset_nets: *const fn(base: *Part.Base) anyerror!void,
+    get_or_generate_decouplers: *const fn(base: *Part.Base, b: *Board, decoupler_buf: []Part) []const Part,
     validate: ?*const fn(base: *const Part.Base, v: *Validator, state: *anyopaque, mode: Validator.Update_Mode) anyerror!void,
     validator_state_bytes: usize,
     validator_state_align: usize,
@@ -94,42 +95,78 @@ pub const VTable = struct {
                 }
             }
 
-            pub fn finalize_power_nets(base: *Part.Base, b: *Board) !void {
+            pub fn get_or_generate_decouplers(base: *Part.Base, b: *Board, buf: []Part) []const Part {
                 @setEvalBranchQuota(10000);
 
                 const part: *P = @fieldParentPtr("base", base);
+                var decoupler_buf_index: usize = 0;
+                var decoupler_number: usize = 1;
 
                 inline for (@typeInfo(P).@"struct".fields) |field| {
                     if (comptime std.mem.startsWith(u8, field.name, "pwr")) {
                         const Pwr = field.type;
                         const pwr = &@field(part.*, field.name);
-
                         inline for (@typeInfo(Pwr).@"struct".fields) |info| {
-                            if (comptime std.meta.stringToEnum(Net_ID, info.name)) |net| {
-                                if (info.type == Net_ID) {
-                                    maybe_set_power_net_or_generate_decoupler(Pwr, net, &@field(pwr, info.name), b);
-                                } else {
-                                    for (&@field(pwr, info.name)) |*net_ptr| {
-                                        maybe_set_power_net_or_generate_decoupler(Pwr, net, net_ptr, b);
-                                    }
+                            const field_ptr = &@field(pwr, info.name);
+                            const slice: []Net_ID = if (info.type == Net_ID) field_ptr[0..1] else field_ptr;
+                            if (comptime std.mem.eql(u8, info.name, "gnd")) {
+                                for (slice) |*net_ptr| {
+                                    if (net_ptr.* == .unset) net_ptr.* = .gnd;
                                 }
-                            } else if (std.mem.eql(u8, info.name, "vcc")) {
-                                if (info.type == Net_ID) {
-                                    maybe_set_power_net_or_generate_decoupler(Pwr, .unset, &pwr.vcc, b);
-                                } else {
-                                    for (&pwr.vcc) |*net_ptr| {
-                                        maybe_set_power_net_or_generate_decoupler(Pwr, .unset, net_ptr, b);
+                            } else {
+                                const power_net = comptime std.meta.stringToEnum(Net_ID, info.name) orelse .unset;
+                                for (slice) |*net_ptr| {
+                                    if (maybe_set_power_net_or_generate_decoupler(Pwr, power_net, net_ptr, b, base.name, decoupler_number)) |decoupler| {
+                                        if (decoupler_buf_index < buf.len) {
+                                            buf[decoupler_buf_index] = decoupler;
+                                            decoupler_buf_index += 1;
+                                        }
                                     }
+                                    decoupler_number += 1;
                                 }
                             }
                         }
                     }
                 }
 
-                try check_for_unset_nets(P, part.*, base, "");
+                return buf[0..decoupler_buf_index];
             }
 
-            fn check_for_unset_nets(comptime T: type, value: T, base: *Part.Base, comptime prefix: []const u8) !void {
+            fn maybe_set_power_net_or_generate_decoupler(comptime Pwr: type, comptime power_net: Net_ID, net_ptr: *Net_ID, b: *Board, part_name: []const u8, decoupler_number: usize) ?Part {
+                defer if (net_ptr.* == .unset) {
+                    net_ptr.* = power_net;
+                };
+
+                if (@hasDecl(Pwr, "Decouple") and Pwr.Decouple != void) {
+                    const decoupler_name = b.fmt("Decoupler: {s} #{}", .{ part_name, decoupler_number });
+                    if (b.get_part(decoupler_name)) |existing| return existing;
+
+                    if (power_net.is_power() and net_ptr.* == .unset or power_net == .unset and net_ptr.is_power()) {
+                        const internal_net = b.unique_net(if (power_net == .unset) "Vcc" else @tagName(power_net));
+                        const external_net = if (power_net == .unset) net_ptr.* else power_net;
+                        net_ptr.* = internal_net;
+
+                        const decoupler = b.part(Pwr.Decouple, decoupler_name, .{
+                            .gnd = .gnd,
+                            .internal = internal_net,
+                            .external = external_net,
+                        });
+                        return .{
+                            .base = &decoupler.base,
+                            .vt = comptime Part.VTable.init(Pwr.Decouple),
+                        };
+                    }
+                }
+
+                return null;
+            }
+
+            pub fn check_for_unset_nets(base: *Part.Base) !void {
+                const part: *P = @fieldParentPtr("base", base);
+                try check_for_unset_nets_generic(P, part.*, base, "");
+            }
+
+            fn check_for_unset_nets_generic(comptime T: type, value: T, base: *Part.Base, comptime prefix: []const u8) !void {
                 @setEvalBranchQuota(100_000);
                 if (T == Part.Base or T == void) return;
                 if (T == Net_ID) {
@@ -143,54 +180,25 @@ pub const VTable = struct {
                 switch (@typeInfo(T)) {
                     .int, .float => {},
                     .@"struct" => |struct_info| inline for (struct_info.fields) |field_info| {
-                        try check_for_unset_nets(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
+                        try check_for_unset_nets_generic(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
                     },
                     .@"union" => |union_info| inline for (union_info.fields) |field_info| {
                         if (value == @field(union_info.tag_type.?, field_info.name)) {
-                            try check_for_unset_nets(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
+                            try check_for_unset_nets_generic(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
                         }
                     },
                     .pointer => |info| if (info.size == .slice) {
                         for (value) |item| {
-                            try check_for_unset_nets(@TypeOf(item), item, base, prefix ++ "[?]");
+                            try check_for_unset_nets_generic(@TypeOf(item), item, base, prefix ++ "[?]");
                         }
                     },
                     .optional => |info| if (value) |v| {
-                        try check_for_unset_nets(info.child, v, base, prefix);
+                        try check_for_unset_nets_generic(info.child, v, base, prefix);
                     },
                     .array => |info| inline for (0..info.len) |i| {
-                        try check_for_unset_nets(@TypeOf(value[i]), value[i], base, std.fmt.comptimePrint("{s}[{}]", .{ prefix, i }));
+                        try check_for_unset_nets_generic(@TypeOf(value[i]), value[i], base, std.fmt.comptimePrint("{s}[{}]", .{ prefix, i }));
                     },
                     else => {},
-                }
-            }
-
-            fn maybe_set_power_net_or_generate_decoupler(comptime Pwr: type, comptime power_net: Net_ID, net_ptr: *Net_ID, b: *Board) void {
-                if (power_net == .unset) {
-                    if (@hasDecl(Pwr, "Decouple") and Pwr.Decouple != void) {
-                        const internal_net = b.unique_net("Vcc");
-                        _ = b.part(Pwr.Decouple, b.fmt("Decoupler: {s}", .{ b.net_name(internal_net) }), .{
-                            .gnd = .gnd,
-                            .internal = internal_net,
-                            .external = net_ptr.*,
-                        });
-                        net_ptr.* = internal_net;
-                    }
-                    return;
-                }
-
-                if (net_ptr.* != .unset) return;
-
-                if (@hasDecl(Pwr, "Decouple") and Pwr.Decouple != void and power_net != .gnd) {
-                    const internal_net = b.unique_net(@tagName(power_net));
-                    _ = b.part(Pwr.Decouple, b.fmt("Decoupler: {s}", .{ b.net_name(internal_net) }), .{
-                        .gnd = .gnd,
-                        .internal = internal_net,
-                        .external = power_net,
-                    });
-                    net_ptr.* = internal_net;
-                } else {
-                    net_ptr.* = power_net;
                 }
             }
 
@@ -204,20 +212,17 @@ pub const VTable = struct {
                 }
             }
         };
-        return &.{
+        return comptime &.{
             .pin_to_net = impl.pin_to_net,
             .check_config = if (has_check_config) impl.check_config else null,
-            .finalize_power_nets = impl.finalize_power_nets,
+            .check_for_unset_nets = impl.check_for_unset_nets,
+            .get_or_generate_decouplers = impl.get_or_generate_decouplers,
             .validate = if (has_validate) impl.validate else null,
             .validator_state_bytes = @sizeOf(Validator_State),
             .validator_state_align = validator_state_alignment,
         };
     }
 };
-
-pub fn finalize_power_nets(self: Part, b: *Board) !void {
-    try self.vt.finalize_power_nets(self.base, b);
-}
 
 pub fn identity_remap(comptime T: type, comptime n: usize) [n]T {
     var remap: [n]T = undefined;

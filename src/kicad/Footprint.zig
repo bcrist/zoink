@@ -115,7 +115,7 @@ pub fn read(r: *sx.Reader, arena: std.mem.Allocator) !?Footprint {
     return fp;
 }
 
-pub fn write(self: Footprint, w: *sx.Writer, b: *Board, p: Part, options: Writer_Options) !void {
+pub fn write(self: Footprint, w: *sx.Writer, b: *Board, p: Part, remap: *const Net_Remap, options: Writer_Options) !void {
     try w.expression("footprint");
     try w.print_quoted("fp:{s}", .{ self.name });
     w.set_compact(false);
@@ -156,7 +156,7 @@ pub fn write(self: Footprint, w: *sx.Writer, b: *Board, p: Part, options: Writer
     for (self.circles) |circle| try circle.write(w, "fp_circle");
     for (self.arcs) |arc| try arc.write(w, "fp_arc");
 
-    for (self.pads) |pad| try pad.write(w, b, p, self.format_pin_name);
+    for (self.pads) |pad| try pad.write(w, b, p, remap, self.format_pin_name);
 
     try w.expression("embedded_fonts");
     try w.string("no");
@@ -183,6 +183,7 @@ const Pin_Name_Format_Func = kicad.Pin_Name_Format_Func;
 const Pin_ID = enums.Pin_ID;
 const kicad = @import("../kicad.zig");
 const enums = @import("../enums.zig");
+const Net_Remap = @import("../Net_Remap.zig");
 const Part = @import("../Part.zig");
 const Board = @import("../Board.zig");
 const sx = @import("sx");

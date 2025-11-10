@@ -13,11 +13,12 @@ pub const BJT_Type = enum {
 };
 
 /// Note: the validation simulation is not sophisticated enough to accurately model BJTs, but it might be good enough in cases where the transistor is always in saturation or off.
-pub fn BJT(comptime bjt_type: BJT_Type, comptime Pkg: type, comptime pinout: BJT_Pinout) type {
+pub fn BJT(comptime bjt_type: BJT_Type, comptime Pkg: type, comptime pinout: BJT_Pinout, comptime default_value: []const u8) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
             .prefix = .Q,
+            .value = default_value,
         },
 
         b: Net_ID = .unset,
@@ -102,11 +103,12 @@ pub const FET_Type = enum {
 };
 
 /// Note: the validation simulation is not sophisticated enough to accurately model FETs, but it might be good enough in cases where the transistor is always in saturation or off.
-pub fn FET(comptime fet_type: FET_Type, comptime Pkg: type, comptime pinout: FET_Pinout) type {
+pub fn FET(comptime fet_type: FET_Type, comptime Pkg: type, comptime pinout: FET_Pinout, comptime default_value: []const u8) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
             .prefix = .Q,
+            .value = default_value,
         },
 
         g: Net_ID = .unset,
@@ -181,6 +183,7 @@ pub fn FET(comptime fet_type: FET_Type, comptime Pkg: type, comptime pinout: FET
 const Pin_ID = enums.Pin_ID;
 const Net_ID = enums.Net_ID;
 const Validator = @import("../Validator.zig");
+const Board = @import("../Board.zig");
 const Part = @import("../Part.zig");
 const power = @import("../power.zig");
 const enums = @import("../enums.zig");

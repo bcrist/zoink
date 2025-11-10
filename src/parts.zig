@@ -2,20 +2,22 @@ pub const jae = @import("parts/jae.zig");
 
 pub const _74 = @import("parts/74x.zig");
 
-pub const SN74LVC00AD   = _74.x00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
-pub const SN74LVC00ADB  = _74.x00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
-pub const SN74LVC00APW  = _74.x00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
 
-pub const SN74LVC1G00DBV = _74.x1G00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
-pub const SN74LVC1G00DCK = _74.x1G00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+// Buffer
+pub const SN74LVC1G34DBV = _74.x1G34(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
+pub const SN74LVC1G34DCK = _74.x1G34(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
 
-pub const SN74LVC02AD   = _74.x02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
-pub const SN74LVC02ADB  = _74.x02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
-pub const SN74LVC02APW  = _74.x02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
+pub const SN74LVC2G34DBV = _74.x2G34(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
+pub const SN74LVC2G34DCK = _74.x2G34(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 
-pub const SN74LVC1G02DBV = _74.x1G02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
-pub const SN74LVC1G02DCK = _74.x1G02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+// ST Buffer
+pub const SN74LVC1G17DBV = _74.x1G17(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
+pub const SN74LVC1G17DCK = _74.x1G17(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
 
+pub const SN74LVC2G17DBV = _74.x2G17(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
+pub const SN74LVC2G17DCK = _74.x2G17(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
+
+// Inverter
 pub const SN74LVC04AD   = _74.x04(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
 pub const SN74LVC04ADB  = _74.x04(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
 pub const SN74LVC04APW  = _74.x04(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
@@ -23,13 +25,10 @@ pub const SN74LVC04APW  = _74.x04(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_
 pub const SN74LVC1G04DBV = _74.x1G04(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
 pub const SN74LVC1G04DCK = _74.x1G04(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
 
-pub const SN74LVC08AD   = _74.x08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
-pub const SN74LVC08ADB  = _74.x08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
-pub const SN74LVC08APW  = _74.x08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
+pub const SN74LVC2G04DBV = _74.x2G04(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
+pub const SN74LVC2G04DCK = _74.x2G04(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 
-pub const SN74LVC1G08DBV = _74.x1G08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
-pub const SN74LVC1G08DCK = _74.x1G08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
-
+// ST Inverter
 pub const SN74LVC14AD   = _74.x14(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
 pub const SN74LVC14ADB  = _74.x14(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
 pub const SN74LVC14APW  = _74.x14(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
@@ -37,9 +36,52 @@ pub const SN74LVC14APW  = _74.x14(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_
 pub const SN74LVC1G14DBV = _74.x1G14(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
 pub const SN74LVC1G14DCK = _74.x1G14(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
 
-pub const SN74LVC1G17DBV = _74.x1G17(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
-pub const SN74LVC1G17DCK = _74.x1G17(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+pub const SN74LVC2G14DBV = _74.x2G14(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
+pub const SN74LVC2G14DCK = _74.x2G14(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 
+// NAND
+pub const SN74LVC00AD   = _74.x00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
+pub const SN74LVC00ADB  = _74.x00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
+pub const SN74LVC00APW  = _74.x00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
+
+pub const SN74LVC1G00DBV = _74.x1G00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
+pub const SN74LVC1G00DCK = _74.x1G00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+
+pub const SN74LVC2G00DCT = _74.x2G00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC2G00DCU = _74.x2G00(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
+
+pub const SN74LVC1G10DBV = _74.x1G10(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
+pub const SN74LVC1G10DCK = _74.x1G10(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
+
+// AND
+pub const SN74LVC08AD   = _74.x08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
+pub const SN74LVC08ADB  = _74.x08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
+pub const SN74LVC08APW  = _74.x08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
+
+pub const SN74LVC1G08DBV = _74.x1G08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
+pub const SN74LVC1G08DCK = _74.x1G08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+
+pub const SN74LVC2G08DCT = _74.x2G08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC2G08DCU = _74.x2G08(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
+
+pub const SN74LVC1G11DBV = _74.x1G11(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
+pub const SN74LVC1G11DCK = _74.x1G11(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
+
+// NOR
+pub const SN74LVC02AD   = _74.x02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
+pub const SN74LVC02ADB  = _74.x02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
+pub const SN74LVC02APW  = _74.x02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
+
+pub const SN74LVC1G02DBV = _74.x1G02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
+pub const SN74LVC1G02DCK = _74.x1G02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+
+pub const SN74LVC2G02DCT = _74.x2G02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC2G02DCU = _74.x2G02(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
+
+pub const SN74LVC1G27DBV = _74.x1G27(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
+pub const SN74LVC1G27DCK = _74.x1G27(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
+
+// OR
 pub const SN74LVC32AD   = _74.x32(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
 pub const SN74LVC32ADB  = _74.x32(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
 pub const SN74LVC32APW  = _74.x32(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
@@ -47,9 +89,13 @@ pub const SN74LVC32APW  = _74.x32(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_
 pub const SN74LVC1G32DBV = _74.x1G32(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
 pub const SN74LVC1G32DCK = _74.x1G32(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
 
-pub const SN74LVC1G34DBV = _74.x1G34(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
-pub const SN74LVC1G34DCK = _74.x1G34(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+pub const SN74LVC2G32DCT = _74.x2G32(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC2G32DCU = _74.x2G32(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
 
+pub const SN74LVC1G332DBV = _74.x1G332(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
+pub const SN74LVC1G332DCK = _74.x1G332(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
+
+// XOR
 pub const SN74LVC86AD   = _74.x86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_14_150);
 pub const SN74LVC86ADB  = _74.x86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_14);
 pub const SN74LVC86APW  = _74.x86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_14);
@@ -57,27 +103,21 @@ pub const SN74LVC86APW  = _74.x86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_
 pub const SN74LVC1G86DBV = _74.x1G86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
 pub const SN74LVC1G86DCK = _74.x1G86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
 
-pub const SN74LVC1G10DBV = _74.x1G10(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
-pub const SN74LVC1G10DCK = _74.x1G10(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
-
-pub const SN74LVC1G11DBV = _74.x1G11(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
-pub const SN74LVC1G11DCK = _74.x1G11(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
-
-pub const SN74LVC1G27DBV = _74.x1G27(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
-pub const SN74LVC1G27DCK = _74.x1G27(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
-
-pub const SN74LVC1G332DBV = _74.x1G332(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
-pub const SN74LVC1G332DCK = _74.x1G332(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
+pub const SN74LVC2G86DCT = _74.x2G86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC2G86DCU = _74.x2G86(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
 
 pub const SN74LVC1G386DBV = _74.x1G386(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G386DCK = _74.x1G386(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 
+// OR-AND
 pub const SN74LVC1G0832DBV = _74.x1G3208(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G0832DCK = _74.x1G3208(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 
+// AND-OR
 pub const SN74LVC1G3208DBV = _74.x1G3208(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G3208DCK = _74.x1G3208(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 
+// 2:1 Mux
 pub const SN74LVC1G57DBV = _74.x1G57(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G57DCK = _74.x1G57(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 pub const SN74LVC1G58DBV = _74.x1G58(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
@@ -88,48 +128,54 @@ pub const SN74LVC1G98DBV = _74.x1G98(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT
 pub const SN74LVC1G98DCK = _74.x1G98(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 pub const SN74LVC1G157DBV = _74.x1G157(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G157DCK = _74.x1G157(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
+
+// 2:1 Bus switch
 pub const SN74LVC1G3157DBV = _74.x1G3157(.p3v3, C0402_Decoupler, LVCMOS_5VT, LVCMOS, pkg.SOT23_6);
 pub const SN74LVC1G3157DCK = _74.x1G3157(.p3v3, C0402_Decoupler, LVCMOS_5VT, LVCMOS, pkg.SOT323_6);
 
+// 1:2 Decoder
 pub const SN74LVC1G18DBV = _74.x1G18(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G18DCK = _74.x1G18(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
+
 pub const SN74LVC1G19DBV = _74.x1G19(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G19DCK = _74.x1G19(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 
-pub const SN74LVC138AD = _74.x138(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_16_150);
-pub const SN74LVC138ADB = _74.x138(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_16);
-pub const SN74LVC138APW = _74.x138(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_16);
+// 2:3 Decoder
+pub const SN74LVC1G29DCT = _74.x1G29(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC1G29DCU = _74.x1G29(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
 
+// 2:4 Decoder
 pub const SN74LVC139AD = _74.x139(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_16_150);
 pub const SN74LVC139ADB = _74.x139(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_16);
 pub const SN74LVC139APW = _74.x139(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_16);
 
-pub const SN74LVC1G29DCT = _74.x1G29(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
-pub const SN74LVC1G29DCU = _74.x1G29(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
-
 pub const SN74LVC1G139DCT = _74.x1G139(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
 pub const SN74LVC1G139DCU = _74.x1G139(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
 
-pub const SN74LVC1G125DBV = _74.x1G125(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
-pub const SN74LVC1G125DCK = _74.x1G125(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
-pub const SN74LVC1G126DBV = _74.x1G126(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
-pub const SN74LVC1G126DCK = _74.x1G126(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
-pub const SN74LVC1G240DBV = _74.x1G240(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
-pub const SN74LVC1G240DCK = _74.x1G240(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+// 3:8 Decoder
+pub const SN74LVC138AD = _74.x138(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_16_150);
+pub const SN74LVC138ADB = _74.x138(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_16);
+pub const SN74LVC138APW = _74.x138(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_16);
 
-pub const SN74LVC541ADB  = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_20);
-pub const SN74LVC541ADGV = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TVSOP_20);
-pub const SN74LVC541ADW  = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_20_300);
-pub const SN74LVC541APW  = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_20);
-
+// D FF
 pub const SN74LVC1G74DCT = _74.x1G74(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
 pub const SN74LVC1G74DCU = _74.x1G74(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
+
 pub const SN74LVC1G79DBV = _74.x1G79(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
 pub const SN74LVC1G79DCK = _74.x1G79(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+
+pub const SN74LVC2G79DCT = _74.x2G79(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC2G79DCU = _74.x2G79(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
+
 pub const SN74LVC1G80DBV = _74.x1G80(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
 pub const SN74LVC1G80DCK = _74.x1G80(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+
+pub const SN74LVC2G80DCT = _74.x2G80(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC2G80DCU = _74.x2G80(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
+
 pub const SN74LVC1G175DBV = _74.x1G175(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G175DCK = _74.x1G175(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
+
 pub const SN74LVC1G374DBV = _74.x1G374(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G374DCK = _74.x1G374(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 
@@ -138,6 +184,7 @@ pub const SN74LVC574ADGV = _74.x574(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TVSO
 pub const SN74LVC574ADW  = _74.x574(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_20_300);
 pub const SN74LVC574APW  = _74.x574(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_20);
 
+// D Latch
 pub const SN74LVC1G373DBV = _74.x1G373(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_6);
 pub const SN74LVC1G373DCK = _74.x1G373(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_6);
 
@@ -145,6 +192,24 @@ pub const SN74LVC573ADB  = _74.x573(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP
 pub const SN74LVC573ADGV = _74.x573(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TVSOP_20);
 pub const SN74LVC573ADW  = _74.x573(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_20_300);
 pub const SN74LVC573APW  = _74.x573(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_20);
+
+// Tristate buffer
+pub const SN74LVC1G125DBV = _74.x1G125(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
+pub const SN74LVC1G125DCK = _74.x1G125(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+
+pub const SN74LVC1G126DBV = _74.x1G126(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
+pub const SN74LVC1G126DCK = _74.x1G126(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+
+pub const SN74LVC2G125DCT = _74.x2G125(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC2G125DCU = _74.x2G125(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
+
+pub const SN74LVC2G126DCT = _74.x2G126(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_8);
+pub const SN74LVC2G126DCU = _74.x2G126(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.VSSOP_8);
+
+pub const SN74LVC541ADB  = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_20);
+pub const SN74LVC541ADGV = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TVSOP_20);
+pub const SN74LVC541ADW  = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_20_300);
+pub const SN74LVC541APW  = _74.x541(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_20);
 
 pub const SN74LVT16244BDL    = _74.x16244(.p3v3, C0402_Decoupler, LVTTL_5VT, pkg.SSOP_48, false);
 pub const SN74LVT16244BDGG   = _74.x16244(.p3v3, C0402_Decoupler, LVTTL_5VT, pkg.TSSOP_48, false);
@@ -165,6 +230,16 @@ pub const SN74ALVCH16244DL   = _74.x16244(.p3v3, C0402_Decoupler, LVCMOS, pkg.SS
 pub const SN74ALVCH16244DGG  = _74.x16244(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_48, true);
 pub const SN74ALVCH16244DGV  = _74.x16244(.p3v3, C0402_Decoupler, LVCMOS, pkg.TVSOP_48, true);
 
+// Tristate inverter
+pub const SN74LVC1G240DBV = _74.x1G240(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT23_5);
+pub const SN74LVC1G240DCK = _74.x1G240(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOT323_5);
+
+pub const SN74LVC540ADB  = _74.x540(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SSOP_20);
+pub const SN74LVC540ADGV = _74.x540(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TVSOP_20);
+pub const SN74LVC540ADW  = _74.x540(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.SOIC_20_300);
+pub const SN74LVC540APW  = _74.x540(.p3v3, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_20);
+
+// Bus transceiver
 pub const SN74LVT16245BDL    = _74.x16245(.p3v3, C0402_Decoupler, LVTTL_5VT, pkg.SSOP_48, false);
 pub const SN74LVT16245BDGG   = _74.x16245(.p3v3, C0402_Decoupler, LVTTL_5VT, pkg.TSSOP_48, false);
 pub const SN74LVT16245BDGV   = _74.x16245(.p3v3, C0402_Decoupler, LVTTL_5VT, pkg.TVSOP_48, false);
@@ -184,6 +259,7 @@ pub const SN74ALVCH16245DL   = _74.x16245(.p3v3, C0402_Decoupler, LVCMOS, pkg.SS
 pub const SN74ALVCH16245DGG  = _74.x16245(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_48, true);
 pub const SN74ALVCH16245DGV  = _74.x16245(.p3v3, C0402_Decoupler, LVCMOS, pkg.TVSOP_48, true);
 
+// 2x12b bus exchange switch
 pub const SN74CBTLV16212DL   = _74.CBT16212(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56);
 pub const SN74CBTLV16212G    = _74.CBT16212(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56);
 pub const SN74CBTLV16212V    = _74.CBT16212(.p3v3, C0402_Decoupler, LVCMOS, pkg.TVSOP_56);
@@ -192,6 +268,7 @@ pub const SN74CBT16212CDL   = _74.CBT16212(.p5v0, C0402_Decoupler, LVCMOS_5VT, p
 pub const SN74CBT16212CDGG  = _74.CBT16212(.p5v0, C0402_Decoupler, LVCMOS_5VT, pkg.TSSOP_56);
 pub const SN74CBT16212CDGV  = _74.CBT16212(.p5v0, C0402_Decoupler, LVCMOS_5VT, pkg.TVSOP_56);
 
+// 12x 2:1 mux/demux, latched, tri-state
 pub const SN74ABT16260DL    = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, false);
 pub const SN74ABTH16260DL   = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, true);
 pub const SN74ALVCH16260DL  = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
@@ -202,10 +279,12 @@ pub const SN74ABTH162260DL   = _74.x16260(.p5v, C0402_Decoupler, TTL, pkg.SSOP_5
 pub const SN74ALVCH162260DL  = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
 pub const SN74ALVCH162260DGG = _74.x16260(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, true);
 
+// 2x 8b bus transceiver and bidirectional positive-edge-triggered register, tri-state
 pub const SN74ABT16652DL   = _74.x16652(.p5v, C0402_Decoupler, TTL, pkg.SSOP_56, false);
 pub const SN74LVT16652DL   = _74.x16652(.p3v3, C0402_Decoupler, LVTTL_5VT, pkg.SSOP_56, false);
 pub const SN74LVTH16652DGG = _74.x16652(.p3v3, C0402_Decoupler, LVTTL_5VT, pkg.TSSOP_56, true);
 
+// 20b positive-edge-triggered D register, qualified storage, tri-state
 pub const SN74ALVC16721DL   = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, false);
 pub const SN74ALVC16721DGG  = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSSOP_56, false);
 pub const SN74ALVCH16721DL  = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.SSOP_56, true);
@@ -301,26 +380,30 @@ pub const AP62300TWU = regulator.AP62300TWU;
 
 pub const transistor = @import("parts/transistor.zig");
 
-pub const @"2N2222" = transistor.BJT(.npn, pkg.TO92, .ebc);
-pub const @"2N2907" = transistor.BJT(.pnp, pkg.TO92, .ebc);
+pub const @"2N2222" = transistor.BJT(.npn, pkg.TO92, .ebc, "2N2222");
+pub const @"2N2907" = transistor.BJT(.pnp, pkg.TO92, .ebc, "2N2907");
 
-pub const @"2N3904" = transistor.BJT(.npn, pkg.TO92, .ebc);
-pub const @"2N3906" = transistor.BJT(.pnp, pkg.TO92, .ebc);
+pub const @"2N3904" = transistor.BJT(.npn, pkg.TO92, .ebc, "2N3904");
+pub const MMBT3904 = transistor.BJT(.npn, pkg.SOT23, .bec, "MMBT3904");
+pub const MMST3904 = transistor.BJT(.npn, pkg.SOT323, .bec, "MMST3904");
+pub const @"2N3906" = transistor.BJT(.pnp, pkg.TO92, .ebc, "2N3906");
+pub const MMBT3906 = transistor.BJT(.pnp, pkg.SOT23, .bec, "MMBT3906");
+pub const MMST3906 = transistor.BJT(.pnp, pkg.SOT323, .bec, "MMST3906");
 
-pub const BC546 = transistor.BJT(.npn, pkg.TO92, .cbe);
-pub const BC556 = transistor.BJT(.pnp, pkg.TO92, .cbe);
+pub const BC546 = transistor.BJT(.npn, pkg.TO92, .cbe, "BC546");
+pub const BC556 = transistor.BJT(.pnp, pkg.TO92, .cbe, "BC556");
 
-pub const BC547 = transistor.BJT(.npn, pkg.TO92, .cbe);
-pub const BC557 = transistor.BJT(.pnp, pkg.TO92, .cbe);
+pub const BC547 = transistor.BJT(.npn, pkg.TO92, .cbe, "BC547");
+pub const BC557 = transistor.BJT(.pnp, pkg.TO92, .cbe, "BC557");
 
-pub const BC548 = transistor.BJT(.npn, pkg.TO92, .cbe);
-pub const BC558 = transistor.BJT(.pnp, pkg.TO92, .cbe);
+pub const BC548 = transistor.BJT(.npn, pkg.TO92, .cbe, "BC548");
+pub const BC558 = transistor.BJT(.pnp, pkg.TO92, .cbe, "BC558");
 
-pub const BC549 = transistor.BJT(.npn, pkg.TO92, .cbe);
-pub const BC559 = transistor.BJT(.pnp, pkg.TO92, .cbe);
+pub const BC549 = transistor.BJT(.npn, pkg.TO92, .cbe, "BC549");
+pub const BC559 = transistor.BJT(.pnp, pkg.TO92, .cbe, "BC559");
 
-pub const @"2N7002" = transistor.FET(.n_channel, pkg.SOT23, .gsd);
-pub const BSS84 = transistor.FET(.p_channel, pkg.SOT23, .gsd);
+pub const @"2N7002" = transistor.FET(.n_channel, pkg.SOT23, .gsd, "2N7002");
+pub const BSS84 = transistor.FET(.p_channel, pkg.SOT23, .gsd, "BSS84");
 
 const passive = @import("parts/passive.zig");
 pub const Resistor = passive.Resistor;

@@ -1,6 +1,6 @@
 .{
     .name = .zoink,
-    .version = "0.1.0",
+    .version = "0.1.1",
     .minimum_zig_version = "0.15.1",
     .fingerprint = 0x701de67035fe779a,
     .paths = .{
@@ -15,8 +15,8 @@
             .hash = "sx-1.1.8-0vgbavzRAAAMCYztSRXLrwxYzRDU2Ml45KZXtPp5L9YO",
         },
         .lc4k = .{
-            .url = "git+https://github.com/bcrist/zig-lc4k#3c208c07859f587ba4c86c490bef5396c9da5a46",
-            .hash = "lc4k-0.2.9-5R47QpweFADGQr0ILj_8z5nWeio5Ce83GOhgHypRhl-V",
+            .url = "git+https://github.com/bcrist/zig-lc4k#cd98a5e91981edf452f18732a036ddecb923703d",
+            .hash = "lc4k-0.2.10-5R47Qj4eFAA6csJ0vgitr5tfBchHW8zG-QPvxFGUatZu",
         },
         .bit_helper = .{
             .url = "git+https://github.com/bcrist/zig-bithelper#01fe5f519f54ab42c649096573c45ddaa351e1d5",

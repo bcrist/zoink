@@ -50,28 +50,6 @@ pub const Net_ID = enum (u32) {
             _ => false,
         };
     }
-
-    pub fn kicad_net_id(self: Net_ID) usize {
-        return switch (self) {
-            .unset, .no_connect => 0,
-            .gnd => 1,
-            .p1v => 2,
-            .p1v2 => 3,
-            .p1v5 => 4,
-            .p1v8 => 5,
-            .p2v5 => 6,
-            .p3v => 7,
-            .p3v3 => 8,
-            .p5v => 9,
-            .p6v => 10,
-            .p9v => 11,
-            .p12v => 12,
-            .p15v => 13,
-            .p19v => 14,
-            .p24v => 15,
-            _ => 15 + @intFromEnum(self),
-        };
-    }
 };
 
 pub const Pin_ID = enum (u16) {
