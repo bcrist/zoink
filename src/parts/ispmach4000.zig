@@ -11,8 +11,8 @@ pub fn LC4k(
     const Simulator = lc4k.Simulator(Device);
 
     const Pkg = switch (Device.package) {
-        .TQFP44 => pkg.TQFP_48_7mm,
-        .TQFP48 => pkg.TQFP_44_10mm,
+        .TQFP44 => pkg.TQFP_44_10mm,
+        .TQFP48 => pkg.TQFP_48_7mm,
         .TQFP100 => pkg.LQFP_100_14mm,
         .TQFP128 => pkg.LQFP_128_14mm,
         .TQFP144 => pkg.LQFP_144_20mm,
@@ -210,7 +210,7 @@ pub fn LC4k(
             const pin_index = pin_number - 1;
             const p: lc4k.Pin(Signal) = Device.all_pins[pin_index];
             return switch (p.func()) {
-                .io, .io_oe0, .io_oe1 => |mc_index| self.io[p.glb.?][mc_index],
+                .io, .io_oe0, .io_oe1 => |mc_index| self.io[p.info.glb.?][mc_index],
                 .input => for (0.., Device.input_pins) |input_index, input_pin| {
                     if (input_pin.info.all_pins_index == pin_index) {
                         break self.in[input_index];
@@ -231,7 +231,7 @@ pub fn LC4k(
                         break @field(self.pwr, @tagName(vcc))[vcc_index];
                     }
                 } else unreachable,
-                .gndo => |bank| switch (bank) {
+                .gndo => switch (p.info.bank.?) {
                     0 => for (0.., Device.gnd_bank0_pins) |gnd_index, gnd_pin| {
                         if (gnd_pin.info.all_pins_index == pin_index) {
                             break self.pwr_bank0.gnd[gnd_index];
@@ -242,9 +242,8 @@ pub fn LC4k(
                             break self.pwr_bank1.gnd[gnd_index];
                         }
                     } else unreachable,
-                    else => unreachable,
                 },
-                .vcco => |bank| switch (bank) {
+                .vcco => switch (p.info.bank.?) {
                     0 => for (0.., Device.vcco_bank0_pins) |vcc_index, vcc_pin| {
                         if (vcc_pin.info.all_pins_index == pin_index) {
                             break @field(self.pwr_bank0, @tagName(vcco0))[vcc_index];
@@ -255,7 +254,6 @@ pub fn LC4k(
                             break @field(self.pwr_bank1, @tagName(vcco1))[vcc_index];
                         }
                     } else unreachable,
-                    else => unreachable,
                 },
                 .tck => self.jtag.tck,
                 .tms => self.jtag.tms,
