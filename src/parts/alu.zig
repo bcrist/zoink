@@ -5,6 +5,7 @@ pub fn L4C381(comptime Decoupler: type, comptime Package: type) type {
         base: Part.Base = .{
             .prefix = .U,
             .package = &Package.pkg,
+            .value = "L4C381",
         },
 
         pwr: power.Single(.p5v, Decoupler) = .{},
@@ -300,7 +301,7 @@ pub fn L4C381(comptime Decoupler: type, comptime Package: type) type {
 // - AMD Am29516, Am29C516
 // - LOGIC LMU16, LMU216
 // - TRW MPY016H
-pub fn M16(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime package_type: Multiplier_Package_Type) type {
+pub fn M16(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime package_type: Multiplier_Package_Type) type {
     return struct {
         base: Part.Base = .{
             .prefix = .U,
@@ -311,6 +312,7 @@ pub fn M16(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
                 .pga68 => &packages.PGA68.pkg,
                 .flatpack64 => @compileError("not currently supported"),
             },
+            .value = value,
         },
 
         pwr: power.Multi(2, 2, pwr, Decoupler) = .{},

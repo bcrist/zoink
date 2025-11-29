@@ -124,30 +124,61 @@ pub fn bus(self: *Board, comptime name: []const u8, comptime bits: comptime_int)
 
     comptime var full_bus = true;
     comptime var base = name;
-    comptime var delta: isize = 1;
-    const lsb: isize = comptime if (std.mem.lastIndexOfScalar(u8, name, '[')) |subscript_begin| lsb: {
+    comptime var bit_indices: [bits]u16 = std.simd.iota(u16, bits);
+    comptime if (std.mem.lastIndexOfScalar(u8, name, '[')) |subscript_begin| {
         full_bus = false;
         if (!std.mem.endsWith(u8, name, "]")) @compileError("Expected closing ] in bus name: " ++ name);
         base = name[0..subscript_begin];
         const subscript = name[subscript_begin + 1 .. name.len - 1];
-        if (std.mem.indexOfScalar(u8, subscript, ':')) |separator_pos| {
-            const first = std.fmt.parseInt(u16, subscript[0..separator_pos], 10) catch @compileError("Invalid bus subscript: " ++ name);
-            const last = std.fmt.parseInt(u16, subscript[separator_pos + 1 ..], 10) catch @compileError("Invalid bus subscript: " ++ name);
-            const max: u16 = @max(first, last);
-            const min: u16 = @min(first, last);
-            const count = max - min + 1;
-            if (bits != count) {
-                @compileError(std.fmt.comptimePrint("Subscript indicates bus length of {} but result has length {}", .{ count, bits }));
-            }
-            if (first > last) delta = -1;
-            break :lsb first;
-        } else {
-            break :lsb std.fmt.parseInt(u16, subscript) catch @compileError("Invalid bus subscript: " ++ name);
-        }
-    } else 0;
 
-    inline for (0..bits) |i| {
-        result[i] = self.net(std.fmt.comptimePrint("{s}[{}]", .{ base, lsb + @as(isize, i) * delta }));
+        const be_marker = std.mem.indexOfScalar(u8, subscript, '>');
+        const le_marker = std.mem.indexOfScalar(u8, subscript, '<');
+
+        if (be_marker != null and le_marker != null) {
+            @compileError("Subscript contains both little-endian marker '<' and big-endian marker '>'");
+        }
+
+        var bits_written = 0;
+        var iter = std.mem.tokenizeAny(u8, subscript, " <>");
+        while (iter.next()) |item| {
+            if (std.mem.indexOfScalar(u8, item, ':')) |separator_pos| {
+                var lsb = std.fmt.parseInt(u16, item[0..separator_pos], 10) catch @compileError("Invalid bus subscript: " ++ name);
+                var msb = std.fmt.parseInt(u16, item[separator_pos + 1 ..], 10) catch @compileError("Invalid bus subscript: " ++ name);
+                if (be_marker != null) {
+                    const temp = lsb;
+                    lsb = msb;
+                    msb = temp;
+                }
+                const delta = if (lsb <= msb) 1 else -1;
+                var b: comptime_int = lsb;
+                while (true) {
+                    if (bits_written < bits) {
+                        bit_indices[bits_written] = b;
+                    }
+                    bits_written += 1;
+                    if (b == msb) break;
+                    b += delta;
+                }
+            } else {
+                const b = std.fmt.parseInt(u16, subscript) catch @compileError("Invalid bus subscript: " ++ name);
+                if (bits_written < bits) {
+                    bit_indices[bits_written] = b;
+                }
+                bits_written += 1;
+            }
+        }
+        if (bits != bits_written) {
+            @compileError(std.fmt.comptimePrint("Subscript indicates bus length of {} but result has length {}", .{ bits_written, bits }));
+        }
+        if (bits_written > 1 and be_marker == null and le_marker == null) {
+            @compileError("Expected little-endian marker '<' or big-endian marker '>' when extracting multiple bits from bus");
+        }
+    };
+
+    var max_bit: u16 = 0;
+    inline for (0.., bit_indices) |i, bit| {
+        max_bit = @max(max_bit, bit);
+        result[i] = self.net(std.fmt.comptimePrint("{s}[{}]", .{ base, bit }));
     }
 
     if (full_bus) {
@@ -162,9 +193,8 @@ pub fn bus(self: *Board, comptime name: []const u8, comptime bits: comptime_int)
             gop.value_ptr.* = self.arena.dupe(Net_ID, &result) catch @panic("OOM");
         }
     } else if (self.bus_lookup.get(base)) |full| {
-        const expected_bits = @max(lsb, lsb + (bits - 1) * delta);
-        if (full.len <= expected_bits) {
-            std.debug.panic("Expected at least {} bits for bus {s}; found {}", .{ expected_bits, base, full.len });
+        if (full.len <= max_bit) {
+            std.debug.panic("Expected at least {} bits for bus {s}; found {}", .{ max_bit + 1, base, full.len });
         }
     }
 

@@ -120,18 +120,14 @@ pub const Voltage = enum (u8) {
     pub const TTL = struct {
         pub const Vcc = from_float(5.0);
         pub const Vcco = from_float(4.3);
-
         pub const Vil = from_float(0.7);
         pub const Vth = from_float(1.45);
         pub const Vih = from_float(2.2);
         pub const Vclamp = from_float(5.3);
-
         pub const Vol = from_float(0.4);
         pub const Zol: f32 = 10.0;
-
         pub const Voh = from_float(2.4);
         pub const Zoh: f32 = 100.0;
-
         pub const Rpull: f32 = 20_000.0;
     };
 
@@ -139,18 +135,14 @@ pub const Voltage = enum (u8) {
     pub const LVTTL = struct {
         pub const Vcc = from_float(3.3);
         pub const Vcco = from_float(2.9);
-
         pub const Vil = from_float(0.7);
         pub const Vth = from_float(1.45);
         pub const Vih = from_float(2.2);
         pub const Vclamp = from_float(3.6);
-
         pub const Vol = from_float(0.4);
         pub const Zol: f32 = 5.0;
-
         pub const Voh = from_float(2.4);
         pub const Zoh: f32 = 20.0;
-
         pub const Rpull: f32 = 20_000.0;
     };
     
@@ -158,18 +150,14 @@ pub const Voltage = enum (u8) {
     pub const LVTTL_5VT = struct {
         pub const Vcc = from_float(3.3);
         pub const Vcco = from_float(2.9);
-
         pub const Vil = from_float(0.7);
         pub const Vth = from_float(1.45);
         pub const Vih = from_float(2.2);
         pub const Vclamp = from_float(5.3);
-
         pub const Vol = from_float(0.4);
         pub const Zol: f32 = 5.0;
-
         pub const Voh = from_float(2.4);
         pub const Zoh: f32 = 20.0;
-
         pub const Rpull: f32 = 20_000.0;
     };
 
@@ -184,6 +172,48 @@ pub const Voltage = enum (u8) {
     pub const LVCMOS_5VT = CMOS_V(.p3v3, .{ .clamp = .p5v });
     
     pub const CMOS = CMOS_V(.p5v, .{});
+
+    pub const BiCMOS = struct {
+        pub const Vcc = CMOS.vcc;
+        pub const Vcco = CMOS.vcc;
+        pub const Vil = TTL.Vil;
+        pub const Vth = TTL.Vth;
+        pub const Vih = TTL.Vih;
+        pub const Vclamp = TTL.Vclamp;
+        pub const Vol = CMOS.Vol;
+        pub const Zol = CMOS.Zol;
+        pub const Voh = CMOS.Voh;
+        pub const Zoh = CMOS.Zoh;
+        pub const Rpull = TTL.Rpull;
+    };
+
+    pub const LVBiCMOS = struct {
+        pub const Vcc = LVCMOS.vcc;
+        pub const Vcco = LVCMOS.vcc;
+        pub const Vil = LVTTL.Vil;
+        pub const Vth = LVTTL.Vth;
+        pub const Vih = LVTTL.Vih;
+        pub const Vclamp = LVTTL.Vclamp;
+        pub const Vol = LVCMOS.Vol;
+        pub const Zol = LVCMOS.Zol;
+        pub const Voh = LVCMOS.Voh;
+        pub const Zoh = LVCMOS.Zoh;
+        pub const Rpull = LVTTL.Rpull;
+    };
+
+    pub const LVBiCMOS_5VT = struct {
+        pub const Vcc = LVCMOS_5VT.vcc;
+        pub const Vcco = LVCMOS_5VT.vcc;
+        pub const Vil = LVTTL_5VT.Vil;
+        pub const Vth = LVTTL_5VT.Vth;
+        pub const Vih = LVTTL_5VT.Vih;
+        pub const Vclamp = LVTTL_5VT.Vclamp;
+        pub const Vol = LVCMOS_5VT.Vol;
+        pub const Zol = LVCMOS_5VT.Zol;
+        pub const Voh = LVCMOS_5VT.Voh;
+        pub const Zoh = LVCMOS_5VT.Zoh;
+        pub const Rpull = LVTTL_5VT.Rpull;
+    };
 
     pub const CMOS_V_Options = struct {
         clamp: ?Voltage = null,

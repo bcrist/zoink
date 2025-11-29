@@ -3,6 +3,7 @@ pub fn EMC1702(comptime Decoupler: type) type {
         base: Part.Base = .{
             .package = &pkg.QFN_12_4x4_EP.pkg,
             .prefix = .U,
+            .value = "EMC1702",
         },
 
         pwr: power.Single(.unset, Decoupler) = .{},

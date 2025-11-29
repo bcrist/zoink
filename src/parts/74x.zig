@@ -1,11 +1,233 @@
-fn Single_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
-    return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+pub const Family = enum {
+    TTL,
+    S,
+    AS,
+    LS,
+    ALS,
+    F,
+    H,
+    ABT,
+    LVT,
+    ALVT,
+    C,
+    HC,
+    HCT,
+    FCT,
+    AC,
+    ACT,
+    AHC,
+    AHCT,
+    VHC,
+    VHCT,
+    LV,
+    LVC,
+    ALVC,
+    LCX,
+    LVX,
+    AVC,
+    AUP,
+    AUC,
+    CBT,
+    CBTLV,
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+    pub fn value(comptime self: Family, comptime suffix: []const u8) []const u8 {
+        return switch (self) {
+            .TTL => "74",
+            else => "74" ++ @tagName(self),
+        } ++ suffix;
+    }
+
+    pub fn default_vcc(self: Family) Net_ID {
+        return switch (self) {
+            .TTL,
+            .S,
+            .AS,
+            .LS,
+            .ALS,
+            .F,
+            .H,
+            .ABT,
+            .C,
+            .HC,
+            .HCT,
+            .FCT,
+            .AC,
+            .ACT,
+            .AHC,
+            .AHCT,
+            .VHC,
+            .VHCT,
+            .CBT,
+            => .p5v,
+
+            .LVT,
+            .ALVT,
+            .LV,
+            .LVC,
+            .ALVC,
+            .LCX,
+            .LVX,
+            .AVC,
+            .AUP,
+            .CBTLV,
+            => .p3v3,
+
+            .AUC,
+            => .p1v8,
+        };
+    }
+
+    pub fn levels(comptime self: Family, comptime vcc: Net_ID) type {
+        return switch (self) {
+            .TTL,
+            .S,
+            .AS,
+            .LS,
+            .ALS,
+            .F,
+            .H,
+            => {
+                std.debug.assert(vcc == .p5v);
+                return Voltage.TTL;
+            },
+
+            .ABT => {
+                std.debug.assert(vcc == .p5v);
+                return Voltage.BiCMOS;
+            },
+
+            .LVT,
+            .ALVT,
+            => {
+                std.debug.assert(vcc == .p3v3);
+                return Voltage.LVBiCMOS_5VT;
+            },
+
+            .C,
+            .HC,
+            .AC,
+            .AHC,
+            .VHC,
+            => {
+                const v = Voltage.from_net(vcc).as_float();
+                std.debug.assert(v >= 2.0);
+                std.debug.assert(v <= 6.0);
+                return Voltage.CMOS_V(.from_net(vcc), .{});
+            },
+
+            .HCT,
+            .ACT,
+            .AHCT,
+            .VHCT,
+            .CBT,
+            => {
+                // N.B. these are not actual BiCMOS families, but their levels are similar: TTL input levels and CMOS output levels
+                std.debug.assert(vcc == .p5v);
+                return Voltage.BiCMOS;
+            },
+
+            .FCT => {
+                // N.B. some FCT parts are 5V while others are 3.3V
+                // N.B. this is not an actual BiCMOS family, but their levels are similar: TTL input levels and CMOS output levels
+                return switch (vcc) {
+                    .p5v => Voltage.BiCMOS,
+                    .p3v3 => Voltage.LVBiCMOS,
+                    else => unreachable,
+                };
+            },
+
+            .ALVC,
+            .AVC,
+            => {
+                const v = Voltage.from_net(vcc).as_float();
+                std.debug.assert(v >= 1.2);
+                std.debug.assert(v <= 3.6);
+                return Voltage.CMOS_V(.from_net(vcc), .{});
+            },
+
+            .LV,
+            .LVC,
+            => {
+                // N.B. Some LV/LVC parts allow Vcc up to 5.5V, but others max out at 3.6V.
+                const v = Voltage.from_net(vcc).as_float();
+                std.debug.assert(v >= 1);
+                std.debug.assert(v <= 5.5);
+                return Voltage.CMOS_V(.from_net(vcc), .{ .clamp = .from_float(@max(v, 5.0)) });
+            },
+
+            .CBTLV,
+            => {
+                const v = Voltage.from_net(vcc).as_float();
+                std.debug.assert(v >= 2.3);
+                std.debug.assert(v <= 3.6);
+                return Voltage.CMOS_V(.from_net(vcc), .{ .clamp = .from_float(@max(v, 3.3)) });
+            },
+
+            .LCX => {
+                const v = Voltage.from_net(vcc).as_float();
+                std.debug.assert(v >= 2.3);
+                std.debug.assert(v <= 3.6);
+                return Voltage.CMOS_V(.from_net(vcc), .{ .clamp = .p5v });
+            },
+
+            .LVX => {
+                // N.B. LVX pins that are input-only are 5V tolerant, but bidirectional pins are not, even when the output buffer is disabled.
+                // Therefore we're going to act like all pins have protection diodes to Vcc
+                const v = Voltage.from_net(vcc).as_float();
+                std.debug.assert(v >= 2);
+                std.debug.assert(v <= 3.6);
+                return Voltage.CMOS_V(.from_net(vcc), .{});
+            },
+
+            .AUP => {
+                const v = Voltage.from_net(vcc).as_float();
+                std.debug.assert(v >= 0.8);
+                std.debug.assert(v <= 3.6);
+                return Voltage.CMOS_V(.from_net(vcc), .{ .clamp = .p3v3 });
+            },
+
+            .AUC => {
+                const v = Voltage.from_net(vcc).as_float();
+                std.debug.assert(v >= 0.8);
+                std.debug.assert(v <= 2.7);
+                return Voltage.CMOS_V(.from_net(vcc), .{ .clamp = .p3v3 });
+            },
+        };
+    }
+
+};
+
+pub const Options = struct {
+    logic_family: Family,
+    Package: type,
+    pwr: Net_ID,
+    levels: type,
+    Decoupler: type,
+
+    pub fn init(comptime logic_family: Family, comptime Pkg: type) Options {
+        return comptime .{
+            .logic_family = logic_family,
+            .Package = Pkg,
+            .pwr = logic_family.default_vcc(),
+            .levels = logic_family.levels(logic_family.default_vcc()),
+            .Decoupler = parts.C0402_Decoupler,
+        };
+    }
+
+    pub fn base(comptime self: Options, comptime value_suffix: []const u8) Part.Base {
+        return .{
+            .package = &self.Package.pkg,
+            .prefix = .U,
+            .value = self.logic_family.value(value_suffix),
+        };
+    }
+};
+
+fn Single_Buffer(comptime value_suffix: []const u8, comptime options: Options, comptime invert: bool) type {
+    return struct {
+        base: Part.Base = options.base(value_suffix),
+
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         a: Net_ID = .unset,
         y: Net_ID = .unset,
 
@@ -15,8 +237,8 @@ fn Single_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels
                 2 => self.a,
                 3 => self.pwr.gnd,
                 4 => self.y,
-                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (options.Package.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(options.pwr)),
+                6 => if (options.Package.data.num_pads() == 6) @field(self.pwr, @tagName(options.pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -25,31 +247,28 @@ fn Single_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.a, levels);
-                    const a = v.read_logic(self.a, levels);
-                    try v.expect_output_valid(self.y, if (invert) !a else a, levels);
+                    try v.expect_valid(self.a, options.levels);
+                    const a = v.read_logic(self.a, options.levels);
+                    try v.expect_output_valid(self.y, if (invert) !a else a, options.levels);
                 },
                 .nets_only => {
-                    const a = v.read_logic(self.a, levels);
-                    try v.drive_logic(self.y, if (invert) !a else a, levels);
+                    const a = v.read_logic(self.a, options.levels);
+                    try v.drive_logic(self.y, if (invert) !a else a, options.levels);
                 },
             }
         }
     };
 }
 
-fn Dual_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: usize) type {
+fn Dual_Buffer(comptime value_suffix: []const u8, comptime options: Options, comptime invert: usize) type {
     const invert_array: [2]bool = .{
         (invert & 1) != 0,
         (invert & 2) != 0,
     };
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         logic: union (enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
@@ -85,7 +304,7 @@ fn Dual_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: 
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     2 => self.pwr.gnd,
-                    5 => @field(self.pwr, @tagName(pwr)),
+                    5 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl.a[self.remap[0]],
                     6 => impl.y[self.remap[0]],
@@ -99,7 +318,7 @@ fn Dual_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: 
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     2 => self.pwr.gnd,
-                    5 => @field(self.pwr, @tagName(pwr)),
+                    5 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl[self.remap[0]].a,
                     6 => impl[self.remap[0]].y,
@@ -117,24 +336,24 @@ fn Dual_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: 
                 .reset => {},
                 .commit => switch (self.logic) {
                     .bus => |impl| {
-                        try v.expect_valid(impl.a, levels);
-                        const a = v.read_bus(impl.a, levels);
-                        try v.expect_output_valid(impl.y, a ^ invert, levels);
+                        try v.expect_valid(impl.a, options.levels);
+                        const a = v.read_bus(impl.a, options.levels);
+                        try v.expect_output_valid(impl.y, a ^ invert, options.levels);
                     },
                     .individual => |impl| for (0.., impl) |n, buf| {
-                        try v.expect_valid(buf.a, levels);
-                        const a = v.read_logic(buf.a, levels);
-                        try v.expect_output_valid(buf.y, a != invert_array[n], levels);
+                        try v.expect_valid(buf.a, options.levels);
+                        const a = v.read_logic(buf.a, options.levels);
+                        try v.expect_output_valid(buf.y, a != invert_array[n], options.levels);
                     },
                 },
                 .nets_only => switch (self.logic) {
                     .bus => |impl| {
-                        const a = v.read_bus(impl.a, levels);
-                        try v.drive_bus(impl.y, a ^ invert, levels);
+                        const a = v.read_bus(impl.a, options.levels);
+                        try v.drive_bus(impl.y, a ^ invert, options.levels);
                     },
                     .individual => |impl| for (0.., impl) |n, buf| {
-                        const a = v.read_logic(buf.a, levels);
-                        try v.drive_logic(buf.y, a != invert_array[n], levels);
+                        const a = v.read_logic(buf.a, options.levels);
+                        try v.drive_logic(buf.y, a != invert_array[n], options.levels);
                     },
                 },
             }
@@ -142,14 +361,11 @@ fn Dual_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: 
     };
 }
 
-fn Hex_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, invert: bool) type {
+fn Hex_Buffer(comptime value_suffix: []const u8, comptime options: Options, invert: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         logic: union (enum) {
             bus: Bus_Impl,
             individual: [6]Individual_Impl,
@@ -185,7 +401,7 @@ fn Hex_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     7 => self.pwr.gnd,
-                    14 => @field(self.pwr, @tagName(pwr)),
+                    14 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl.a[self.remap[0]],
                     2 => impl.y[self.remap[0]],
@@ -211,7 +427,7 @@ fn Hex_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     7 => self.pwr.gnd,
-                    14 => @field(self.pwr, @tagName(pwr)),
+                    14 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl[self.remap[0]].a,
                     2 => impl[self.remap[0]].y,
@@ -241,28 +457,28 @@ fn Hex_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 .reset => {},
                 .commit => switch (self.logic) {
                     .bus => |impl| {
-                        try v.expect_valid(impl.a, levels);
-                        var a = v.read_bus(impl.a, levels);
+                        try v.expect_valid(impl.a, options.levels);
+                        var a = v.read_bus(impl.a, options.levels);
                         if (invert) a = ~a;
-                        try v.expect_output_valid(impl.y, a, levels);
+                        try v.expect_output_valid(impl.y, a, options.levels);
                     },
                     .individual => |impl| for (impl) |gate| {
-                        try v.expect_valid(gate.a, levels);
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        try v.expect_valid(gate.a, options.levels);
+                        const a = @intFromBool(v.read_logic(gate.a, options.levels));
                         if (invert) a = !a;
-                        try v.expect_output_valid(gate.y, a, levels);
+                        try v.expect_output_valid(gate.y, a, options.levels);
                     },
                 },
                 .nets_only => switch (self.logic) {
                     .bus => |impl| {
-                        var a = v.read_bus(impl.a, levels);
+                        var a = v.read_bus(impl.a, options.levels);
                         if (invert) a = ~a;
-                        try v.drive_bus(impl.y, a, levels);
+                        try v.drive_bus(impl.y, a, options.levels);
                     },
                     .individual => |impl| for (impl) |gate| {
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
+                        const a = @intFromBool(v.read_logic(gate.a, options.levels));
                         if (invert) a = !a;
-                        try v.drive_logic(gate.y, a, levels);
+                        try v.drive_logic(gate.y, a, options.levels);
                     },
                 },
             }
@@ -270,14 +486,11 @@ fn Hex_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
     };
 }
 
-fn Single_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
+fn Single_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn(a: usize, b: usize) usize) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         a: Net_ID = .unset,
         b: Net_ID = .unset,
         y: Net_ID = .unset,
@@ -288,8 +501,8 @@ fn Single_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: 
                 2 => self.a,
                 3 => self.pwr.gnd,
                 4 => self.y,
-                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (options.Package.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(options.pwr)),
+                6 => if (options.Package.data.num_pads() == 6) @field(self.pwr, @tagName(options.pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -298,30 +511,27 @@ fn Single_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: 
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.a, levels);
-                    try v.expect_valid(self.b, levels);
-                    const a = @intFromBool(v.read_logic(self.a, levels));
-                    const b = @intFromBool(v.read_logic(self.b, levels));
-                    try v.expect_output_valid(self.y, func(a, b) != 0, levels);
+                    try v.expect_valid(self.a, options.levels);
+                    try v.expect_valid(self.b, options.levels);
+                    const a = @intFromBool(v.read_logic(self.a, options.levels));
+                    const b = @intFromBool(v.read_logic(self.b, options.levels));
+                    try v.expect_output_valid(self.y, func(a, b) != 0, options.levels);
                 },
                 .nets_only => {
-                    const a = @intFromBool(v.read_logic(self.a, levels));
-                    const b = @intFromBool(v.read_logic(self.b, levels));
-                    try v.drive_logic(self.y, func(a, b) != 0, levels);
+                    const a = @intFromBool(v.read_logic(self.a, options.levels));
+                    const b = @intFromBool(v.read_logic(self.b, options.levels));
+                    try v.drive_logic(self.y, func(a, b) != 0, options.levels);
                 },
             }
         }
     };
 }
 
-fn Dual_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize) usize) type {
+fn Dual_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn(a: usize, b: usize) usize) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         logic: union (enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
@@ -359,7 +569,7 @@ fn Dual_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
-                    8 => @field(self.pwr, @tagName(pwr)),
+                    8 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl.a[self.remap[0]],
                     2 => impl.b[self.remap[0]],
@@ -375,7 +585,7 @@ fn Dual_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
-                    8 => @field(self.pwr, @tagName(pwr)),
+                    8 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl[self.remap[0]].a,
                     2 => impl[self.remap[0]].b,
@@ -395,30 +605,30 @@ fn Dual_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                 .reset => {},
                 .commit => switch (self.logic) {
                     .bus => |impl| {
-                        try v.expect_valid(impl.a, levels);
-                        try v.expect_valid(impl.b, levels);
-                        const a = v.read_bus(impl.a, levels);
-                        const b = v.read_bus(impl.b, levels);
-                        try v.expect_output_valid(impl.y, func(a, b), levels);
+                        try v.expect_valid(impl.a, options.levels);
+                        try v.expect_valid(impl.b, options.levels);
+                        const a = v.read_bus(impl.a, options.levels);
+                        const b = v.read_bus(impl.b, options.levels);
+                        try v.expect_output_valid(impl.y, func(a, b), options.levels);
                     },
                     .individual => |impl| for (impl) |gate| {
-                        try v.expect_valid(gate.a, levels);
-                        try v.expect_valid(gate.b, levels);
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
-                        const b = @intFromBool(v.read_logic(gate.b, levels));
-                        try v.expect_output_valid(gate.y, func(a, b) != 0, levels);
+                        try v.expect_valid(gate.a, options.levels);
+                        try v.expect_valid(gate.b, options.levels);
+                        const a = @intFromBool(v.read_logic(gate.a, options.levels));
+                        const b = @intFromBool(v.read_logic(gate.b, options.levels));
+                        try v.expect_output_valid(gate.y, func(a, b) != 0, options.levels);
                     },
                 },
                 .nets_only => switch (self.logic) {
                     .bus => |impl| {
-                        const a = v.read_bus(impl.a, levels);
-                        const b = v.read_bus(impl.b, levels);
-                        try v.drive_bus(impl.y, func(a, b), levels);
+                        const a = v.read_bus(impl.a, options.levels);
+                        const b = v.read_bus(impl.b, options.levels);
+                        try v.drive_bus(impl.y, func(a, b), options.levels);
                     },
                     .individual => |impl| for (impl) |gate| {
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
-                        const b = @intFromBool(v.read_logic(gate.b, levels));
-                        try v.drive_logic(gate.y, func(a, b) != 0, levels);
+                        const a = @intFromBool(v.read_logic(gate.a, options.levels));
+                        const b = @intFromBool(v.read_logic(gate.b, options.levels));
+                        try v.drive_logic(gate.y, func(a, b) != 0, options.levels);
                     },
                 },
             }
@@ -430,14 +640,11 @@ const Quad_Gate_Pinout = enum {
     aby,
     yab, // mainly just 74x02, but also used by some quad gate open-collector chips
 };
-fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, pinout: Quad_Gate_Pinout, func: *const fn(a: usize, b: usize) usize) type {
+fn Quad_Gate(comptime value_suffix: []const u8, comptime options: Options, pinout: Quad_Gate_Pinout, func: *const fn(a: usize, b: usize) usize) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         logic: union (enum) {
             bus: Bus_Impl,
             individual: [4]Individual_Impl,
@@ -476,7 +683,7 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                         0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                         7 => self.pwr.gnd,
-                        14 => @field(self.pwr, @tagName(pwr)),
+                        14 => @field(self.pwr, @tagName(options.pwr)),
 
                         1 => impl.a[self.remap[0]],
                         2 => impl.b[self.remap[0]],
@@ -500,7 +707,7 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                         0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                         7 => self.pwr.gnd,
-                        14 => @field(self.pwr, @tagName(pwr)),
+                        14 => @field(self.pwr, @tagName(options.pwr)),
 
                         1 => impl[self.remap[0]].a,
                         2 => impl[self.remap[0]].b,
@@ -526,7 +733,7 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                         0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                         7 => self.pwr.gnd,
-                        14 => @field(self.pwr, @tagName(pwr)),
+                        14 => @field(self.pwr, @tagName(options.pwr)),
 
                         1 => impl.y[self.remap[0]],
                         2 => impl.a[self.remap[0]],
@@ -550,7 +757,7 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                         0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                         7 => self.pwr.gnd,
-                        14 => @field(self.pwr, @tagName(pwr)),
+                        14 => @field(self.pwr, @tagName(options.pwr)),
 
                         1 => impl[self.remap[0]].y,
                         2 => impl[self.remap[0]].a,
@@ -579,30 +786,30 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                 .reset => {},
                 .commit => switch (self.logic) {
                     .bus => |impl| {
-                        try v.expect_valid(impl.a, levels);
-                        try v.expect_valid(impl.b, levels);
-                        const a = v.read_bus(impl.a, levels);
-                        const b = v.read_bus(impl.b, levels);
-                        try v.expect_output_valid(impl.y, func(a, b), levels);
+                        try v.expect_valid(impl.a, options.levels);
+                        try v.expect_valid(impl.b, options.levels);
+                        const a = v.read_bus(impl.a, options.levels);
+                        const b = v.read_bus(impl.b, options.levels);
+                        try v.expect_output_valid(impl.y, func(a, b), options.levels);
                     },
                     .individual => |impl| for (impl) |gate| {
-                        try v.expect_valid(gate.a, levels);
-                        try v.expect_valid(gate.b, levels);
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
-                        const b = @intFromBool(v.read_logic(gate.b, levels));
-                        try v.expect_output_valid(gate.y, func(a, b) != 0, levels);
+                        try v.expect_valid(gate.a, options.levels);
+                        try v.expect_valid(gate.b, options.levels);
+                        const a = @intFromBool(v.read_logic(gate.a, options.levels));
+                        const b = @intFromBool(v.read_logic(gate.b, options.levels));
+                        try v.expect_output_valid(gate.y, func(a, b) != 0, options.levels);
                     },
                 },
                 .nets_only => switch (self.logic) {
                     .bus => |impl| {
-                        const a = v.read_bus(impl.a, levels);
-                        const b = v.read_bus(impl.b, levels);
-                        try v.drive_bus(impl.y, func(a, b), levels);
+                        const a = v.read_bus(impl.a, options.levels);
+                        const b = v.read_bus(impl.b, options.levels);
+                        try v.drive_bus(impl.y, func(a, b), options.levels);
                     },
                     .individual => |impl| for (impl) |gate| {
-                        const a = @intFromBool(v.read_logic(gate.a, levels));
-                        const b = @intFromBool(v.read_logic(gate.b, levels));
-                        try v.drive_logic(gate.y, func(a, b) != 0, levels);
+                        const a = @intFromBool(v.read_logic(gate.a, options.levels));
+                        const b = @intFromBool(v.read_logic(gate.b, options.levels));
+                        try v.drive_logic(gate.y, func(a, b) != 0, options.levels);
                     },
                 },
             }
@@ -611,14 +818,11 @@ fn Quad_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
     };
 }
 
-fn Single_3in_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize, c: usize) usize) type {
+fn Single_3in_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn(a: usize, b: usize, c: usize) usize) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         a: Net_ID = .unset,
         b: Net_ID = .unset,
         c: Net_ID = .unset,
@@ -630,7 +834,7 @@ fn Single_3in_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime leve
                 2 => self.pwr.gnd,
                 3 => self.a,
                 4 => self.y,
-                5 => @field(self.pwr, @tagName(pwr)),
+                5 => @field(self.pwr, @tagName(options.pwr)),
                 6 => self.c,
                 else => unreachable,
             };
@@ -640,33 +844,30 @@ fn Single_3in_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime leve
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.a, levels);
-                    try v.expect_valid(self.b, levels);
-                    try v.expect_valid(self.c, levels);
-                    const a = @intFromBool(v.read_logic(self.a, levels));
-                    const b = @intFromBool(v.read_logic(self.b, levels));
-                    const c = @intFromBool(v.read_logic(self.c, levels));
-                    try v.expect_output_valid(self.y, func(a, b, c) != 0, levels);
+                    try v.expect_valid(self.a, options.levels);
+                    try v.expect_valid(self.b, options.levels);
+                    try v.expect_valid(self.c, options.levels);
+                    const a = @intFromBool(v.read_logic(self.a, options.levels));
+                    const b = @intFromBool(v.read_logic(self.b, options.levels));
+                    const c = @intFromBool(v.read_logic(self.c, options.levels));
+                    try v.expect_output_valid(self.y, func(a, b, c) != 0, options.levels);
                 },
                 .nets_only => {
-                    const a = @intFromBool(v.read_logic(self.a, levels));
-                    const b = @intFromBool(v.read_logic(self.b, levels));
-                    const c = @intFromBool(v.read_logic(self.c, levels));
-                    try v.drive_logic(self.y, func(a, b, c) != 0, levels);
+                    const a = @intFromBool(v.read_logic(self.a, options.levels));
+                    const b = @intFromBool(v.read_logic(self.b, options.levels));
+                    const c = @intFromBool(v.read_logic(self.c, options.levels));
+                    try v.drive_logic(self.y, func(a, b, c) != 0, options.levels);
                 },
             }
         }
     };
 }
 
-fn Single_3in_Mux_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, func: *const fn(a: usize, b: usize, sel: usize) usize) type {
+fn Single_3in_Mux_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn(a: usize, b: usize, sel: usize) usize) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         a: Net_ID = .unset,
         b: Net_ID = .unset,
         sel: Net_ID = .unset,
@@ -678,7 +879,7 @@ fn Single_3in_Mux_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime 
                 2 => self.pwr.gnd,
                 3 => self.a,
                 4 => self.y,
-                5 => @field(self.pwr, @tagName(pwr)),
+                5 => @field(self.pwr, @tagName(options.pwr)),
                 6 => self.sel,
                 else => unreachable,
             };
@@ -688,19 +889,19 @@ fn Single_3in_Mux_Gate(comptime pwr: Net_ID, comptime Decoupler: type, comptime 
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.a, levels);
-                    try v.expect_valid(self.b, levels);
-                    try v.expect_valid(self.sel, levels);
-                    const a = @intFromBool(v.read_logic(self.a, levels));
-                    const b = @intFromBool(v.read_logic(self.b, levels));
-                    const sel = @intFromBool(v.read_logic(self.sel, levels));
-                    try v.expect_output_valid(self.y, func(a, b, sel) != 0, levels);
+                    try v.expect_valid(self.a, options.levels);
+                    try v.expect_valid(self.b, options.levels);
+                    try v.expect_valid(self.sel, options.levels);
+                    const a = @intFromBool(v.read_logic(self.a, options.levels));
+                    const b = @intFromBool(v.read_logic(self.b, options.levels));
+                    const sel = @intFromBool(v.read_logic(self.sel, options.levels));
+                    try v.expect_output_valid(self.y, func(a, b, sel) != 0, options.levels);
                 },
                 .nets_only => {
-                    const a = @intFromBool(v.read_logic(self.a, levels));
-                    const b = @intFromBool(v.read_logic(self.b, levels));
-                    const sel = @intFromBool(v.read_logic(self.sel, levels));
-                    try v.drive_logic(self.y, func(a, b, sel) != 0, levels);
+                    const a = @intFromBool(v.read_logic(self.a, options.levels));
+                    const b = @intFromBool(v.read_logic(self.b, options.levels));
+                    const sel = @intFromBool(v.read_logic(self.sel, options.levels));
+                    try v.drive_logic(self.y, func(a, b, sel) != 0, options.levels);
                 },
             }
         }
@@ -761,188 +962,185 @@ fn mux157_gate(a: usize, b: usize, c: usize) usize {
 }
 
 /// Quad 2-in NAND
-pub fn x00(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, .aby, nand_gate);
+pub fn x00(comptime options: Options) type {
+    return Quad_Gate("00", options, .aby, nand_gate);
 }
 /// Single 2-in NAND
-pub fn x1G00(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Gate(pwr, Decoupler, levels, Pkg, nand_gate);
+pub fn x1G00(comptime options: Options) type {
+    return Single_Gate("1G00", options, nand_gate);
 }
 /// Dual 2-in NAND
-pub fn x2G00(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Gate(pwr, Decoupler, levels, Pkg, nand_gate);
+pub fn x2G00(comptime options: Options) type {
+    return Dual_Gate("2G00", options, nand_gate);
 }
 
 /// Quad 2-in NOR
-pub fn x02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, .yab, nor_gate);
+pub fn x02(comptime options: Options) type {
+    return Quad_Gate("02", options, .yab, nor_gate);
 }
 /// Single 2-in NOR
-pub fn x1G02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Gate(pwr, Decoupler, levels, Pkg, nor_gate);
+pub fn x1G02(comptime options: Options) type {
+    return Single_Gate("1G02", options, nor_gate);
 }
 /// Single 2-in NOR
-pub fn x2G02(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Gate(pwr, Decoupler, levels, Pkg, nor_gate);
+pub fn x2G02(comptime options: Options) type {
+    return Dual_Gate("2G02", options, nor_gate);
 }
 
 /// Hex inverter
-pub fn x04(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Hex_Buffer(pwr, Decoupler, levels, Pkg, true);
+pub fn x04(comptime options: Options) type {
+    return Hex_Buffer("04", options, true);
 }
 /// Single inverter
-pub fn x1G04(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Buffer(pwr, Decoupler, levels, Pkg, true);
+pub fn x1G04(comptime options: Options) type {
+    return Single_Buffer("1G04", options, true);
 }
 /// Dual inverter
-pub fn x2G04(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0b00);
+pub fn x2G04(comptime options: Options) type {
+    return Dual_Buffer("2G04", options, 0b00);
 }
 
 /// Quad 2-in AND
-pub fn x08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, .aby, and_gate);
+pub fn x08(comptime options: Options) type {
+    return Quad_Gate("08", options, .aby, and_gate);
 }
 /// Single 2-in AND
-pub fn x1G08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Gate(pwr, Decoupler, levels, Pkg, and_gate);
+pub fn x1G08(comptime options: Options) type {
+    return Single_Gate("1G08", options, and_gate);
 }
 /// Dual 2-in AND
-pub fn x2G08(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Gate(pwr, Decoupler, levels, Pkg, and_gate);
+pub fn x2G08(comptime options: Options) type {
+    return Dual_Gate("2G08", options, and_gate);
 }
 
 /// Hex inverter, ST inputs
-pub fn x14(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Hex_Buffer(pwr, Decoupler, levels, Pkg, true);
+pub fn x14(comptime options: Options) type {
+    return Hex_Buffer("14", options, true);
 }
 /// Single inverter, ST inputs
-pub fn x1G14(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Buffer(pwr, Decoupler, levels, Pkg, true);
+pub fn x1G14(comptime options: Options) type {
+    return Single_Buffer("1G14", options, true);
 }
 /// Dual inverter, ST inputs
-pub fn x2G14(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0b11);
+pub fn x2G14(comptime options: Options) type {
+    return Dual_Buffer("2G14", options, 0b11);
 }
 
 /// Single buffer, ST inputs
-pub fn x1G17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Buffer(pwr, Decoupler, levels, Pkg, false);
+pub fn x1G17(comptime options: Options) type {
+    return Single_Buffer("1G17", options, false);
 }
 /// Dual buffer, ST inputs
-pub fn x2G17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0b00);
+pub fn x2G17(comptime options: Options) type {
+    return Dual_Buffer("2G17", options, 0b00);
 }
 
 /// Quad 2-in OR
-pub fn x32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, .aby, or_gate);
+pub fn x32(comptime options: Options) type {
+    return Quad_Gate("32", options, .aby, or_gate);
 }
 /// Single 2-in OR
-pub fn x1G32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Gate(pwr, Decoupler, levels, Pkg, or_gate);
+pub fn x1G32(comptime options: Options) type {
+    return Single_Gate("1G32", options, or_gate);
 }
 /// Dual 2-in OR
-pub fn x2G32(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Gate(pwr, Decoupler, levels, Pkg, or_gate);
+pub fn x2G32(comptime options: Options) type {
+    return Dual_Gate("2G32", options, or_gate);
 }
 
 /// Single buffer
-pub fn x1G34(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Buffer(pwr, Decoupler, levels, Pkg, false);
+pub fn x1G34(comptime options: Options) type {
+    return Single_Buffer("1G34", options, false);
 }
 /// Dual buffer
-pub fn x2G34(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0x00);
+pub fn x2G34(comptime options: Options) type {
+    return Dual_Buffer("2G34", options, 0x00);
 }
 
 // Single buffer & Single inverter (AUP/AXP families)
-pub fn x2G3404(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Buffer(pwr, Decoupler, levels, Pkg, 0b10);
+pub fn x2G3404(comptime options: Options) type {
+    return Dual_Buffer("2G3404", options, 0b10);
 }
 
 /// Quad 2-in XOR
-pub fn x86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Quad_Gate(pwr, Decoupler, levels, Pkg, .aby, xor_gate);
+pub fn x86(comptime options: Options) type {
+    return Quad_Gate("86", options, .aby, xor_gate);
 }
 /// Single 2-in XOR
-pub fn x1G86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
+pub fn x1G86(comptime options: Options) type {
+    return Single_Gate("1G86", options, xor_gate);
 }
 /// Dual 2-in XOR
-pub fn x2G86(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Gate(pwr, Decoupler, levels, Pkg, xor_gate);
+pub fn x2G86(comptime options: Options) type {
+    return Dual_Gate("2G86", options, xor_gate);
 }
 
 /// Single 3-in NAND
-pub fn x1G10(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, nand3_gate);
+pub fn x1G10(comptime options: Options) type {
+    return Single_3in_Gate("1G10", options, nand3_gate);
 }
 
 /// Single 3-in AND
-pub fn x1G11(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, and3_gate);
+pub fn x1G11(comptime options: Options) type {
+    return Single_3in_Gate("1G11", options, and3_gate);
 }
 
 /// Single 3-in NOR
-pub fn x1G27(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, nor3_gate);
+pub fn x1G27(comptime options: Options) type {
+    return Single_3in_Gate("1G27", options, nor3_gate);
 }
 
 /// Single 3-in OR
-pub fn x1G332(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, or3_gate);
+pub fn x1G332(comptime options: Options) type {
+    return Single_3in_Gate("1G332", options, or3_gate);
 }
 
 /// Single 3-in XOR
-pub fn x1G386(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, xor3_gate);
+pub fn x1G386(comptime options: Options) type {
+    return Single_3in_Gate("1G386", options, xor3_gate);
 }
 
 /// Single OR-AND
-pub fn x1G3208(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, or_and_gate);
+pub fn x1G3208(comptime options: Options) type {
+    return Single_3in_Gate("1G3208", options, or_and_gate);
 }
 
 /// Single AND-OR
-pub fn x1G0832(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Gate(pwr, Decoupler, levels, Pkg, and_or_gate);
+pub fn x1G0832(comptime options: Options) type {
+    return Single_3in_Gate("1G0832", options, and_or_gate);
 }
 
 /// Single 2:1 mux, A input inverted
-pub fn x1G57(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux57_gate);
+pub fn x1G57(comptime options: Options) type {
+    return Single_3in_Mux_Gate("1G57", options, mux57_gate);
 }
 
 /// Single 2:1 mux, B input inverted
-pub fn x1G58(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux58_gate);
+pub fn x1G58(comptime options: Options) type {
+    return Single_3in_Mux_Gate("1G58", options, mux58_gate);
 }
 
 /// Single 2:1 mux, C input inverted
-pub fn x1G97(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux97_gate);
+pub fn x1G97(comptime options: Options) type {
+    return Single_3in_Mux_Gate("1G97", options, mux97_gate);
 }
 
 /// Single 2:1 mux, all inputs inverted
-pub fn x1G98(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux98_gate);
+pub fn x1G98(comptime options: Options) type {
+    return Single_3in_Mux_Gate("1G98", options, mux98_gate);
 }
 
 /// Single 2:1 mux
-pub fn x1G157(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_3in_Mux_Gate(pwr, Decoupler, levels, Pkg, mux157_gate);
+pub fn x1G157(comptime options: Options) type {
+    return Single_3in_Mux_Gate("1G157", options, mux157_gate);
 }
 
 /// Single 2:1 bus switch
-pub fn x1G3157(comptime pwr: Net_ID, comptime Decoupler: type, comptime input_levels: type, switch_levels: type, comptime Pkg: type) type {
+pub fn x1G3157(comptime options: Options, switch_levels: type) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("1G3157"),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         a: [2]Net_ID = @splat(.unset),
         b: Net_ID = .unset,
         sel: Net_ID = .unset,
@@ -954,7 +1152,7 @@ pub fn x1G3157(comptime pwr: Net_ID, comptime Decoupler: type, comptime input_le
                 2 => self.pwr.gnd,
                 3 => self.a[0],
                 4 => self.b,
-                5 => @field(self.pwr, @tagName(pwr)),
+                5 => @field(self.pwr, @tagName(options.pwr)),
                 6 => self.sel,
                 else => unreachable,
             };
@@ -964,20 +1162,20 @@ pub fn x1G3157(comptime pwr: Net_ID, comptime Decoupler: type, comptime input_le
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.sel, input_levels);
+                    try v.expect_valid(self.sel, options.levels);
                     try v.expect_below(self.a[0], switch_levels.Vclamp);
                     try v.expect_below(self.a[1], switch_levels.Vclamp);
                     try v.expect_below(self.b, switch_levels.Vclamp);
 
                     const power_limit = 0.016384 * self.r_on;
-                    if (v.read_logic(self.sel, input_levels)) {
+                    if (v.read_logic(self.sel, options.levels)) {
                         try v.verify_power_limit(self.a[1], self.b, self.r_on, power_limit);
                     } else {
                         try v.verify_power_limit(self.a[0], self.b, self.r_on, power_limit);
                     }
                 },
                 .nets_only => {
-                    if (v.read_logic(self.sel, input_levels)) {
+                    if (v.read_logic(self.sel, options.levels)) {
                         try v.connect_nets(self.a[1], self.b, self.r_on);
                     } else {
                         try v.connect_nets(self.a[0], self.b, self.r_on);
@@ -988,14 +1186,11 @@ pub fn x1G3157(comptime pwr: Net_ID, comptime Decoupler: type, comptime input_le
     };
 }
 
-fn Single_1_2_Demux(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime hiz_inactive: bool) type {
+fn Single_1_2_Demux(comptime value_suffix: []const u8, comptime options: Options, comptime hiz_inactive: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         a: Net_ID = .unset,
         y: [2]Net_ID = @splat(.unset),
         sel: Net_ID = .unset,
@@ -1006,7 +1201,7 @@ fn Single_1_2_Demux(comptime pwr: Net_ID, comptime Decoupler: type, comptime lev
                 2 => self.pwr.gnd,
                 3 => self.a,
                 4 => self.y[1],
-                5 => @field(self.pwr, @tagName(pwr)),
+                5 => @field(self.pwr, @tagName(options.pwr)),
                 6 => self.y[0],
                 else => unreachable,
             };
@@ -1016,24 +1211,24 @@ fn Single_1_2_Demux(comptime pwr: Net_ID, comptime Decoupler: type, comptime lev
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.sel, levels);
-                    try v.expect_valid(self.a, levels);
+                    try v.expect_valid(self.sel, options.levels);
+                    try v.expect_valid(self.a, options.levels);
 
-                    const sel = v.read_logic(self.sel, levels);
-                    const a = v.read_logic(self.a, levels);
-                    try v.expect_output_valid(self.y[@intFromBool(sel)], a, levels);
+                    const sel = v.read_logic(self.sel, options.levels);
+                    const a = v.read_logic(self.a, options.levels);
+                    try v.expect_output_valid(self.y[@intFromBool(sel)], a, options.levels);
 
                     if (!hiz_inactive) {
-                        try v.expect_output_valid(self.y[@intFromBool(!sel)], true, levels);
+                        try v.expect_output_valid(self.y[@intFromBool(!sel)], true, options.levels);
                     }
                 },
                 .nets_only => {
-                    const sel = v.read_logic(self.sel, levels);
-                    const a = v.read_logic(self.a, levels);
-                    try v.drive_logic(self.y[@intFromBool(sel)], a, levels);
+                    const sel = v.read_logic(self.sel, options.levels);
+                    const a = v.read_logic(self.a, options.levels);
+                    try v.drive_logic(self.y[@intFromBool(sel)], a, options.levels);
 
                     if (!hiz_inactive) {
-                        try v.drive_logic(self.y[@intFromBool(!sel)], true, levels);
+                        try v.drive_logic(self.y[@intFromBool(!sel)], true, options.levels);
                     }
                 },
             }
@@ -1042,24 +1237,21 @@ fn Single_1_2_Demux(comptime pwr: Net_ID, comptime Decoupler: type, comptime lev
 }
 
 /// Single 1:2 3-state demux
-pub fn x1G18(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_1_2_Demux(pwr, Decoupler, levels, Pkg, true);
+pub fn x1G18(comptime options: Options) type {
+    return Single_1_2_Demux("1G18", options, true);
 }
 
 /// Single 1:2 decoder
-pub fn x1G19(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_1_2_Demux(pwr, Decoupler, levels, Pkg, false);
+pub fn x1G19(comptime options: Options) type {
+    return Single_1_2_Demux("1G19", options, false);
 }
 
 /// Single 2:3 decoder
-pub fn x1G29(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x1G29(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("1G29"),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         a: Net_ID = .unset,
         y: [3]Net_ID = @splat(.unset),
         sel: [2]Net_ID = @splat(.unset),
@@ -1073,7 +1265,7 @@ pub fn x1G29(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                 5 => self.y[2],
                 6 => self.sel[1],
                 7 => self.y[0],
-                8 => @field(self.pwr, @tagName(pwr)),
+                8 => @field(self.pwr, @tagName(options.pwr)),
                 else => unreachable,
             };
         }
@@ -1082,47 +1274,47 @@ pub fn x1G29(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.sel, levels);
-                    try v.expect_valid(self.a, levels);
+                    try v.expect_valid(self.sel, options.levels);
+                    try v.expect_valid(self.a, options.levels);
 
-                    const sel = v.read_bus(self.sel, levels);
-                    const a = v.read_logic(self.a, levels);
+                    const sel = v.read_bus(self.sel, options.levels);
+                    const a = v.read_logic(self.a, options.levels);
                     switch (sel) {
                         0, 1 => {
-                            v.expect_output_valid(self.y[0], a, levels);
-                            v.expect_output_valid(self.y[1], true, levels);
-                            v.expect_output_valid(self.y[2], true, levels);
+                            v.expect_output_valid(self.y[0], a, options.levels);
+                            v.expect_output_valid(self.y[1], true, options.levels);
+                            v.expect_output_valid(self.y[2], true, options.levels);
                         },
                         2 => {
-                            v.expect_output_valid(self.y[0], true, levels);
-                            v.expect_output_valid(self.y[1], a, levels);
-                            v.expect_output_valid(self.y[2], true, levels);
+                            v.expect_output_valid(self.y[0], true, options.levels);
+                            v.expect_output_valid(self.y[1], a, options.levels);
+                            v.expect_output_valid(self.y[2], true, options.levels);
                         },
                         3 => {
-                            v.expect_output_valid(self.y[0], true, levels);
-                            v.expect_output_valid(self.y[1], true, levels);
-                            v.expect_output_valid(self.y[2], a, levels);
+                            v.expect_output_valid(self.y[0], true, options.levels);
+                            v.expect_output_valid(self.y[1], true, options.levels);
+                            v.expect_output_valid(self.y[2], a, options.levels);
                         },
                     }
                 },
                 .nets_only => {
-                    const sel = v.read_bus(self.sel, levels);
-                    const a = v.read_logic(self.a, levels);
+                    const sel = v.read_bus(self.sel, options.levels);
+                    const a = v.read_logic(self.a, options.levels);
                     switch (sel) {
                         0, 1 => {
-                            v.drive_logic(self.y[0], a, levels);
-                            v.drive_logic(self.y[1], true, levels);
-                            v.drive_logic(self.y[2], true, levels);
+                            v.drive_logic(self.y[0], a, options.levels);
+                            v.drive_logic(self.y[1], true, options.levels);
+                            v.drive_logic(self.y[2], true, options.levels);
                         },
                         2 => {
-                            v.drive_logic(self.y[0], true, levels);
-                            v.drive_logic(self.y[1], a, levels);
-                            v.drive_logic(self.y[2], true, levels);
+                            v.drive_logic(self.y[0], true, options.levels);
+                            v.drive_logic(self.y[1], a, options.levels);
+                            v.drive_logic(self.y[2], true, options.levels);
                         },
                         3 => {
-                            v.drive_logic(self.y[0], true, levels);
-                            v.drive_logic(self.y[1], true, levels);
-                            v.drive_logic(self.y[2], a, levels);
+                            v.drive_logic(self.y[0], true, options.levels);
+                            v.drive_logic(self.y[1], true, options.levels);
+                            v.drive_logic(self.y[2], a, options.levels);
                         },
                     }
                 },
@@ -1132,14 +1324,11 @@ pub fn x1G29(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
 }
 
 /// Single 2:4 decoder
-pub fn x1G139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x1G139(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("1G139"),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         y: [4]Net_ID = @splat(.unset),
         sel: [2]Net_ID = @splat(.unset),
 
@@ -1152,7 +1341,7 @@ pub fn x1G139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 5 => self.y[2],
                 6 => self.y[1],
                 7 => self.y[0],
-                8 => @field(self.pwr, @tagName(pwr)),
+                8 => @field(self.pwr, @tagName(options.pwr)),
                 else => unreachable,
             };
         }
@@ -1161,29 +1350,26 @@ pub fn x1G139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.sel, levels);
-                    const sel: u2 = @truncate(v.read_bus(self.sel, levels));
+                    try v.expect_valid(self.sel, options.levels);
+                    const sel: u2 = @truncate(v.read_bus(self.sel, options.levels));
                     const val = @as(u4, 1) << sel;
-                    v.expect_output_valid(self.y, ~val, levels);
+                    v.expect_output_valid(self.y, ~val, options.levels);
                 },
                 .nets_only => {
-                    const sel: u2 = @truncate(v.read_bus(self.sel, levels));
+                    const sel: u2 = @truncate(v.read_bus(self.sel, options.levels));
                     const val = @as(u4, 1) << sel;
-                    v.expect_output_valid(self.y, ~val, levels);
+                    v.expect_output_valid(self.y, ~val, options.levels);
                 },
             }
         }
     };
 }
 
-fn Single_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+fn Single_Tristate_Driver_Active_Low(comptime value_suffix: []const u8, comptime options: Options, comptime invert: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         a: Net_ID = .unset,
         y: Net_ID = .unset,
         n_oe: Net_ID = .unset,
@@ -1194,8 +1380,8 @@ fn Single_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: t
                 2 => self.a,
                 3 => self.pwr.gnd,
                 4 => self.y,
-                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (options.Package.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(options.pwr)),
+                6 => if (options.Package.data.num_pads() == 6) @field(self.pwr, @tagName(options.pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -1204,17 +1390,17 @@ fn Single_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: t
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.n_oe, levels);
-                    try v.expect_valid(self.a, levels);
-                    if (!v.read_logic(self.n_oe, levels)) {
-                        const a = v.read_logic(self.a, levels);
-                        try v.expect_output_valid(self.y, if (invert) !a else a, levels);
+                    try v.expect_valid(self.n_oe, options.levels);
+                    try v.expect_valid(self.a, options.levels);
+                    if (!v.read_logic(self.n_oe, options.levels)) {
+                        const a = v.read_logic(self.a, options.levels);
+                        try v.expect_output_valid(self.y, if (invert) !a else a, options.levels);
                     }
                 },
                 .nets_only => {
-                    if (!v.read_logic(self.n_oe, levels)) {
-                        const a = v.read_logic(self.a, levels);
-                        try v.drive_logic(self.y, if (invert) !a else a, levels);
+                    if (!v.read_logic(self.n_oe, options.levels)) {
+                        const a = v.read_logic(self.a, options.levels);
+                        try v.drive_logic(self.y, if (invert) !a else a, options.levels);
                     }
                 },
             }
@@ -1222,14 +1408,11 @@ fn Single_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: t
     };
 }
 
-fn Single_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+fn Single_Tristate_Driver_Active_High(comptime value_suffix: []const u8, comptime options: Options, comptime invert: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         a: Net_ID = .unset,
         y: Net_ID = .unset,
         oe: Net_ID = .unset,
@@ -1240,8 +1423,8 @@ fn Single_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: 
                 2 => self.a,
                 3 => self.pwr.gnd,
                 4 => self.y,
-                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (options.Package.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(options.pwr)),
+                6 => if (options.Package.data.num_pads() == 6) @field(self.pwr, @tagName(options.pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -1250,17 +1433,17 @@ fn Single_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: 
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.oe, levels);
-                    try v.expect_valid(self.a, levels);
-                    if (v.read_logic(self.oe, levels)) {
-                        const a = v.read_logic(self.a, levels);
-                        try v.expect_output_valid(self.y, if (invert) !a else a, levels);
+                    try v.expect_valid(self.oe, options.levels);
+                    try v.expect_valid(self.a, options.levels);
+                    if (v.read_logic(self.oe, options.levels)) {
+                        const a = v.read_logic(self.a, options.levels);
+                        try v.expect_output_valid(self.y, if (invert) !a else a, options.levels);
                     }
                 },
                 .nets_only => {
-                    if (v.read_logic(self.oe, levels)) {
-                        const a = v.read_logic(self.a, levels);
-                        try v.drive_logic(self.y, if (invert) !a else a, levels);
+                    if (v.read_logic(self.oe, options.levels)) {
+                        const a = v.read_logic(self.a, options.levels);
+                        try v.drive_logic(self.y, if (invert) !a else a, options.levels);
                     }
                 },
             }
@@ -1268,14 +1451,11 @@ fn Single_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: 
     };
 }
 
-fn Dual_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+fn Dual_Tristate_Driver_Active_Low(comptime value_suffix: []const u8, comptime options: Options, comptime invert: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         logic: union (enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
@@ -1299,7 +1479,7 @@ fn Dual_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: typ
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
-                    8 => @field(self.pwr, @tagName(pwr)),
+                    8 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl.n_oe[0],
                     2 => impl.a[0],
@@ -1315,7 +1495,7 @@ fn Dual_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: typ
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
-                    8 => @field(self.pwr, @tagName(pwr)),
+                    8 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl[0].n_oe,
                     2 => impl[0].a,
@@ -1348,43 +1528,43 @@ fn Dual_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: typ
                 .reset => {},
                 .commit => switch (self.logic) {
                     .bus => |impl| {
-                        try v.expect_valid(impl.n_oe, levels);
-                        try v.expect_valid(impl.a, levels);
-                        const oe = v.read_logic(impl.n_oe, levels);
+                        try v.expect_valid(impl.n_oe, options.levels);
+                        try v.expect_valid(impl.a, options.levels);
+                        const oe = v.read_logic(impl.n_oe, options.levels);
                         if (0 == (oe & 1)) {
-                            const a = v.read_logic(impl.a[0], levels);
-                            try v.expect_output_valid(impl.y[0], if (invert) !a else a, levels);
+                            const a = v.read_logic(impl.a[0], options.levels);
+                            try v.expect_output_valid(impl.y[0], if (invert) !a else a, options.levels);
                         }
                         if (0 == (oe & 2)) {
-                            const a = v.read_logic(impl.a[1], levels);
-                            try v.expect_output_valid(impl.y[1], if (invert) !a else a, levels);
+                            const a = v.read_logic(impl.a[1], options.levels);
+                            try v.expect_output_valid(impl.y[1], if (invert) !a else a, options.levels);
                         }
                     },
                     .individual => |impl| for (impl) |buf| {
-                        try v.expect_valid(buf.n_oe, levels);
-                        try v.expect_valid(buf.a, levels);
-                        if (!v.read_logic(buf.n_oe, levels)) {
-                            const a = v.read_logic(buf.a, levels);
-                            try v.expect_output_valid(buf.y, if (invert) !a else a, levels);
+                        try v.expect_valid(buf.n_oe, options.levels);
+                        try v.expect_valid(buf.a, options.levels);
+                        if (!v.read_logic(buf.n_oe, options.levels)) {
+                            const a = v.read_logic(buf.a, options.levels);
+                            try v.expect_output_valid(buf.y, if (invert) !a else a, options.levels);
                         }
                     },
                 },
                 .nets_only => switch (self.logic) {
                     .bus => |impl| {
-                        const oe = v.read_logic(impl.n_oe, levels);
+                        const oe = v.read_logic(impl.n_oe, options.levels);
                         if (0 == (oe & 1)) {
-                            const a = v.read_logic(impl.a[0], levels);
-                            try v.drive_logic(impl.y[0], if (invert) !a else a, levels);
+                            const a = v.read_logic(impl.a[0], options.levels);
+                            try v.drive_logic(impl.y[0], if (invert) !a else a, options.levels);
                         }
                         if (0 == (oe & 2)) {
-                            const a = v.read_logic(impl.a[1], levels);
-                            try v.drive_logic(impl.y[1], if (invert) !a else a, levels);
+                            const a = v.read_logic(impl.a[1], options.levels);
+                            try v.drive_logic(impl.y[1], if (invert) !a else a, options.levels);
                         }
                     },
                     .individual => |impl| for (impl) |buf| {
-                        if (!v.read_logic(buf.n_oe, levels)) {
-                            const a = v.read_logic(buf.a, levels);
-                            try v.drive_logic(buf.y, if (invert) !a else a, levels);
+                        if (!v.read_logic(buf.n_oe, options.levels)) {
+                            const a = v.read_logic(buf.a, options.levels);
+                            try v.drive_logic(buf.y, if (invert) !a else a, options.levels);
                         }
                     },
                 },
@@ -1393,14 +1573,11 @@ fn Dual_Tristate_Driver_Active_Low(comptime pwr: Net_ID, comptime Decoupler: typ
     };
 }
 
-fn Dual_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+fn Dual_Tristate_Driver_Active_High(comptime value_suffix: []const u8, comptime options: Options, comptime invert: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         logic: union (enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
@@ -1424,7 +1601,7 @@ fn Dual_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: ty
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
-                    8 => @field(self.pwr, @tagName(pwr)),
+                    8 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl.oe[0],
                     2 => impl.a[0],
@@ -1440,7 +1617,7 @@ fn Dual_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: ty
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
-                    8 => @field(self.pwr, @tagName(pwr)),
+                    8 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl[0].oe,
                     2 => impl[0].a,
@@ -1473,43 +1650,43 @@ fn Dual_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: ty
                 .reset => {},
                 .commit => switch (self.logic) {
                     .bus => |impl| {
-                        try v.expect_valid(impl.oe, levels);
-                        try v.expect_valid(impl.a, levels);
-                        const oe = v.read_logic(impl.oe, levels);
+                        try v.expect_valid(impl.oe, options.levels);
+                        try v.expect_valid(impl.a, options.levels);
+                        const oe = v.read_logic(impl.oe, options.levels);
                         if (0 != (oe & 1)) {
-                            const a = v.read_logic(impl.a[0], levels);
-                            try v.expect_output_valid(impl.y[0], if (invert) !a else a, levels);
+                            const a = v.read_logic(impl.a[0], options.levels);
+                            try v.expect_output_valid(impl.y[0], if (invert) !a else a, options.levels);
                         }
                         if (0 != (oe & 2)) {
-                            const a = v.read_logic(impl.a[1], levels);
-                            try v.expect_output_valid(impl.y[1], if (invert) !a else a, levels);
+                            const a = v.read_logic(impl.a[1], options.levels);
+                            try v.expect_output_valid(impl.y[1], if (invert) !a else a, options.levels);
                         }
                     },
                     .individual => |impl| for (impl) |buf| {
-                        try v.expect_valid(buf.oe, levels);
-                        try v.expect_valid(buf.a, levels);
-                        if (v.read_logic(buf.oe, levels)) {
-                            const a = v.read_logic(buf.a, levels);
-                            try v.expect_output_valid(buf.y, if (invert) !a else a, levels);
+                        try v.expect_valid(buf.oe, options.levels);
+                        try v.expect_valid(buf.a, options.levels);
+                        if (v.read_logic(buf.oe, options.levels)) {
+                            const a = v.read_logic(buf.a, options.levels);
+                            try v.expect_output_valid(buf.y, if (invert) !a else a, options.levels);
                         }
                     },
                 },
                 .nets_only => switch (self.logic) {
                     .bus => |impl| {
-                        const oe = v.read_logic(impl.oe, levels);
+                        const oe = v.read_logic(impl.oe, options.levels);
                         if (0 != (oe & 1)) {
-                            const a = v.read_logic(impl.a[0], levels);
-                            try v.drive_logic(impl.y[0], if (invert) !a else a, levels);
+                            const a = v.read_logic(impl.a[0], options.levels);
+                            try v.drive_logic(impl.y[0], if (invert) !a else a, options.levels);
                         }
                         if (0 != (oe & 2)) {
-                            const a = v.read_logic(impl.a[1], levels);
-                            try v.drive_logic(impl.y[1], if (invert) !a else a, levels);
+                            const a = v.read_logic(impl.a[1], options.levels);
+                            try v.drive_logic(impl.y[1], if (invert) !a else a, options.levels);
                         }
                     },
                     .individual => |impl| for (impl) |buf| {
-                        if (v.read_logic(buf.oe, levels)) {
-                            const a = v.read_logic(buf.a, levels);
-                            try v.drive_logic(buf.y, if (invert) !a else a, levels);
+                        if (v.read_logic(buf.oe, options.levels)) {
+                            const a = v.read_logic(buf.a, options.levels);
+                            try v.drive_logic(buf.y, if (invert) !a else a, options.levels);
                         }
                     },
                 },
@@ -1518,31 +1695,28 @@ fn Dual_Tristate_Driver_Active_High(comptime pwr: Net_ID, comptime Decoupler: ty
     };
 }
 
-pub fn x1G125(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Tristate_Driver_Active_Low(pwr, Decoupler, levels, Pkg, false);
+pub fn x1G125(comptime options: Options) type {
+    return Single_Tristate_Driver_Active_Low("1G125", options, false);
 }
-pub fn x2G125(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Tristate_Driver_Active_Low(pwr, Decoupler, levels, Pkg, false);
+pub fn x2G125(comptime options: Options) type {
+    return Dual_Tristate_Driver_Active_Low("2G125", options, false);
 }
-pub fn x1G126(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Tristate_Driver_Active_High(pwr, Decoupler, levels, Pkg, false);
+pub fn x1G126(comptime options: Options) type {
+    return Single_Tristate_Driver_Active_High("1G126", options, false);
 }
-pub fn x2G126(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_Tristate_Driver_Active_High(pwr, Decoupler, levels, Pkg, false);
+pub fn x2G126(comptime options: Options) type {
+    return Dual_Tristate_Driver_Active_High("2G126", options, false);
 }
-pub fn x1G240(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_Tristate_Driver_Active_Low(pwr, Decoupler, levels, Pkg, true);
+pub fn x1G240(comptime options: Options) type {
+    return Single_Tristate_Driver_Active_Low("1G240", options, true);
 }
 
 /// a.k.a. x2G74
-pub fn x1G74(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x1G74(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("1G74"),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         clk: Net_ID = .unset,
         d: Net_ID = .unset,
         q: Net_ID = .unset,
@@ -1559,7 +1733,7 @@ pub fn x1G74(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                 5 => self.q,
                 6 => self.n_async_clr,
                 7 => self.n_async_set,
-                8 => @field(self.pwr, @tagName(pwr)),
+                8 => @field(self.pwr, @tagName(options.pwr)),
                 else => unreachable,
             };
         }
@@ -1576,22 +1750,22 @@ pub fn x1G74(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                     state.clk = true;
                 },
                 .commit => {
-                    try v.expect_valid(self.d, levels);
-                    try v.expect_valid(self.clk, levels);
-                    try v.expect_valid(self.n_async_clr, levels);
-                    try v.expect_valid(self.n_async_set, levels);
+                    try v.expect_valid(self.d, options.levels);
+                    try v.expect_valid(self.clk, options.levels);
+                    try v.expect_valid(self.n_async_clr, options.levels);
+                    try v.expect_valid(self.n_async_set, options.levels);
 
-                    try v.expect_output_valid(self.q, state.q, levels);
-                    try v.expect_output_valid(self.n_q, !state.q, levels);
+                    try v.expect_output_valid(self.q, state.q, options.levels);
+                    try v.expect_output_valid(self.n_q, !state.q, options.levels);
 
-                    const new_clk = v.read_logic(self.clk, levels);
+                    const new_clk = v.read_logic(self.clk, options.levels);
                     if (new_clk and !state.clk) {
-                        state.q = v.read_logic(self.d, levels);
+                        state.q = v.read_logic(self.d, options.levels);
                     }
                     state.clk = new_clk;
 
-                    const ac = !v.read_logic(self.n_async_clr, levels);
-                    const as = !v.read_logic(self.n_async_set, levels);
+                    const ac = !v.read_logic(self.n_async_clr, options.levels);
+                    const as = !v.read_logic(self.n_async_set, options.levels);
 
                     if (ac and !as) {
                         state.q = false;
@@ -1600,23 +1774,23 @@ pub fn x1G74(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
                     }
                 },
                 .nets_only => {
-                    const ac = !v.read_logic(self.n_async_clr, levels);
-                    const as = !v.read_logic(self.n_async_set, levels);
+                    const ac = !v.read_logic(self.n_async_clr, options.levels);
+                    const as = !v.read_logic(self.n_async_set, options.levels);
 
                     if (ac) {
                         if (as) {
-                            try v.drive_logic(self.q, true, levels);
-                            try v.drive_logic(self.n_q, true, levels);
+                            try v.drive_logic(self.q, true, options.levels);
+                            try v.drive_logic(self.n_q, true, options.levels);
                         } else {
-                            try v.drive_logic(self.q, false, levels);
-                            try v.drive_logic(self.n_q, true, levels);
+                            try v.drive_logic(self.q, false, options.levels);
+                            try v.drive_logic(self.n_q, true, options.levels);
                         }
                     } else if (as) {
-                        try v.drive_logic(self.q, true, levels);
-                        try v.drive_logic(self.n_q, false, levels);
+                        try v.drive_logic(self.q, true, options.levels);
+                        try v.drive_logic(self.n_q, false, options.levels);
                     } else {
-                        try v.drive_logic(self.q, state.q, levels);
-                        try v.drive_logic(self.n_q, !state.q, levels);
+                        try v.drive_logic(self.q, state.q, options.levels);
+                        try v.drive_logic(self.n_q, !state.q, options.levels);
                     }
                 },
             }
@@ -1624,14 +1798,11 @@ pub fn x1G74(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: ty
     };
 }
 
-fn Single_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+fn Single_DFF(comptime value_suffix: []const u8, comptime options: Options, comptime invert: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         clk: Net_ID = .unset,
         d: Net_ID = .unset,
         q: Net_ID = .unset,
@@ -1642,8 +1813,8 @@ fn Single_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 2 => self.clk,
                 3 => self.pwr.gnd,
                 4 => self.q,
-                5 => if (Pkg.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(pwr)),
-                6 => if (Pkg.data.num_pads() == 6) @field(self.pwr, @tagName(pwr)) else unreachable,
+                5 => if (options.Package.data.num_pads() == 6) .no_connect else @field(self.pwr, @tagName(options.pwr)),
+                6 => if (options.Package.data.num_pads() == 6) @field(self.pwr, @tagName(options.pwr)) else unreachable,
                 else => unreachable,
             };
         }
@@ -1660,33 +1831,30 @@ fn Single_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     state.clk = true;
                 },
                 .commit => {
-                    try v.expect_valid(self.d, levels);
-                    try v.expect_valid(self.clk, levels);
-                    try v.expect_output_valid(self.q, state.q, levels);
+                    try v.expect_valid(self.d, options.levels);
+                    try v.expect_valid(self.clk, options.levels);
+                    try v.expect_output_valid(self.q, state.q, options.levels);
 
-                    const new_clk = v.read_logic(self.clk, levels);
+                    const new_clk = v.read_logic(self.clk, options.levels);
                     if (new_clk and !state.clk) {
-                        const d = v.read_logic(self.d, levels);
+                        const d = v.read_logic(self.d, options.levels);
                         state.q = if (invert) !d else d;
                     }
                     state.clk = new_clk;
                 },
                 .nets_only => {
-                    try v.drive_logic(self.q, state.q, levels);
+                    try v.drive_logic(self.q, state.q, options.levels);
                 },
             }
         }
     };
 }
 
-fn Dual_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+fn Dual_DFF(comptime value_suffix: []const u8, comptime options: Options, comptime invert: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         logic: union (enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
@@ -1711,7 +1879,7 @@ fn Dual_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
-                    8 => @field(self.pwr, @tagName(pwr)),
+                    8 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl[0].clk,
                     2 => impl[0].d,
@@ -1727,7 +1895,7 @@ fn Dual_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
-                    8 => @field(self.pwr, @tagName(pwr)),
+                    8 => @field(self.pwr, @tagName(options.pwr)),
 
                     1 => impl.clk[0],
                     2 => impl.d[0],
@@ -1768,25 +1936,25 @@ fn Dual_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 },
                 .commit => switch (self.logic) {
                     .individual => |impl| for (0.., impl) |n, reg| {
-                        try v.expect_valid(reg.d, levels);
-                        try v.expect_valid(reg.clk, levels);
-                        try v.expect_output_valid(reg.q, state.q[n], levels);
+                        try v.expect_valid(reg.d, options.levels);
+                        try v.expect_valid(reg.clk, options.levels);
+                        try v.expect_output_valid(reg.q, state.q[n], options.levels);
 
-                        const new_clk = v.read_logic(reg.clk, levels);
+                        const new_clk = v.read_logic(reg.clk, options.levels);
                         if (new_clk and !state.clk[n]) {
-                            const d = v.read_logic(reg.d, levels);
+                            const d = v.read_logic(reg.d, options.levels);
                             state.q[n] = if (invert) !d else d;
                         }
                         state.clk[n] = new_clk;
                     },
                     .bus => |impl| {
-                        try v.expect_valid(impl.d, levels);
-                        try v.expect_valid(impl.clk, levels);
+                        try v.expect_valid(impl.d, options.levels);
+                        try v.expect_valid(impl.clk, options.levels);
                         for (0..2) |n| {
-                            try v.expect_output_valid(impl.q[n], state.q[n], levels);
-                            const new_clk = v.read_logic(impl.clk[n], levels);
+                            try v.expect_output_valid(impl.q[n], state.q[n], options.levels);
+                            const new_clk = v.read_logic(impl.clk[n], options.levels);
                             if (new_clk and !state.clk[n]) {
-                                const d = v.read_logic(impl.d[n], levels);
+                                const d = v.read_logic(impl.d[n], options.levels);
                                 state.q[n] = if (invert) !d else d;
                             }
                             state.clk[n] = new_clk;
@@ -1795,10 +1963,10 @@ fn Dual_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 },
                 .nets_only => switch (self.logic) {
                     .individual => |impl| for (0.., impl) |n, reg| {
-                        try v.drive_logic(reg.q, state.q[n], levels);
+                        try v.drive_logic(reg.q, state.q[n], options.levels);
                     },
                     .bus => |impl| for (0..2) |n| {
-                        try v.drive_logic(impl.q[n], state.q[n], levels);
+                        try v.drive_logic(impl.q[n], state.q[n], options.levels);
                     },
                 },
             }
@@ -1806,28 +1974,25 @@ fn Dual_DFF(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
     };
 }
 
-pub fn x1G79(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_DFF(pwr, Decoupler, levels, Pkg, false);
+pub fn x1G79(comptime options: Options) type {
+    return Single_DFF("1G79", options, false);
 }
-pub fn x2G79(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_DFF(pwr, Decoupler, levels, Pkg, false);
+pub fn x2G79(comptime options: Options) type {
+    return Dual_DFF("2G79", options, false);
 }
-pub fn x1G80(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Single_DFF(pwr, Decoupler, levels, Pkg, true);
+pub fn x1G80(comptime options: Options) type {
+    return Single_DFF("1G80", options, true);
 }
-pub fn x2G80(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_DFF(pwr, Decoupler, levels, Pkg, true);
+pub fn x2G80(comptime options: Options) type {
+    return Dual_DFF("2G80", options, true);
 }
 
 /// Single DFF with async clear
-pub fn x1G175(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x1G175(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("1G175"),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         clk: Net_ID = .unset,
         d: Net_ID = .unset,
         q: Net_ID = .unset,
@@ -1839,7 +2004,7 @@ pub fn x1G175(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 2 => self.pwr.gnd,
                 3 => self.d,
                 4 => self.q,
-                5 => @field(self.pwr, @tagName(pwr)),
+                5 => @field(self.pwr, @tagName(options.pwr)),
                 6 => self.n_async_clr,
                 else => unreachable,
             };
@@ -1857,27 +2022,27 @@ pub fn x1G175(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     state.clk = true;
                 },
                 .commit => {
-                    try v.expect_valid(self.d, levels);
-                    try v.expect_valid(self.clk, levels);
-                    try v.expect_valid(self.n_async_clr, levels);
+                    try v.expect_valid(self.d, options.levels);
+                    try v.expect_valid(self.clk, options.levels);
+                    try v.expect_valid(self.n_async_clr, options.levels);
 
-                    try v.expect_output_valid(self.q, state.q, levels);
+                    try v.expect_output_valid(self.q, state.q, options.levels);
 
-                    const new_clk = v.read_logic(self.clk, levels);
+                    const new_clk = v.read_logic(self.clk, options.levels);
                     if (new_clk and !state.clk) {
-                        state.q = v.read_logic(self.d, levels);
+                        state.q = v.read_logic(self.d, options.levels);
                     }
                     state.clk = new_clk;
 
-                    if (!v.read_logic(self.n_async_clr, levels)) {
+                    if (!v.read_logic(self.n_async_clr, options.levels)) {
                         state.q = false;
                     }
                 },
                 .nets_only => {
-                    if (!v.read_logic(self.n_async_clr, levels)) {
-                        try v.drive_logic(self.q, false, levels);
+                    if (!v.read_logic(self.n_async_clr, options.levels)) {
+                        try v.drive_logic(self.q, false, options.levels);
                     } else {
-                        try v.drive_logic(self.q, state.q, levels);
+                        try v.drive_logic(self.q, state.q, options.levels);
                     }
                 },
             }
@@ -1886,14 +2051,11 @@ pub fn x1G175(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 }
 
 /// Single DFF with OE
-pub fn x1G374(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x1G374(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("1G374"),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         clk: Net_ID = .unset,
         d: Net_ID = .unset,
         q: Net_ID = .unset,
@@ -1905,7 +2067,7 @@ pub fn x1G374(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 2 => self.pwr.gnd,
                 3 => self.d,
                 4 => self.q,
-                5 => @field(self.pwr, @tagName(pwr)),
+                5 => @field(self.pwr, @tagName(options.pwr)),
                 6 => self.n_oe,
                 else => unreachable,
             };
@@ -1923,23 +2085,23 @@ pub fn x1G374(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     state.clk = true;
                 },
                 .commit => {
-                    try v.expect_valid(self.d, levels);
-                    try v.expect_valid(self.clk, levels);
-                    try v.expect_valid(self.n_oe, levels);
+                    try v.expect_valid(self.d, options.levels);
+                    try v.expect_valid(self.clk, options.levels);
+                    try v.expect_valid(self.n_oe, options.levels);
 
-                    if (!v.read_logic(self.n_oe, levels)) {
-                        try v.drive_logic(self.q, state.q, levels);
+                    if (!v.read_logic(self.n_oe, options.levels)) {
+                        try v.drive_logic(self.q, state.q, options.levels);
                     }
 
-                    const new_clk = v.read_logic(self.clk, levels);
+                    const new_clk = v.read_logic(self.clk, options.levels);
                     if (new_clk and !state.clk) {
-                        state.q = v.read_logic(self.d, levels);
+                        state.q = v.read_logic(self.d, options.levels);
                     }
                     state.clk = new_clk;
                 },
                 .nets_only => {
-                    if (!v.read_logic(self.n_oe, levels)) {
-                        try v.drive_logic(self.q, state.q, levels);
+                    if (!v.read_logic(self.n_oe, options.levels)) {
+                        try v.drive_logic(self.q, state.q, options.levels);
                     }
                 },
             }
@@ -1947,14 +2109,11 @@ pub fn x1G374(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
     };
 }
 
-pub fn x1G373(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x1G373(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("1G373"),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         transparent: Net_ID = .unset,
         d: Net_ID = .unset,
         q: Net_ID = .unset,
@@ -1966,7 +2125,7 @@ pub fn x1G373(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 2 => self.pwr.gnd,
                 3 => self.d,
                 4 => self.q,
-                5 => @field(self.pwr, @tagName(pwr)),
+                5 => @field(self.pwr, @tagName(options.pwr)),
                 6 => self.n_oe,
                 else => unreachable,
             };
@@ -1982,21 +2141,21 @@ pub fn x1G373(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     state.q = false;
                 },
                 .commit => {
-                    try v.expect_valid(self.d, levels);
-                    try v.expect_valid(self.transparent, levels);
-                    try v.expect_valid(self.n_oe, levels);
-                    if (v.read_logic(self.transparent, levels)) {
-                        state.q = v.read_logic(self.d, levels);
+                    try v.expect_valid(self.d, options.levels);
+                    try v.expect_valid(self.transparent, options.levels);
+                    try v.expect_valid(self.n_oe, options.levels);
+                    if (v.read_logic(self.transparent, options.levels)) {
+                        state.q = v.read_logic(self.d, options.levels);
                     }
-                    if (!v.read_logic(self.n_oe, levels)) {
-                        try v.expect_output_valid(self.q, state.q, levels);
+                    if (!v.read_logic(self.n_oe, options.levels)) {
+                        try v.expect_output_valid(self.q, state.q, options.levels);
                     }
                 },
                 .nets_only => {
-                    if (!v.read_logic(self.n_oe, levels)) {
-                        const le = v.read_logic(self.transparent, levels);
-                        const q = if (le) v.read_logic(self.d, levels) else state.q;
-                        try v.drive_bus(self.q, q, levels);
+                    if (!v.read_logic(self.n_oe, options.levels)) {
+                        const le = v.read_logic(self.transparent, options.levels);
+                        const q = if (le) v.read_logic(self.d, options.levels) else state.q;
+                        try v.drive_bus(self.q, q, options.levels);
                     }
                 },
             }
@@ -2010,14 +2169,11 @@ pub fn x1G373(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 // TODO x2G241
 
 // 3:8 decoder/demux
-pub fn x138(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x138(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("138"),
 
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         sel: [3]Net_ID = @splat(.unset),
         y: [8]Net_ID = @splat(.unset),
         enable: Net_ID = .unset,
@@ -2042,7 +2198,7 @@ pub fn x138(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 13 => self.y[2],
                 14 => self.y[1],
                 15 => self.y[0],
-                16 => @field(self.pwr, @tagName(pwr)),
+                16 => @field(self.pwr, @tagName(options.pwr)),
                 else => unreachable,
             };
         }
@@ -2051,23 +2207,23 @@ pub fn x138(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.sel, levels);
-                    try v.expect_valid(self.enable, levels);
-                    try v.expect_valid(self.n_enable, levels);
+                    try v.expect_valid(self.sel, options.levels);
+                    try v.expect_valid(self.enable, options.levels);
+                    try v.expect_valid(self.n_enable, options.levels);
                     var out: u8 = 0;
-                    if (v.read_logic(self.enable, levels) and v.read_bus(self.n_enable, levels) == 0) {
-                        const index: u3 = @truncate(v.read_bus(self.sel, levels));
+                    if (v.read_logic(self.enable, options.levels) and v.read_bus(self.n_enable, options.levels) == 0) {
+                        const index: u3 = @truncate(v.read_bus(self.sel, options.levels));
                         out = @as(u8, 1) << index;
                     }
-                    try v.expect_output_valid(self.y, ~out, levels);
+                    try v.expect_output_valid(self.y, ~out, options.levels);
                 },
                 .nets_only => {
                     var out: u8 = 0;
-                    if (v.read_logic(self.enable, levels) and v.read_bus(self.n_enable, levels) == 0) {
-                        const index: u3 = @truncate(v.read_bus(self.sel, levels));
+                    if (v.read_logic(self.enable, options.levels) and v.read_bus(self.n_enable, options.levels) == 0) {
+                        const index: u3 = @truncate(v.read_bus(self.sel, options.levels));
                         out = @as(u8, 1) << index;
                     }
-                    try v.drive_bus(self.y, ~out, levels);
+                    try v.drive_bus(self.y, ~out, options.levels);
                 },
             }
         }
@@ -2076,15 +2232,12 @@ pub fn x138(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
 }
 
 // Dual 2:4 decoder/demux
-pub fn x139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x139(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("139"),
 
         u: [2]Unit = @splat(.{}),
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
@@ -2111,7 +2264,7 @@ pub fn x139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 8 => self.pwr.gnd,
-                16 => @field(self.pwr, @tagName(pwr)),
+                16 => @field(self.pwr, @tagName(options.pwr)),
 
                 1 => self.u[self.remap[0]].n_enable,
                 2 => self.u[self.remap[0]].sel[0],
@@ -2137,22 +2290,22 @@ pub fn x139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             switch (mode) {
                 .reset => {},
                 .commit => for (self.u) |unit| {
-                    try v.expect_valid(unit.n_enable, levels);
-                    try v.expect_valid(unit.sel, levels);
+                    try v.expect_valid(unit.n_enable, options.levels);
+                    try v.expect_valid(unit.sel, options.levels);
                     var out: u4 = 0;
-                    if (!v.read_logic(unit.n_enable, levels)) {
-                        const index: u2 = @truncate(v.read_bus(unit.sel, levels));
+                    if (!v.read_logic(unit.n_enable, options.levels)) {
+                        const index: u2 = @truncate(v.read_bus(unit.sel, options.levels));
                         out = @as(u4, 1) << index;
                     }
-                    try v.expect_output_valid(unit.y, ~out, levels);
+                    try v.expect_output_valid(unit.y, ~out, options.levels);
                 },
                 .nets_only => for (self.u) |unit| {
                     var out: u4 = 0;
-                    if (!v.read_logic(unit.n_enable, levels)) {
-                        const index: u2 = @truncate(v.read_bus(unit.sel, levels));
+                    if (!v.read_logic(unit.n_enable, options.levels)) {
+                        const index: u2 = @truncate(v.read_bus(unit.sel, options.levels));
                         out = @as(u4, 1) << index;
                     }
-                    try v.drive_bus(unit.y, ~out, levels);
+                    try v.drive_bus(unit.y, ~out, options.levels);
                 },
             }
         }
@@ -2172,15 +2325,12 @@ pub fn x139(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
 // TODO x161
 // TODO x163
 
-fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert_outputs: bool) type {
+fn Dual_4b_Tristate_Buffer(comptime value_suffix: []const u8, comptime options: Options, comptime invert_outputs: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
         u: [2]Unit = @splat(.{}),
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
@@ -2232,7 +2382,7 @@ fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, compt
                 19 => self.u[self.remap[1]].n_oe,
 
                 10 => self.pwr.gnd,
-                20 => @field(self.pwr, @tagName(pwr)),
+                20 => @field(self.pwr, @tagName(options.pwr)),
 
                 2 => self.u[self.remap[0]].logical_a_bit(0),
                 4 => self.u[self.remap[0]].logical_a_bit(1),
@@ -2262,23 +2412,23 @@ fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, compt
             switch (mode) {
                 .reset => {},
                 .commit => for (self.u) |unit| {
-                    try v.expect_valid(unit.a, levels);
-                    try v.expect_valid(unit.n_oe, levels);
-                    if (v.read_logic(unit.n_oe, levels) == false) {
-                        var data = v.read_bus(unit.a, levels);
+                    try v.expect_valid(unit.a, options.levels);
+                    try v.expect_valid(unit.n_oe, options.levels);
+                    if (v.read_logic(unit.n_oe, options.levels) == false) {
+                        var data = v.read_bus(unit.a, options.levels);
                         if (invert_outputs) {
                             data = ~data;
                         }
-                        try v.expect_output_valid(unit.y, data, levels);
+                        try v.expect_output_valid(unit.y, data, options.levels);
                     }
                 },
                 .nets_only => for (self.u) |unit| {
-                    if (v.read_logic(unit.n_oe, levels) == false) {
-                        var data = v.read_bus(unit.a, levels);
+                    if (v.read_logic(unit.n_oe, options.levels) == false) {
+                        var data = v.read_bus(unit.a, options.levels);
                         if (invert_outputs) {
                             data = ~data;
                         }
-                        try v.drive_bus(unit.y, data, levels);
+                        try v.drive_bus(unit.y, data, options.levels);
                     }
                 },
             }
@@ -2287,21 +2437,18 @@ fn Dual_4b_Tristate_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, compt
 }
 
 /// Dual 4b inverter, tri-state
-pub fn x240(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_4b_Tristate_Buffer(pwr, Decoupler, levels, Pkg, .{ true, true });
+pub fn x240(comptime options: Options) type {
+    return Dual_4b_Tristate_Buffer("240", options, .{ true, true });
 }
 
 /// Dual 4b buffer, tri-state (one active low and one active high OE)
-pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x241(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("241"),
 
         u0: Unit_Active_Low_OE = .{},
         u1: Unit_Active_High_OE = .{},
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
 
         pub const Unit_Active_Low_OE = struct {
             a: [4]Net_ID = @splat(.unset),
@@ -2365,7 +2512,7 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 19 => self.u1.oe,
 
                 10 => self.pwr.gnd,
-                20 => @field(self.pwr, @tagName(pwr)),
+                20 => @field(self.pwr, @tagName(options.pwr)),
 
                 2 => self.u0.logical_a_bit(0),
                 4 => self.u0.logical_a_bit(1),
@@ -2395,27 +2542,27 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.u0.a, levels);
-                    try v.expect_valid(self.u0.n_oe, levels);
-                    try v.expect_valid(self.u1.a, levels);
-                    try v.expect_valid(self.u1.oe, levels);
-                    if (v.read_logic(self.u0.n_oe, levels) == false) {
-                        const data = v.read_bus(self.u0.a, levels);
-                        try v.expect_output_valid(self.u0.y, data, levels);
+                    try v.expect_valid(self.u0.a, options.levels);
+                    try v.expect_valid(self.u0.n_oe, options.levels);
+                    try v.expect_valid(self.u1.a, options.levels);
+                    try v.expect_valid(self.u1.oe, options.levels);
+                    if (v.read_logic(self.u0.n_oe, options.levels) == false) {
+                        const data = v.read_bus(self.u0.a, options.levels);
+                        try v.expect_output_valid(self.u0.y, data, options.levels);
                     }
-                    if (v.read_logic(self.u1.oe, levels) == true) {
-                        const data = v.read_bus(self.u1.a, levels);
-                        try v.expect_output_valid(self.u1.y, data, levels);
+                    if (v.read_logic(self.u1.oe, options.levels) == true) {
+                        const data = v.read_bus(self.u1.a, options.levels);
+                        try v.expect_output_valid(self.u1.y, data, options.levels);
                     }
                 },
                 .nets_only => {
-                    if (v.read_logic(self.u0.n_oe, levels) == false) {
-                        const data = v.read_bus(self.u0.a, levels);
-                        try v.drive_bus(self.u0.y, data, levels);
+                    if (v.read_logic(self.u0.n_oe, options.levels) == false) {
+                        const data = v.read_bus(self.u0.a, options.levels);
+                        try v.drive_bus(self.u0.y, data, options.levels);
                     }
-                    if (v.read_logic(self.u1.oe, levels) == true) {
-                        const data = v.read_bus(self.u1.a, levels);
-                        try v.drive_bus(self.u1.y, data, levels);
+                    if (v.read_logic(self.u1.oe, options.levels) == true) {
+                        const data = v.read_bus(self.u1.a, options.levels);
+                        try v.drive_bus(self.u1.y, data, options.levels);
                     }
                 },
             }
@@ -2424,23 +2571,20 @@ pub fn x241(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
 }
 
 /// Dual 4b buffer, tri-state
-pub fn x244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Dual_4b_Tristate_Buffer(pwr, Decoupler, levels, Pkg, .{ false, false });
+pub fn x244(comptime options: Options) type {
+    return Dual_4b_Tristate_Buffer("244", options, .{ false, false });
 }
 
 /// 8b bus transceiver
-pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x245(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("245"),
 
         a: [8]Net_ID = @splat(.unset),
         b: [8]Net_ID = @splat(.unset),
         n_oe: Net_ID = .unset,
         a_to_b: Net_ID = .unset, // B to A when low
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
 
         pub fn check_config(self: @This()) !void {
@@ -2464,7 +2608,7 @@ pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 19 => self.n_oe,
 
                 10 => self.pwr.gnd,
-                20 => @field(self.pwr, @tagName(pwr)),
+                20 => @field(self.pwr, @tagName(options.pwr)),
 
                 2 => self.a[self.remap[0]],
                 3 => self.a[self.remap[1]],
@@ -2492,30 +2636,30 @@ pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.n_oe, levels);
-                    try v.expect_valid(self.a_to_b, levels);
-                    if (v.read_logic(self.a_to_b, levels)) {
-                        try v.expect_valid(self.a, levels);
-                        if (v.read_logic(self.n_oe, levels) == false) {
-                            const data = v.read_bus(self.a, levels);
-                            try v.expect_output_valid(self.b, data, levels);
+                    try v.expect_valid(self.n_oe, options.levels);
+                    try v.expect_valid(self.a_to_b, options.levels);
+                    if (v.read_logic(self.a_to_b, options.levels)) {
+                        try v.expect_valid(self.a, options.levels);
+                        if (v.read_logic(self.n_oe, options.levels) == false) {
+                            const data = v.read_bus(self.a, options.levels);
+                            try v.expect_output_valid(self.b, data, options.levels);
                         }
                     } else {
-                        try v.expect_valid(self.b, levels);
-                        if (v.read_logic(self.n_oe, levels) == false) {
-                            const data = v.read_bus(self.b, levels);
-                            try v.expect_output_valid(self.a, data, levels);
+                        try v.expect_valid(self.b, options.levels);
+                        if (v.read_logic(self.n_oe, options.levels) == false) {
+                            const data = v.read_bus(self.b, options.levels);
+                            try v.expect_output_valid(self.a, data, options.levels);
                         }
                     }
                 },
                 .nets_only => {
-                    if (v.read_logic(self.n_oe, levels) == false) {
-                        if (v.read_logic(self.a_to_b, levels)) {
-                            const data = v.read_bus(self.a, levels);
-                            try v.drive_bus(self.b, data, levels);
+                    if (v.read_logic(self.n_oe, options.levels) == false) {
+                        if (v.read_logic(self.a_to_b, options.levels)) {
+                            const data = v.read_bus(self.a, options.levels);
+                            try v.drive_bus(self.b, data, options.levels);
                         } else {
-                            const data = v.read_bus(self.b, levels);
-                            try v.drive_bus(self.a, data, levels);
+                            const data = v.read_bus(self.b, options.levels);
+                            try v.drive_bus(self.a, data, options.levels);
                         }
                     }
                 },
@@ -2524,17 +2668,14 @@ pub fn x245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
     };
 }
 
-pub fn Octal_Line_Driver(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime invert: bool) type {
+pub fn Octal_Line_Driver(comptime value_suffix: []const u8, comptime options: Options, comptime invert: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(value_suffix),
 
         a: [8]Net_ID = @splat(.unset),
         y: [8]Net_ID = @splat(.unset),
         n_oe: [2]Net_ID = @splat(.unset),
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
 
         pub fn check_config(self: @This()) !void {
@@ -2558,7 +2699,7 @@ pub fn Octal_Line_Driver(comptime pwr: Net_ID, comptime Decoupler: type, comptim
                 19 => self.n_oe[1],
 
                 10 => self.pwr.gnd,
-                20 => @field(self.pwr, @tagName(pwr)),
+                20 => @field(self.pwr, @tagName(options.pwr)),
 
                 2 => self.a[self.remap[0]],
                 3 => self.a[self.remap[1]],
@@ -2586,21 +2727,21 @@ pub fn Octal_Line_Driver(comptime pwr: Net_ID, comptime Decoupler: type, comptim
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.a, levels);
-                    try v.expect_valid(self.n_oe, levels);
-                    const oe = v.read_bus(self.n_oe, levels);
+                    try v.expect_valid(self.a, options.levels);
+                    try v.expect_valid(self.n_oe, options.levels);
+                    const oe = v.read_bus(self.n_oe, options.levels);
                     if (oe == 0) {
-                        var a = v.read_bus(self.a, levels);
+                        var a = v.read_bus(self.a, options.levels);
                         if (invert) a = a ^ 0xFF;
-                        try v.expect_output_valid(self.y, a, levels);
+                        try v.expect_output_valid(self.y, a, options.levels);
                     }
                 },
                 .nets_only => {
-                    const oe = v.read_bus(self.n_oe, levels);
+                    const oe = v.read_bus(self.n_oe, options.levels);
                     if (oe == 0) {
-                        var a = v.read_bus(self.a, levels);
+                        var a = v.read_bus(self.a, options.levels);
                         if (invert) a = a ^ 0xFF;
-                        try v.drive_bus(self.y, a, levels);
+                        try v.drive_bus(self.y, a, options.levels);
                     }
                 },
             }
@@ -2609,27 +2750,24 @@ pub fn Octal_Line_Driver(comptime pwr: Net_ID, comptime Decoupler: type, comptim
 }
 
 /// 8b inverter, tri-state (dual OE)
-pub fn x540(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Octal_Line_Driver(pwr, Decoupler, levels, Pkg, true);
+pub fn x540(comptime options: Options) type {
+    return Octal_Line_Driver("540", options, true);
 }
 /// 8b buffer, tri-state (dual OE)
-pub fn x541(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
-    return Octal_Line_Driver(pwr, Decoupler, levels, Pkg, false);
+pub fn x541(comptime options: Options) type {
+    return Octal_Line_Driver("541", options, false);
 }
 
 /// 8b transparent latch, tri-state
-pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x573(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("573"),
 
         d: [8]Net_ID = @splat(.unset),
         q: [8]Net_ID = @splat(.unset),
         transparent: Net_ID = .unset,
         n_oe: Net_ID = .unset,
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
 
         pub fn check_config(self: @This()) !void {
@@ -2653,7 +2791,7 @@ pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 11 => self.transparent,
 
                 10 => self.pwr.gnd,
-                20 => @field(self.pwr, @tagName(pwr)),
+                20 => @field(self.pwr, @tagName(options.pwr)),
 
                 2 => self.d[self.remap[0]],
                 3 => self.d[self.remap[1]],
@@ -2687,24 +2825,24 @@ pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     state.data = 0xAA;
                 },
                 .commit => {
-                    try v.expect_valid(self.d, levels);
-                    try v.expect_valid(self.transparent, levels);
-                    try v.expect_valid(self.n_oe, levels);
-                    const le = v.read_logic(self.transparent, levels);
+                    try v.expect_valid(self.d, options.levels);
+                    try v.expect_valid(self.transparent, options.levels);
+                    try v.expect_valid(self.n_oe, options.levels);
+                    const le = v.read_logic(self.transparent, options.levels);
                     if (le == true) {
-                        state.data = @truncate(v.read_bus(self.d, levels));
+                        state.data = @truncate(v.read_bus(self.d, options.levels));
                     }
-                    const oe = v.read_logic(self.n_oe, levels);
+                    const oe = v.read_logic(self.n_oe, options.levels);
                     if (oe == false) {
-                        try v.expect_output_valid(self.q, state.data, levels);
+                        try v.expect_output_valid(self.q, state.data, options.levels);
                     }
                 },
                 .nets_only => {
-                    const oe = v.read_logic(self.n_oe, levels);
+                    const oe = v.read_logic(self.n_oe, options.levels);
                     if (oe == false) {
-                        const le = v.read_logic(self.transparent, levels);
-                        const data = if (le == true) v.read_bus(self.d, levels) else state.data;
-                        try v.drive_bus(self.q, data, levels);
+                        const le = v.read_logic(self.transparent, options.levels);
+                        const data = if (le == true) v.read_bus(self.d, options.levels) else state.data;
+                        try v.drive_bus(self.q, data, options.levels);
                     }
                 },
             }
@@ -2713,18 +2851,15 @@ pub fn x573(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
 }
 
 /// 8b positive-edge-triggered D register, tri-state
-pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn x574(comptime options: Options) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("574"),
 
         d: [8]Net_ID = @splat(.unset),
         q: [8]Net_ID = @splat(.unset),
         clk: Net_ID = .unset,
         n_oe: Net_ID = .unset,
-        pwr: power.Single(pwr, Decoupler) = .{},
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
         remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
 
         pub fn check_config(self: @This()) !void {
@@ -2748,7 +2883,7 @@ pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                 11 => self.clk,
 
                 10 => self.pwr.gnd,
-                20 => @field(self.pwr, @tagName(pwr)),
+                20 => @field(self.pwr, @tagName(options.pwr)),
 
                 2 => self.d[self.remap[0]],
                 3 => self.d[self.remap[1]],
@@ -2784,23 +2919,23 @@ pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
                     state.clk = true;
                 },
                 .commit => {
-                    try v.expect_valid(self.d, levels);
-                    try v.expect_valid(self.clk, levels);
-                    try v.expect_valid(self.n_oe, levels);
-                    const oe = v.read_logic(self.n_oe, levels);
+                    try v.expect_valid(self.d, options.levels);
+                    try v.expect_valid(self.clk, options.levels);
+                    try v.expect_valid(self.n_oe, options.levels);
+                    const oe = v.read_logic(self.n_oe, options.levels);
                     if (oe == false) {
-                        try v.expect_output_valid(self.q, state.data, levels);
+                        try v.expect_output_valid(self.q, state.data, options.levels);
                     }
-                    const new_clk = v.read_logic(self.clk, levels);
+                    const new_clk = v.read_logic(self.clk, options.levels);
                     if (new_clk and !state.clk) {
-                        state.data = @truncate(v.read_bus(self.d, levels));
+                        state.data = @truncate(v.read_bus(self.d, options.levels));
                     }
                     state.clk = new_clk;
                 },
                 .nets_only => {
-                    const oe = v.read_logic(self.n_oe, levels);
+                    const oe = v.read_logic(self.n_oe, options.levels);
                     if (oe == false) {
-                        try v.drive_bus(self.q, state.data, levels);
+                        try v.drive_bus(self.q, state.data, options.levels);
                     }
                 },
             }
@@ -2809,15 +2944,12 @@ pub fn x574(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: typ
 }
 
 /// 4x 4b buffer, tri-state
-pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime bus_hold: bool) type {
+pub fn x16244(comptime options: Options, comptime bus_hold: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(if (bus_hold) "H16244" else "16244"),
 
         u: [4]Unit = @splat(.{}),
-        pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        pwr: power.Multi(4, 8, options.pwr, options.Decoupler) = .{},
         remap: [4]u2 = .{ 0, 1, 2, 3 },
 
         pub const Unit = struct {
@@ -2919,10 +3051,10 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 39 => self.pwr.gnd[6],
                 45 => self.pwr.gnd[7],
 
-                7 => @field(self.pwr, @tagName(pwr))[0],
-                18 => @field(self.pwr, @tagName(pwr))[1],
-                31 => @field(self.pwr, @tagName(pwr))[2],
-                42 => @field(self.pwr, @tagName(pwr))[3],
+                7 => @field(self.pwr, @tagName(options.pwr))[0],
+                18 => @field(self.pwr, @tagName(options.pwr))[1],
+                31 => @field(self.pwr, @tagName(options.pwr))[2],
+                42 => @field(self.pwr, @tagName(options.pwr))[3],
 
                 else => unreachable,
             };
@@ -2942,26 +3074,26 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 },
                 .commit => for (self.u, state) |unit, *unit_state| {
                     if (bus_hold) {
-                        try v.expect_valid_or_unconnected(unit.a, levels);
+                        try v.expect_valid_or_unconnected(unit.a, options.levels);
                     } else {
-                        try v.expect_valid(unit.a, levels);
+                        try v.expect_valid(unit.a, options.levels);
                     }
-                    try v.expect_valid(unit.n_oe, levels);
-                    if (v.read_logic(unit.n_oe, levels) == false) {
+                    try v.expect_valid(unit.n_oe, options.levels);
+                    if (v.read_logic(unit.n_oe, options.levels) == false) {
                         const data = read_a(unit, v, unit_state);
-                        try v.expect_output_valid(unit.y, data, levels);
+                        try v.expect_output_valid(unit.y, data, options.levels);
                     }
                 },
                 .nets_only => {
                     if (bus_hold) {
                         for (self.u, state) |unit, *unit_state| {
-                            unit_state.bus_hold = @truncate(try v.pull_and_read_bus(unit.a, levels, unit_state.bus_hold));
+                            unit_state.bus_hold = @truncate(try v.pull_and_read_bus(unit.a, options.levels, unit_state.bus_hold));
                         }
                     }
                     for (self.u, state) |unit, *unit_state| {
-                        if (v.read_logic(unit.n_oe, levels) == false) {
+                        if (v.read_logic(unit.n_oe, options.levels) == false) {
                             const data = read_a(unit, v, unit_state);
-                            try v.drive_bus(unit.y, data, levels);
+                            try v.drive_bus(unit.y, data, options.levels);
                         }
                     }
                 },
@@ -2970,24 +3102,21 @@ pub fn x16244(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_a(unit: Unit, v: *Validator, state: *Validate_State) u16 {
             if (bus_hold) {
-                return @truncate(v.read_bus_with_pull(unit.a, levels, state.bus_hold));
+                return @truncate(v.read_bus_with_pull(unit.a, options.levels, state.bus_hold));
             } else {
-                return @truncate(v.read_bus(unit.a, levels));
+                return @truncate(v.read_bus(unit.a, options.levels));
             }
         }
     };
 }
 
 /// 4x 4b buffer, tri-state
-pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime bus_hold: bool) type {
+pub fn x16245(comptime options: Options, comptime bus_hold: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(if (bus_hold) "H16245" else "16245"),
 
         u: [2]Unit = @splat(.{}),
-        pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        pwr: power.Multi(4, 8, options.pwr, options.Decoupler) = .{},
         remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
@@ -3086,10 +3215,10 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 39 => self.pwr.gnd[6],
                 45 => self.pwr.gnd[7],
 
-                7 => @field(self.pwr, @tagName(pwr))[0],
-                18 => @field(self.pwr, @tagName(pwr))[1],
-                31 => @field(self.pwr, @tagName(pwr))[2],
-                42 => @field(self.pwr, @tagName(pwr))[3],
+                7 => @field(self.pwr, @tagName(options.pwr))[0],
+                18 => @field(self.pwr, @tagName(options.pwr))[1],
+                31 => @field(self.pwr, @tagName(options.pwr))[2],
+                42 => @field(self.pwr, @tagName(options.pwr))[3],
 
                 else => unreachable,
             };
@@ -3109,33 +3238,33 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     state[1].b_hold = 0;
                 },
                 .commit => for (self.u, state) |unit, *unit_state| {
-                    try v.expect_valid(unit.n_oe, levels);
-                    try v.expect_valid(unit.a_to_b, levels);
-                    if (v.read_logic(unit.a_to_b, levels)) {
-                        if (bus_hold) try v.expect_valid_or_unconnected(unit.a, levels) else try v.expect_valid(unit.a, levels);
+                    try v.expect_valid(unit.n_oe, options.levels);
+                    try v.expect_valid(unit.a_to_b, options.levels);
+                    if (v.read_logic(unit.a_to_b, options.levels)) {
+                        if (bus_hold) try v.expect_valid_or_unconnected(unit.a, options.levels) else try v.expect_valid(unit.a, options.levels);
                     } else {
-                        if (bus_hold) try v.expect_valid_or_unconnected(unit.b, levels) else try v.expect_valid(unit.b, levels);
+                        if (bus_hold) try v.expect_valid_or_unconnected(unit.b, options.levels) else try v.expect_valid(unit.b, options.levels);
                     }
-                    if (v.read_logic(unit.n_oe, levels) == false) {
-                        if (v.read_logic(unit.a_to_b, levels)) {
+                    if (v.read_logic(unit.n_oe, options.levels) == false) {
+                        if (v.read_logic(unit.a_to_b, options.levels)) {
                             const data = read_a(unit, v, unit_state);
-                            try v.expect_output_valid(unit.b, data, levels);
+                            try v.expect_output_valid(unit.b, data, options.levels);
                         } else {
                             const data = read_b(unit, v, unit_state);
-                            try v.expect_output_valid(unit.a, data, levels);
+                            try v.expect_output_valid(unit.a, data, options.levels);
                         }
                     }
                 },
                 .nets_only => for (self.u, state) |unit, *unit_state| {
                     if (bus_hold) {
-                        unit_state.a_hold = @truncate(try v.pull_and_read_bus(unit.a, levels, unit_state.a_hold));
-                        unit_state.b_hold = @truncate(try v.pull_and_read_bus(unit.b, levels, unit_state.b_hold));
+                        unit_state.a_hold = @truncate(try v.pull_and_read_bus(unit.a, options.levels, unit_state.a_hold));
+                        unit_state.b_hold = @truncate(try v.pull_and_read_bus(unit.b, options.levels, unit_state.b_hold));
                     }
-                    if (v.read_logic(unit.n_oe, levels) == false) {
-                        if (v.read_logic(unit.a_to_b, levels)) {
-                            try v.drive_bus(unit.b, read_a(unit, v, unit_state), levels);
+                    if (v.read_logic(unit.n_oe, options.levels) == false) {
+                        if (v.read_logic(unit.a_to_b, options.levels)) {
+                            try v.drive_bus(unit.b, read_a(unit, v, unit_state), options.levels);
                         } else {
-                            try v.drive_bus(unit.a, read_b(unit, v, unit_state), levels);
+                            try v.drive_bus(unit.a, read_b(unit, v, unit_state), options.levels);
                         }
                     }
                 },
@@ -3144,31 +3273,29 @@ pub fn x16245(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_a(unit: Unit, v: *Validator, state: *Validate_State) u8 {
             if (bus_hold) {
-                return @truncate(v.read_bus_with_pull(unit.a, levels, state.a_hold));
+                return @truncate(v.read_bus_with_pull(unit.a, options.levels, state.a_hold));
             } else {
-                return @truncate(v.read_bus(unit.a, levels));
+                return @truncate(v.read_bus(unit.a, options.levels));
             }
         }
 
         fn read_b(unit: Unit, v: *Validator, state: *Validate_State) u8 {
             if (bus_hold) {
-                return @truncate(v.read_bus_with_pull(unit.b, levels, state.b_hold));
+                return @truncate(v.read_bus_with_pull(unit.b, options.levels, state.b_hold));
             } else {
-                return @truncate(v.read_bus(unit.b, levels));
+                return @truncate(v.read_bus(unit.b, options.levels));
             }
         }
     };
 }
 
 /// 2x12b bus exchange switch
-pub fn CBT16212(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type) type {
+pub fn CBT16212(comptime options: Options) type {
+    std.debug.assert(options.logic_family == .CBT or options.logic_family == .CBTLV);
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base("16212"),
 
-        pwr: power.Multi(1, 4, pwr, Decoupler) = .{},
+        pwr: power.Multi(1, 4, options.pwr, options.Decoupler) = .{},
         left: [2][12]Net_ID = @splat(@splat(.unset)),
         right: [2][12]Net_ID = @splat(@splat(.unset)),
         op_sel: [3]Net_ID = @splat(.unset),
@@ -3270,7 +3397,7 @@ pub fn CBT16212(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels:
                 38 => self.pwr.gnd[2],
                 49 => self.pwr.gnd[3],
 
-                17 => @field(self.pwr, @tagName(pwr))[0],
+                17 => @field(self.pwr, @tagName(options.pwr))[0],
 
                 else => unreachable,
             };
@@ -3280,11 +3407,11 @@ pub fn CBT16212(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels:
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_valid(self.op_sel, levels);
-                    try v.expect_below(self.left[0], levels.Vclamp);
-                    try v.expect_below(self.left[1], levels.Vclamp);
-                    try v.expect_below(self.right[0], levels.Vclamp);
-                    try v.expect_below(self.right[1], levels.Vclamp);
+                    try v.expect_valid(self.op_sel, options.levels);
+                    try v.expect_below(self.left[0], options.levels.Vclamp);
+                    try v.expect_below(self.left[1], options.levels.Vclamp);
+                    try v.expect_below(self.right[0], options.levels.Vclamp);
+                    try v.expect_below(self.right[1], options.levels.Vclamp);
 
                     const power_limit = 0.016384 * self.r_on;
                     switch (self.read_op(v)) {
@@ -3324,23 +3451,20 @@ pub fn CBT16212(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels:
         }
 
         fn read_op(self: @This(), v: *Validator) Op {
-            return @enumFromInt(v.read_bus(self.op_sel, levels));
+            return @enumFromInt(v.read_bus(self.op_sel, options.levels));
         }
     };
 }
 
 /// 12x 2:1 mux/demux, latched, tri-state
-pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime bus_hold: bool) type {
+pub fn x16260(comptime options: Options, comptime bus_hold: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(if (bus_hold) "H16260" else "16260"),
 
         a: Port_A = .{},
         bx: Port_B = .{},
         by: Port_B = .{},
-        pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        pwr: power.Multi(4, 8, options.pwr, options.Decoupler) = .{},
         remap: [12]u4 = .{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 },
 
         pub const Port_A = struct {
@@ -3429,10 +3553,10 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 46 => self.pwr.gnd[6],
                 53 => self.pwr.gnd[7],
 
-                7 => @field(self.pwr, @tagName(pwr))[0],
-                22 => @field(self.pwr, @tagName(pwr))[1],
-                35 => @field(self.pwr, @tagName(pwr))[2],
-                50 => @field(self.pwr, @tagName(pwr))[3],
+                7 => @field(self.pwr, @tagName(options.pwr))[0],
+                22 => @field(self.pwr, @tagName(options.pwr))[1],
+                35 => @field(self.pwr, @tagName(options.pwr))[2],
+                50 => @field(self.pwr, @tagName(options.pwr))[3],
 
                 else => unreachable,
             };
@@ -3463,72 +3587,72 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 },
                 .commit => {
                     if (bus_hold) {
-                        try v.expect_valid_or_unconnected(self.a.data, levels);
-                        try v.expect_valid_or_unconnected(self.bx.data, levels);
-                        try v.expect_valid_or_unconnected(self.by.data, levels);
+                        try v.expect_valid_or_unconnected(self.a.data, options.levels);
+                        try v.expect_valid_or_unconnected(self.bx.data, options.levels);
+                        try v.expect_valid_or_unconnected(self.by.data, options.levels);
                     } else {
-                        try v.expect_valid(self.a.data, levels);
-                        try v.expect_valid(self.bx.data, levels);
-                        try v.expect_valid(self.by.data, levels);
+                        try v.expect_valid(self.a.data, options.levels);
+                        try v.expect_valid(self.bx.data, options.levels);
+                        try v.expect_valid(self.by.data, options.levels);
                     }
 
-                    try v.expect_valid(self.a.n_oe, levels);
-                    try v.expect_valid(self.a.enable_bx, levels);
-                    try v.expect_valid(self.bx.n_oe, levels);
-                    try v.expect_valid(self.by.n_oe, levels);
+                    try v.expect_valid(self.a.n_oe, options.levels);
+                    try v.expect_valid(self.a.enable_bx, options.levels);
+                    try v.expect_valid(self.bx.n_oe, options.levels);
+                    try v.expect_valid(self.by.n_oe, options.levels);
 
-                    try v.expect_valid(self.bx.latch_input_data, levels);
-                    try v.expect_valid(self.by.latch_input_data, levels);
-                    try v.expect_valid(self.bx.latch_output_data, levels);
-                    try v.expect_valid(self.by.latch_output_data, levels);
+                    try v.expect_valid(self.bx.latch_input_data, options.levels);
+                    try v.expect_valid(self.by.latch_input_data, options.levels);
+                    try v.expect_valid(self.bx.latch_output_data, options.levels);
+                    try v.expect_valid(self.by.latch_output_data, options.levels);
 
-                    if (v.read_logic(self.bx.latch_input_data, levels)) state.bx_to_a = self.read_bx(v, state);
-                    if (v.read_logic(self.bx.latch_output_data, levels)) state.a_to_bx = self.read_a(v, state);
+                    if (v.read_logic(self.bx.latch_input_data, options.levels)) state.bx_to_a = self.read_bx(v, state);
+                    if (v.read_logic(self.bx.latch_output_data, options.levels)) state.a_to_bx = self.read_a(v, state);
 
-                    if (v.read_logic(self.by.latch_input_data, levels)) state.by_to_a = self.read_by(v, state);
-                    if (v.read_logic(self.by.latch_output_data, levels)) state.a_to_by = self.read_a(v, state);
+                    if (v.read_logic(self.by.latch_input_data, options.levels)) state.by_to_a = self.read_by(v, state);
+                    if (v.read_logic(self.by.latch_output_data, options.levels)) state.a_to_by = self.read_a(v, state);
 
-                    if (v.read_logic(self.a.n_oe, levels) == false) {
-                        const data = switch (v.read_logic(self.a.enable_bx, levels)) {
-                            true => if (v.read_logic(self.bx.latch_input_data, levels)) self.read_bx(v, state) else state.bx_to_a,
-                            false => if (v.read_logic(self.by.latch_input_data, levels)) self.read_by(v, state) else state.by_to_a,
+                    if (v.read_logic(self.a.n_oe, options.levels) == false) {
+                        const data = switch (v.read_logic(self.a.enable_bx, options.levels)) {
+                            true => if (v.read_logic(self.bx.latch_input_data, options.levels)) self.read_bx(v, state) else state.bx_to_a,
+                            false => if (v.read_logic(self.by.latch_input_data, options.levels)) self.read_by(v, state) else state.by_to_a,
                         };
-                        try v.expect_output_valid(self.a.data, data, levels);
+                        try v.expect_output_valid(self.a.data, data, options.levels);
                     }
 
-                    if (v.read_logic(self.bx.n_oe, levels) == false) {
-                        const data = if (v.read_logic(self.bx.latch_output_data, levels)) self.read_a(v, state) else state.a_to_bx;
-                        try v.expect_output_valid(self.bx.data, data, levels);
+                    if (v.read_logic(self.bx.n_oe, options.levels) == false) {
+                        const data = if (v.read_logic(self.bx.latch_output_data, options.levels)) self.read_a(v, state) else state.a_to_bx;
+                        try v.expect_output_valid(self.bx.data, data, options.levels);
                     }
 
-                    if (v.read_logic(self.by.n_oe, levels) == false) {
-                        const data = if (v.read_logic(self.by.latch_output_data, levels)) self.read_a(v, state) else state.a_to_by;
-                        try v.expect_output_valid(self.by.data, data, levels);
+                    if (v.read_logic(self.by.n_oe, options.levels) == false) {
+                        const data = if (v.read_logic(self.by.latch_output_data, options.levels)) self.read_a(v, state) else state.a_to_by;
+                        try v.expect_output_valid(self.by.data, data, options.levels);
                     }
                 },
                 .nets_only => {
                     if (bus_hold) {
-                        state.a_hold = @truncate(try v.pull_and_read_bus(self.a.data, levels, state.a_hold));
-                        state.bx_hold = @truncate(try v.pull_and_read_bus(self.bx.data, levels, state.bx_hold));
-                        state.by_hold = @truncate(try v.pull_and_read_bus(self.by.data, levels, state.by_hold));
+                        state.a_hold = @truncate(try v.pull_and_read_bus(self.a.data, options.levels, state.a_hold));
+                        state.bx_hold = @truncate(try v.pull_and_read_bus(self.bx.data, options.levels, state.bx_hold));
+                        state.by_hold = @truncate(try v.pull_and_read_bus(self.by.data, options.levels, state.by_hold));
                     }
 
-                    if (v.read_logic(self.a.n_oe, levels) == false) {
-                        const data = switch (v.read_logic(self.a.enable_bx, levels)) {
-                            true => if (v.read_logic(self.bx.latch_input_data, levels)) self.read_bx(v, state) else state.bx_to_a,
-                            false => if (v.read_logic(self.by.latch_input_data, levels)) self.read_by(v, state) else state.by_to_a,
+                    if (v.read_logic(self.a.n_oe, options.levels) == false) {
+                        const data = switch (v.read_logic(self.a.enable_bx, options.levels)) {
+                            true => if (v.read_logic(self.bx.latch_input_data, options.levels)) self.read_bx(v, state) else state.bx_to_a,
+                            false => if (v.read_logic(self.by.latch_input_data, options.levels)) self.read_by(v, state) else state.by_to_a,
                         };
-                        try v.drive_bus(self.a.data, data, levels);
+                        try v.drive_bus(self.a.data, data, options.levels);
                     }
 
-                    if (v.read_logic(self.bx.n_oe, levels) == false) {
-                        const data = if (v.read_logic(self.bx.latch_output_data, levels)) self.read_a(v, state) else state.a_to_bx;
-                        try v.drive_bus(self.bx.data, data, levels);
+                    if (v.read_logic(self.bx.n_oe, options.levels) == false) {
+                        const data = if (v.read_logic(self.bx.latch_output_data, options.levels)) self.read_a(v, state) else state.a_to_bx;
+                        try v.drive_bus(self.bx.data, data, options.levels);
                     }
 
-                    if (v.read_logic(self.by.n_oe, levels) == false) {
-                        const data = if (v.read_logic(self.by.latch_output_data, levels)) self.read_a(v, state) else state.a_to_by;
-                        try v.drive_bus(self.by.data, data, levels);
+                    if (v.read_logic(self.by.n_oe, options.levels) == false) {
+                        const data = if (v.read_logic(self.by.latch_output_data, options.levels)) self.read_a(v, state) else state.a_to_by;
+                        try v.drive_bus(self.by.data, data, options.levels);
                     }
                 },
             }
@@ -3536,40 +3660,37 @@ pub fn x16260(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_a(self: @This(), v: *Validator, state: *Validate_State) u12 {
             if (bus_hold) {
-                return @truncate(v.read_bus_with_pull(self.a.data, levels, state.a_hold));
+                return @truncate(v.read_bus_with_pull(self.a.data, options.levels, state.a_hold));
             } else {
-                return @truncate(v.read_bus(self.a.data, levels));
+                return @truncate(v.read_bus(self.a.data, options.levels));
             }
         }
 
         fn read_bx(self: @This(), v: *Validator, state: *Validate_State) u12 {
             if (bus_hold) {
-                return @truncate(v.read_bus_with_pull(self.bx.data, levels, state.bx_hold));
+                return @truncate(v.read_bus_with_pull(self.bx.data, options.levels, state.bx_hold));
             } else {
-                return @truncate(v.read_bus(self.bx.data, levels));
+                return @truncate(v.read_bus(self.bx.data, options.levels));
             }
         }
 
         fn read_by(self: @This(), v: *Validator, state: *Validate_State) u12 {
             if (bus_hold) {
-                return @truncate(v.read_bus_with_pull(self.by.data, levels, state.by_hold));
+                return @truncate(v.read_bus_with_pull(self.by.data, options.levels, state.by_hold));
             } else {
-                return @truncate(v.read_bus(self.by.data, levels));
+                return @truncate(v.read_bus(self.by.data, options.levels));
             }
         }
     };
 }
 
 /// 2x 8b bus transceiver and bidirectional positive-edge-triggered register, tri-state
-pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime bus_hold: bool) type {
+pub fn x16652(comptime options: Options, comptime bus_hold: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(if (bus_hold) "H16652" else "16652"),
 
         u: [2]Unit = @splat(.{}),
-        pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        pwr: power.Multi(4, 8, options.pwr, options.Decoupler) = .{},
         remap: [2]u1 = .{ 0, 1 },
 
         pub const Unit = struct {
@@ -3685,10 +3806,10 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 46 => self.pwr.gnd[6],
                 53 => self.pwr.gnd[7],
 
-                7 => @field(self.pwr, @tagName(pwr))[0],
-                22 => @field(self.pwr, @tagName(pwr))[1],
-                35 => @field(self.pwr, @tagName(pwr))[2],
-                50 => @field(self.pwr, @tagName(pwr))[3],
+                7 => @field(self.pwr, @tagName(options.pwr))[0],
+                22 => @field(self.pwr, @tagName(options.pwr))[1],
+                35 => @field(self.pwr, @tagName(options.pwr))[2],
+                50 => @field(self.pwr, @tagName(options.pwr))[3],
 
                 else => unreachable,
             };
@@ -3716,31 +3837,31 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                     }
                 },
                 .commit => for (self.u, state) |unit, *unit_state| {
-                    try v.expect_valid(unit.a_to_b.oe, levels);
-                    try v.expect_valid(unit.b_to_a.n_oe, levels);
+                    try v.expect_valid(unit.a_to_b.oe, options.levels);
+                    try v.expect_valid(unit.b_to_a.n_oe, options.levels);
 
-                    try v.expect_valid(unit.a_to_b.output_register, levels);
-                    try v.expect_valid(unit.b_to_a.output_register, levels);
+                    try v.expect_valid(unit.a_to_b.output_register, options.levels);
+                    try v.expect_valid(unit.b_to_a.output_register, options.levels);
 
-                    try v.expect_valid(unit.a_to_b.clk, levels);
-                    try v.expect_valid(unit.b_to_a.clk, levels);
+                    try v.expect_valid(unit.a_to_b.clk, options.levels);
+                    try v.expect_valid(unit.b_to_a.clk, options.levels);
 
-                    if (v.read_logic(unit.b_to_a.n_oe, levels) == true) {
-                        if (bus_hold) try v.expect_valid_or_unconnected(unit.a, levels) else try v.expect_valid(unit.a, levels);
+                    if (v.read_logic(unit.b_to_a.n_oe, options.levels) == true) {
+                        if (bus_hold) try v.expect_valid_or_unconnected(unit.a, options.levels) else try v.expect_valid(unit.a, options.levels);
                     }
-                    if (v.read_logic(unit.a_to_b.oe, levels) == false) {
-                        if (bus_hold) try v.expect_valid_or_unconnected(unit.b, levels) else try v.expect_valid(unit.b, levels);
+                    if (v.read_logic(unit.a_to_b.oe, options.levels) == false) {
+                        if (bus_hold) try v.expect_valid_or_unconnected(unit.b, options.levels) else try v.expect_valid(unit.b, options.levels);
                     }
 
                     {
-                        const new_a_to_b_clk = v.read_logic(unit.a_to_b.clk, levels);
+                        const new_a_to_b_clk = v.read_logic(unit.a_to_b.clk, options.levels);
                         if (new_a_to_b_clk and !unit_state.a_to_b_clk) {
                             unit_state.a_to_b = read_a(unit, v, unit_state, 2);
                         }
                         unit_state.a_to_b_clk = new_a_to_b_clk;
                     }
                     {
-                        const new_b_to_a_clk = v.read_logic(unit.b_to_a.clk, levels);
+                        const new_b_to_a_clk = v.read_logic(unit.b_to_a.clk, options.levels);
                         if (new_b_to_a_clk and !unit_state.b_to_a_clk) {
                             unit_state.b_to_a = read_b(unit, v, unit_state, 2);
                         }
@@ -3749,18 +3870,18 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 },
                 .nets_only => for (self.u, state) |unit, *unit_state| {
                     if (bus_hold) {
-                        unit_state.a_hold = @truncate(try v.pull_and_read_bus(unit.a, levels, unit_state.a_hold));
-                        unit_state.b_hold = @truncate(try v.pull_and_read_bus(unit.b, levels, unit_state.b_hold));
+                        unit_state.a_hold = @truncate(try v.pull_and_read_bus(unit.a, options.levels, unit_state.a_hold));
+                        unit_state.b_hold = @truncate(try v.pull_and_read_bus(unit.b, options.levels, unit_state.b_hold));
                     }
 
-                    if (v.read_logic(unit.b_to_a.n_oe, levels) == false) {
+                    if (v.read_logic(unit.b_to_a.n_oe, options.levels) == false) {
                         const data = read_a(unit, v, unit_state, 2);
-                        try v.drive_bus(unit.a, data, levels);
+                        try v.drive_bus(unit.a, data, options.levels);
                         if (bus_hold) unit_state.a_hold = data;
                     }
-                    if (v.read_logic(unit.a_to_b.oe, levels) == true) {
+                    if (v.read_logic(unit.a_to_b.oe, options.levels) == true) {
                         const data = read_b(unit, v, unit_state, 2);
-                        try v.drive_bus(unit.b, data, levels);
+                        try v.drive_bus(unit.b, data, options.levels);
                         if (bus_hold) unit_state.b_hold = data;
                     }
                 },
@@ -3768,49 +3889,46 @@ pub fn x16652(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
         }
 
         fn read_a(unit: Unit, v: *Validator, state: *Validate_State, limit: usize) u8 {
-            if (limit > 0 and v.read_logic(unit.b_to_a.n_oe, levels) == false) {
-                if (v.read_logic(unit.b_to_a.output_register, levels)) {
+            if (limit > 0 and v.read_logic(unit.b_to_a.n_oe, options.levels) == false) {
+                if (v.read_logic(unit.b_to_a.output_register, options.levels)) {
                     return state.b_to_a;
                 } else {
                     return read_b(unit, v, state, limit - 1);
                 }
             } else if (bus_hold) {
-                return @truncate(v.read_bus_with_pull(unit.a, levels, state.a_hold));
+                return @truncate(v.read_bus_with_pull(unit.a, options.levels, state.a_hold));
             } else {
-                return @truncate(v.read_bus(unit.a, levels));
+                return @truncate(v.read_bus(unit.a, options.levels));
             }
         }
 
         fn read_b(unit: Unit, v: *Validator, state: *Validate_State, limit: usize) u8 {
-            if (limit > 0 and v.read_logic(unit.a_to_b.oe, levels) == true) {
-                if (v.read_logic(unit.a_to_b.output_register, levels)) {
+            if (limit > 0 and v.read_logic(unit.a_to_b.oe, options.levels) == true) {
+                if (v.read_logic(unit.a_to_b.output_register, options.levels)) {
                     return state.a_to_b;
                 } else {
                     return read_a(unit, v, state, limit - 1);
                 }
             } else if (bus_hold) {
-                return @truncate(v.read_bus_with_pull(unit.b, levels, state.b_hold));
+                return @truncate(v.read_bus_with_pull(unit.b, options.levels, state.b_hold));
             } else {
-                return @truncate(v.read_bus(unit.b, levels));
+                return @truncate(v.read_bus(unit.b, options.levels));
             }
         }
     };
 }
 
 /// 20b positive-edge-triggered D register, qualified storage, tri-state
-pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime Pkg: type, comptime bus_hold: bool) type {
+pub fn x16721(comptime options: Options, comptime bus_hold: bool) type {
     return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
+        base: Part.Base = options.base(if (bus_hold) "H16721" else "16721"),
 
         d: [20]Net_ID = @splat(.unset),
         q: [20]Net_ID = @splat(.unset),
         clk: Net_ID = .unset,
         n_ce: Net_ID = .unset,
         n_oe: Net_ID = .unset,
-        pwr: power.Multi(4, 8, pwr, Decoupler) = .{},
+        pwr: power.Multi(4, 8, options.pwr, options.Decoupler) = .{},
         remap: [20]u5 = .{ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 },
 
         pub fn check_config(self: @This()) !void {
@@ -3885,10 +4003,10 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 46 => self.pwr.gnd[6],
                 53 => self.pwr.gnd[7],
 
-                7 => @field(self.pwr, @tagName(pwr))[0],
-                22 => @field(self.pwr, @tagName(pwr))[1],
-                35 => @field(self.pwr, @tagName(pwr))[2],
-                50 => @field(self.pwr, @tagName(pwr))[3],
+                7 => @field(self.pwr, @tagName(options.pwr))[0],
+                22 => @field(self.pwr, @tagName(options.pwr))[1],
+                35 => @field(self.pwr, @tagName(options.pwr))[2],
+                50 => @field(self.pwr, @tagName(options.pwr))[3],
 
                 28 => .no_connect,
 
@@ -3913,26 +4031,26 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
                 },
                 .commit => {
                     if (bus_hold) {
-                        try v.expect_valid_or_unconnected(self.d, levels);
+                        try v.expect_valid_or_unconnected(self.d, options.levels);
                     } else {
-                        try v.expect_valid(self.d, levels);
+                        try v.expect_valid(self.d, options.levels);
                     }
-                    try v.expect_valid(self.clk, levels);
-                    try v.expect_valid(self.n_ce, levels);
-                    try v.expect_valid(self.n_oe, levels);
-                    if (v.read_logic(self.n_oe, levels) == false) {
-                        try v.expect_output_valid(self.q, state.data, levels);
+                    try v.expect_valid(self.clk, options.levels);
+                    try v.expect_valid(self.n_ce, options.levels);
+                    try v.expect_valid(self.n_oe, options.levels);
+                    if (v.read_logic(self.n_oe, options.levels) == false) {
+                        try v.expect_output_valid(self.q, state.data, options.levels);
                     }
 
-                    const new_clk = v.read_logic(self.clk, levels);
-                    if (new_clk and !state.clk and v.read_logic(self.n_ce, levels) == false) {
+                    const new_clk = v.read_logic(self.clk, options.levels);
+                    if (new_clk and !state.clk and v.read_logic(self.n_ce, options.levels) == false) {
                         state.data = self.read_d(v, state);
                     }
                     state.clk = new_clk;
                 },
                 .nets_only => {
-                    if (v.read_logic(self.n_oe, levels) == false) {
-                        try v.drive_bus(self.q, state.data, levels);
+                    if (v.read_logic(self.n_oe, options.levels) == false) {
+                        try v.drive_bus(self.q, state.data, options.levels);
                     }
                     
                     if (bus_hold) {
@@ -3944,9 +4062,9 @@ pub fn x16721(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: t
 
         fn read_d(self: @This(), v: *Validator, state: *Validate_State) u20 {
             if (bus_hold) {
-                return @truncate(v.read_bus_with_pull(self.d, levels, state.bus_hold));
+                return @truncate(v.read_bus_with_pull(self.d, options.levels, state.bus_hold));
             } else {
-                return @truncate(v.read_bus(self.d, levels));
+                return @truncate(v.read_bus(self.d, options.levels));
             }
         }
     };
@@ -3956,7 +4074,9 @@ const log = std.log.scoped(.zoink);
 
 const Pin_ID = enums.Pin_ID;
 const Net_ID = enums.Net_ID;
+const Voltage = enums.Voltage;
 const enums = @import("../enums.zig");
+const parts = @import("../parts.zig");
 const power = @import("../power.zig");
 const Part = @import("../Part.zig");
 const Package = @import("../Package.zig");

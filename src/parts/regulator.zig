@@ -1,4 +1,4 @@
-pub fn Linear_SOT23(comptime Input_Cap: type, comptime Output_Cap: type, comptime vout: Net_ID, comptime max_vin: Voltage, comptime part_number: []const u8) type {
+pub fn Linear_SOT23(comptime part_number: []const u8, comptime Input_Cap: type, comptime Output_Cap: type, comptime vout: Net_ID, comptime max_vin: Voltage) type {
     return struct {
         base: Part.Base = .{
             .package = &pkg.SOT23_5.pkg,

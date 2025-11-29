@@ -12,10 +12,34 @@ pub fn CY7C0xx(
         std.debug.assert(byte_bits == 8);
         std.debug.assert(addr_bits <= 13);
     } else std.debug.assert(Pkg == packages.TQFP_100_14mm);
+
+    const base_part: []const u8 = switch (byte_bits) {
+        8 => switch (addr_bits) {
+            12 => "CY7C024",
+            13 => "CY7C025",
+            14 => "CY7C026",
+            15 => "CY7C027",
+            16 => "CY7C028",
+        },
+        9 => switch (addr_bits) {
+            12 => "CY7C0241",
+            13 => "CY7C0251",
+            14 => "CY7C036",
+            15 => "CY7C037",
+            16 => "CY7C038",
+        },
+    };
+
+    const value: []const u8 = switch (pwr) {
+        .p5v => base_part,
+        .p3v3 => base_part ++ "V",
+    };
+
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
             .prefix = .U,
+            .value = value,
         },
 
         master: Net_ID = .unset,
@@ -691,17 +715,17 @@ pub fn CY7C0xx(
                 const sem = semaphores[sem_addr];
 
                 if (v.read_logic(port.n_lower_byte_enable, levels) == false) {
-                    const value: u16 = if (sem == .owned) 0 else 0x1FF;
+                    const val: u16 = if (sem == .owned) 0 else 0x1FF;
                     switch (mode) {
-                        .commit => try v.expect_output_valid(port.lower_data, value, levels),
-                        else => try v.drive_bus(port.lower_data, value, levels),
+                        .commit => try v.expect_output_valid(port.lower_data, val, levels),
+                        else => try v.drive_bus(port.lower_data, val, levels),
                     }
                 }
                 if (v.read_logic(port.n_upper_byte_enable, levels) == false) {
-                    const value: u16 = if (sem == .owned) 0 else 0x1FF;
+                    const val: u16 = if (sem == .owned) 0 else 0x1FF;
                     switch (mode) {
-                        .commit => try v.expect_output_valid(port.upper_data, value, levels),
-                        else => try v.drive_bus(port.upper_data, value, levels),
+                        .commit => try v.expect_output_valid(port.upper_data, val, levels),
+                        else => try v.drive_bus(port.upper_data, val, levels),
                     }
                 }
             }

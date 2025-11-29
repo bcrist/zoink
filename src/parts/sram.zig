@@ -163,6 +163,7 @@ pub fn Pins_16b_GSI(comptime Self: type, comptime Pkg: type) type {
 
 
 pub fn Async_8b(
+    comptime value: []const u8,
     comptime addr_bits: comptime_int,
     comptime Power: type,
     comptime levels: type,
@@ -173,6 +174,7 @@ pub fn Async_8b(
         base: Part.Base = .{
             .package = &Pkg.pkg,
             .prefix = .U,
+            .value = value,
         },
 
         pwr: Power = .{},
@@ -251,6 +253,7 @@ pub fn Async_8b(
 }
 
 pub fn Async_16b(
+    comptime value: []const u8,
     comptime addr_bits: comptime_int,
     comptime Power: type,
     comptime levels: type,
@@ -261,6 +264,7 @@ pub fn Async_16b(
         base: Part.Base = .{
             .package = &Pkg.pkg,
             .prefix = .U,
+            .value = value,
         },
 
         pwr: Power = .{},

@@ -25,18 +25,21 @@ pub fn LC4k(
         .BMC149 => pkg.bmc.BGA149,
     };
 
-    switch (Device.family) {
+    const base_part: []const u8 = std.fmt.comptimePrint("LC4{d:0>3}", .{ Device.num_glbs * 16 });
+
+    const value: []const u8 = base_part ++ switch (Device.family) {
         .low_power => switch (vcc) {
-            .p3v3 => {}, // V
-            .p2v5 => {}, // B
-            .p1v8 => {}, // C
+            .p3v3 => "V",
+            .p2v5 => "B",
+            .p1v8 => "C",
             else => unreachable,
         },
-        .zero_power, .zero_power_enhanced => {
-            if (Device.package != .BMC149) {
-                std.debug.assert(vcc == .p1v8);
-            }
-        },
+        .zero_power => "ZC",
+        .zero_power_enhanced => "ZE",
+    };
+
+    if (Device.package != .BMC149 and (Device.family == .zero_power or Device.family == .zero_power_enhanced)) {
+        std.debug.assert(vcc == .p1v8);
     }
 
     std.debug.assert(Device.num_mcs_per_glb == 16);
@@ -52,6 +55,7 @@ pub fn LC4k(
         base: Part.Base = .{
             .package = &Pkg.pkg,
             .prefix = .U,
+            .value = value,
         },
 
         config: ?*const Chip_Config = null,
@@ -176,7 +180,7 @@ pub fn LC4k(
                     const force_no_connect = pad == null or pad.?.maybe_pin() == null;
                     switch (self.io[glb][mc]) {
                         .no_connect => {},
-                        .unset => if (force_no_connect or self.maintenance(self.config.?.glb[glb].mc[mc].input) != .float) {
+                        .unset => if (force_no_connect or self.config == null or self.maintenance(self.config.?.glb[glb].mc[mc].input) != .float) {
                             self.io[glb][mc] = .no_connect;
                         },
                         else => if (force_no_connect) {
@@ -188,13 +192,13 @@ pub fn LC4k(
             }
 
             for (0.., self.in) |i, net| {
-                if (net == .unset and self.maintenance(self.config.?.input[i]) != .float) {
+                if (net == .unset and (self.config == null or self.maintenance(self.config.?.input[i]) != .float)) {
                     self.in[i] = .no_connect;
                 }
             }
 
             for (0.., self.clk) |i, net| {
-                if (net == .unset and self.maintenance(self.config.?.clock[i]) != .float) {
+                if (net == .unset and (self.config == null or self.maintenance(self.config.?.clock[i]) != .float)) {
                     self.clk[i] = .no_connect;
                 }
             }
