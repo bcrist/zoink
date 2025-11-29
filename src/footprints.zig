@@ -468,7 +468,7 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint 
         }
     };
 
-    generate_body_and_outline(&result, data.body_mark orelse if (pins_on_second_side == 0) .sides else .outline, data.body, @floatFromInt(data.overall.height.nominal_um - data.pin_seating.max_um() * 2 - 100));
+    generate_body_and_outline(&result, data.body_mark orelse if (pins_on_second_side == 0) .sides else .outline, data.body, @floatFromInt(data.overall.height.nominal_um - data.pin_seating.max_um() * 2 - 150));
 
     if (data.heat_slug) |heat_slug| {
         result.pads = result.pads ++ .{
@@ -1265,8 +1265,8 @@ pub fn generate_body_and_outline(result: *Footprint, mark: Body_Mark_Type, body:
             };
         },
         .filled => {
-            const fill_w: f64 = @floatFromInt(body.width.max_um() - 100);
-            const fill_h1: f64 = @floatFromInt(body.height.max_um() - 100);
+            const fill_w: f64 = @floatFromInt(body.width.max_um() - 150);
+            const fill_h1: f64 = @floatFromInt(body.height.max_um() - 150);
             const fill_h = @min(fill_h1, max_filled_height);
             result.rects = result.rects ++ .{
                 kicad.Rect {

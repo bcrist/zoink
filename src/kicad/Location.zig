@@ -36,6 +36,20 @@ pub fn init_mm_transformed(xf: zm.Mat3, x: f64, y: f64) Location {
     };
 }
 
+pub fn plus_um(self: Location, x: f64, y: f64) Location {
+    return .{
+        .x = self.x.plus_um(x),
+        .y = self.y.plus_um(y),
+    };
+}
+
+pub fn plus_mm(self: Location, x: f64, y: f64) Location {
+    return .{
+        .x = self.x.plus_mm(x),
+        .y = self.y.plus_mm(y),
+    };
+}
+
 pub fn dst_mm(self: Location, other: Location) f64 {
     const dx = self.x.mm(f64) - other.x.mm(f64);
     const dy = self.y.mm(f64) - other.y.mm(f64);

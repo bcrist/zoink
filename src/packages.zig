@@ -160,6 +160,7 @@ pub const BGA_48_6mm_8mm = jedec.MO_207AD;
 
 pub const bmc = @import("packages/bmc.zig");
 
+pub const BGA_BMC149 = bmc.BGA149;
 pub const BGA_BMC151 = bmc.BGA151;
 
 pub const lattice = @import("packages/lattice.zig");

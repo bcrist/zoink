@@ -48,7 +48,7 @@ pub fn write(self: Circle, w: *sx.Writer, expr: []const u8) !void {
     try w.expression_expanded(expr);
 
     try self.center.write(w, "center", null);
-    try self.end.write(w, "center", null);
+    try self.end.write(w, "end", null);
     try self.stroke.write(w);
 
     try w.expression("fill");

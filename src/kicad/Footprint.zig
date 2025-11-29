@@ -149,14 +149,77 @@ pub fn write(self: Footprint, w: *sx.Writer, b: *Board, p: Part, remap: *const N
     if (self.do_not_populate) try w.string("dnp");
     try w.close();
 
-    for (self.texts) |txt| try txt.write(w, "fp_text");
-    for (self.lines) |line| try line.write(w, "fp_line");
-    for (self.rects) |rect| try rect.write(w, "fp_rect");
-    for (self.polygons) |poly| try poly.write(w, "fp_poly");
-    for (self.circles) |circle| try circle.write(w, "fp_circle");
-    for (self.arcs) |arc| try arc.write(w, "fp_arc");
+    var i: u16 = 0;
 
-    for (self.pads) |pad| try pad.write(w, b, p, remap, self.format_pin_name);
+    for (self.texts) |element| {
+        var e = element;
+        if (e.uuid.raw == Uuid.nil.raw) {
+            e.uuid = self.uuid;
+            e.uuid.set_mid(i);
+        }
+        try e.write(w, "fp_text");
+        i += 1;
+    }
+
+    for (self.lines) |element| {
+        var e = element;
+        if (e.uuid.raw == Uuid.nil.raw) {
+            e.uuid = self.uuid;
+            e.uuid.set_mid(i);
+        }
+        try e.write(w, "fp_line");
+        i += 1;
+    }
+
+    for (self.rects) |element| {
+        var e = element;
+        if (e.uuid.raw == Uuid.nil.raw) {
+            e.uuid = self.uuid;
+            e.uuid.set_mid(i);
+        }
+        try e.write(w, "fp_rect");
+        i += 1;
+    }
+
+    for (self.polygons) |element| {
+        var e = element;
+        if (e.uuid.raw == Uuid.nil.raw) {
+            e.uuid = self.uuid;
+            e.uuid.set_mid(i);
+        }
+        try e.write(w, "fp_poly");
+        i += 1;
+    }
+
+    for (self.circles) |element| {
+        var e = element;
+        if (e.uuid.raw == Uuid.nil.raw) {
+            e.uuid = self.uuid;
+            e.uuid.set_mid(i);
+        }
+        try e.write(w, "fp_circle");
+        i += 1;
+    }
+
+    for (self.arcs) |element| {
+        var e = element;
+        if (e.uuid.raw == Uuid.nil.raw) {
+            e.uuid = self.uuid;
+            e.uuid.set_mid(i);
+        }
+        try e.write(w, "fp_arc");
+        i += 1;
+    }
+
+    for (self.pads) |element| {
+        var e = element;
+        if (e.uuid.raw == Uuid.nil.raw) {
+            e.uuid = self.uuid;
+            e.uuid.set_mid(i);
+        }
+        try e.write(w, b, p, remap, self.format_pin_name);
+        i += 1;
+    }
 
     try w.expression("embedded_fonts");
     try w.string("no");

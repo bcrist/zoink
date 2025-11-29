@@ -11,6 +11,10 @@ pub fn init_v8_from_hash(hash: u64) Uuid {
     };
 }
 
+pub fn set_mid(self: *Uuid, mid: u16) void {
+    self.raw = (self.raw & 0xFFFF_FFFF_FFFF_FFFF_FFFF_0000_FFFF_FFFF) | (@as(u128, mid) << 32);
+}
+
 pub fn to_hash(self: Uuid) ?u64 {
     if ((self.raw & 0xFFFF_FFFF_FFFF_FFFF_0000_0000) == 0x8888_8888_8888_8888_0000_0000) {
         const low: u32 = @truncate(self.raw);

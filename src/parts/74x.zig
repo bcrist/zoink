@@ -26,12 +26,11 @@ fn Single_Buffer(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels
                 .reset => {},
                 .commit => {
                     try v.expect_valid(self.a, levels);
-                    try v.expect_valid(self.b, levels);
-                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    const a = v.read_logic(self.a, levels);
                     try v.expect_output_valid(self.y, if (invert) !a else a, levels);
                 },
                 .nets_only => {
-                    const a = @intFromBool(v.read_logic(self.a, levels));
+                    const a = v.read_logic(self.a, levels);
                     try v.drive_logic(self.y, if (invert) !a else a, levels);
                 },
             }
@@ -1022,19 +1021,19 @@ fn Single_1_2_Demux(comptime pwr: Net_ID, comptime Decoupler: type, comptime lev
 
                     const sel = v.read_logic(self.sel, levels);
                     const a = v.read_logic(self.a, levels);
-                    v.expect_output_valid(self.y[@intFromBool(sel)], a, levels);
+                    try v.expect_output_valid(self.y[@intFromBool(sel)], a, levels);
 
                     if (!hiz_inactive) {
-                        v.expect_output_valid(self.y[@intFromBool(!sel)], true, levels);
+                        try v.expect_output_valid(self.y[@intFromBool(!sel)], true, levels);
                     }
                 },
                 .nets_only => {
                     const sel = v.read_logic(self.sel, levels);
                     const a = v.read_logic(self.a, levels);
-                    v.drive_logic(self.y[@intFromBool(sel)], a, levels);
+                    try v.drive_logic(self.y[@intFromBool(sel)], a, levels);
 
                     if (!hiz_inactive) {
-                        v.drive_logic(self.y[@intFromBool(!sel)], true, levels);
+                        try v.drive_logic(self.y[@intFromBool(!sel)], true, levels);
                     }
                 },
             }
@@ -3187,11 +3186,11 @@ pub fn CBT16212(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels:
             exchange = 7,    // l0 <=> r1, l1 <=> r0
         };
 
-        fn logical_l_net(self: @This(), bus: u1, physical_bit: usize) usize {
+        fn logical_l_net(self: @This(), bus: u1, physical_bit: usize) Net_ID {
             return self.left[bus][self.remap[physical_bit]];
         }
 
-        fn logical_r_net(self: @This(), bus: u1, physical_bit: usize) usize {
+        fn logical_r_net(self: @This(), bus: u1, physical_bit: usize) Net_ID {
             return self.right[bus][self.remap[physical_bit]];
         }
 
@@ -3210,7 +3209,7 @@ pub fn CBT16212(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels:
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.op_sel[0],
                 56 => self.op_sel[1],

@@ -124,8 +124,8 @@ pub fn bus(self: *Board, comptime name: []const u8, comptime bits: comptime_int)
 
     comptime var full_bus = true;
     comptime var base = name;
-    comptime var delta = 1;
-    const lsb = comptime if (std.mem.lastIndexOfScalar(u8, name, '[')) |subscript_begin| lsb: {
+    comptime var delta: isize = 1;
+    const lsb: isize = comptime if (std.mem.lastIndexOfScalar(u8, name, '[')) |subscript_begin| lsb: {
         full_bus = false;
         if (!std.mem.endsWith(u8, name, "]")) @compileError("Expected closing ] in bus name: " ++ name);
         base = name[0..subscript_begin];
@@ -147,7 +147,7 @@ pub fn bus(self: *Board, comptime name: []const u8, comptime bits: comptime_int)
     } else 0;
 
     inline for (0..bits) |i| {
-        result[i] = self.net(std.fmt.comptimePrint("{s}[{}]", .{ base, lsb + i * delta }));
+        result[i] = self.net(std.fmt.comptimePrint("{s}[{}]", .{ base, lsb + @as(isize, i) * delta }));
     }
 
     if (full_bus) {
@@ -267,6 +267,404 @@ pub fn get_dimensions(self: *Board) Dimensions {
         .width = .init_mm(100),
         .height = .init_mm(100),
     };
+}
+
+pub fn generate_kicad_project_file(_: *Board, path: []const u8) !void {
+    if (std.fs.path.dirname(path)) |dirname| {
+        try std.fs.cwd().makePath(dirname);
+    }
+    var f = std.fs.cwd().createFile(path, .{
+        .truncate = false,
+        .exclusive = true,
+    }) catch |err| switch (err) {
+        error.PathAlreadyExists => return,
+        else => return err,
+    };
+    defer f.close();
+
+    const basename = std.fs.path.basename(path);
+    const extension = std.fs.path.extension(basename);
+    const stem = basename[0 .. basename.len - extension.len];
+
+    var buf: [16384]u8 = undefined;
+    var w = f.writer(&buf);
+
+    try w.interface.writeAll(
+        \\{
+        \\  "board": {
+        \\    "3dviewports": [],
+        \\    "design_settings": {
+        \\      "defaults": {
+        \\        "apply_defaults_to_fp_fields": false,
+        \\        "apply_defaults_to_fp_shapes": false,
+        \\        "apply_defaults_to_fp_text": false,
+        \\        "board_outline_line_width": 0.01,
+        \\        "copper_line_width": 0.2,
+        \\        "copper_text_italic": false,
+        \\        "copper_text_size_h": 1.5,
+        \\        "copper_text_size_v": 1.5,
+        \\        "copper_text_thickness": 0.3,
+        \\        "copper_text_upright": false,
+        \\        "courtyard_line_width": 0.05,
+        \\        "dimension_precision": 4,
+        \\        "dimension_units": 3,
+        \\        "dimensions": {
+        \\          "arrow_length": 1270000,
+        \\          "extension_offset": 500000,
+        \\          "keep_text_aligned": true,
+        \\          "suppress_zeroes": true,
+        \\          "text_position": 0,
+        \\          "units_format": 0
+        \\        },
+        \\        "fab_line_width": 0.1,
+        \\        "fab_text_italic": false,
+        \\        "fab_text_size_h": 1.0,
+        \\        "fab_text_size_v": 1.0,
+        \\        "fab_text_thickness": 0.15,
+        \\        "fab_text_upright": false,
+        \\        "other_line_width": 0.1,
+        \\        "other_text_italic": false,
+        \\        "other_text_size_h": 1.0,
+        \\        "other_text_size_v": 1.0,
+        \\        "other_text_thickness": 0.15,
+        \\        "other_text_upright": false,
+        \\        "pads": {
+        \\          "drill": 0.8,
+        \\          "height": 1.27,
+        \\          "width": 2.54
+        \\        },
+        \\        "silk_line_width": 0.15,
+        \\        "silk_text_italic": false,
+        \\        "silk_text_size_h": 1.0,
+        \\        "silk_text_size_v": 1.0,
+        \\        "silk_text_thickness": 0.15,
+        \\        "silk_text_upright": false,
+        \\        "zones": {
+        \\          "min_clearance": 0.25
+        \\        }
+        \\      },
+        \\      "diff_pair_dimensions": [
+        \\        {
+        \\          "gap": 0.0,
+        \\          "via_gap": 0.0,
+        \\          "width": 0.0
+        \\        }
+        \\      ],
+        \\      "drc_exclusions": [],
+        \\      "meta": {
+        \\        "version": 2
+        \\      },
+        \\      "rule_severities": {
+        \\        "annular_width": "error",
+        \\        "clearance": "error",
+        \\        "connection_width": "warning",
+        \\        "copper_edge_clearance": "error",
+        \\        "copper_sliver": "warning",
+        \\        "courtyards_overlap": "error",
+        \\        "creepage": "error",
+        \\        "diff_pair_gap_out_of_range": "error",
+        \\        "diff_pair_uncoupled_length_too_long": "error",
+        \\        "drill_out_of_range": "error",
+        \\        "duplicate_footprints": "warning",
+        \\        "extra_footprint": "warning",
+        \\        "footprint": "error",
+        \\        "footprint_filters_mismatch": "ignore",
+        \\        "footprint_symbol_mismatch": "ignore",
+        \\        "footprint_type_mismatch": "ignore",
+        \\        "hole_clearance": "error",
+        \\        "hole_to_hole": "warning",
+        \\        "holes_co_located": "warning",
+        \\        "invalid_outline": "error",
+        \\        "isolated_copper": "warning",
+        \\        "item_on_disabled_layer": "error",
+        \\        "items_not_allowed": "error",
+        \\        "length_out_of_range": "error",
+        \\        "lib_footprint_issues": "ignore",
+        \\        "lib_footprint_mismatch": "warning",
+        \\        "malformed_courtyard": "error",
+        \\        "microvia_drill_out_of_range": "error",
+        \\        "mirrored_text_on_front_layer": "warning",
+        \\        "missing_courtyard": "ignore",
+        \\        "missing_footprint": "warning",
+        \\        "net_conflict": "warning",
+        \\        "nonmirrored_text_on_back_layer": "warning",
+        \\        "npth_inside_courtyard": "ignore",
+        \\        "padstack": "warning",
+        \\        "pth_inside_courtyard": "ignore",
+        \\        "shorting_items": "error",
+        \\        "silk_edge_clearance": "warning",
+        \\        "silk_over_copper": "ignore",
+        \\        "silk_overlap": "ignore",
+        \\        "skew_out_of_range": "error",
+        \\        "solder_mask_bridge": "error",
+        \\        "starved_thermal": "error",
+        \\        "text_height": "warning",
+        \\        "text_on_edge_cuts": "error",
+        \\        "text_thickness": "warning",
+        \\        "through_hole_pad_without_hole": "error",
+        \\        "too_many_vias": "error",
+        \\        "track_angle": "error",
+        \\        "track_dangling": "warning",
+        \\        "track_segment_length": "error",
+        \\        "track_width": "error",
+        \\        "tracks_crossing": "error",
+        \\        "unconnected_items": "error",
+        \\        "unresolved_variable": "error",
+        \\        "via_dangling": "warning",
+        \\        "zones_intersect": "error"
+        \\      },
+        \\      "rules": {
+        \\        "max_error": 0.005,
+        \\        "min_clearance": 0.1,
+        \\        "min_connection": 0.1,
+        \\        "min_copper_edge_clearance": 0.5,
+        \\        "min_groove_width": 0.0,
+        \\        "min_hole_clearance": 0.2,
+        \\        "min_hole_to_hole": 0.2,
+        \\        "min_microvia_diameter": 0.4,
+        \\        "min_microvia_drill": 0.3,
+        \\        "min_resolved_spokes": 1,
+        \\        "min_silk_clearance": 0.15,
+        \\        "min_text_height": 1.0,
+        \\        "min_text_thickness": 0.15,
+        \\        "min_through_hole_diameter": 0.3,
+        \\        "min_track_width": 0.1,
+        \\        "min_via_annular_width": 0.05,
+        \\        "min_via_diameter": 0.4,
+        \\        "solder_mask_to_copper_clearance": 0.09,
+        \\        "use_height_for_length_calcs": true
+        \\      },
+        \\      "teardrop_options": [
+        \\        {
+        \\          "td_onpthpad": true,
+        \\          "td_onroundshapesonly": false,
+        \\          "td_onsmdpad": true,
+        \\          "td_ontrackend": false,
+        \\          "td_onvia": true
+        \\        }
+        \\      ],
+        \\      "teardrop_parameters": [
+        \\        {
+        \\          "td_allow_use_two_tracks": true,
+        \\          "td_curve_segcount": 0,
+        \\          "td_height_ratio": 1.0,
+        \\          "td_length_ratio": 0.5,
+        \\          "td_maxheight": 2.0,
+        \\          "td_maxlen": 1.0,
+        \\          "td_on_pad_in_zone": false,
+        \\          "td_target_name": "td_round_shape",
+        \\          "td_width_to_size_filter_ratio": 0.9
+        \\        },
+        \\        {
+        \\          "td_allow_use_two_tracks": true,
+        \\          "td_curve_segcount": 0,
+        \\          "td_height_ratio": 1.0,
+        \\          "td_length_ratio": 0.5,
+        \\          "td_maxheight": 2.0,
+        \\          "td_maxlen": 1.0,
+        \\          "td_on_pad_in_zone": false,
+        \\          "td_target_name": "td_rect_shape",
+        \\          "td_width_to_size_filter_ratio": 0.9
+        \\        },
+        \\        {
+        \\          "td_allow_use_two_tracks": true,
+        \\          "td_curve_segcount": 0,
+        \\          "td_height_ratio": 1.0,
+        \\          "td_length_ratio": 0.5,
+        \\          "td_maxheight": 2.0,
+        \\          "td_maxlen": 1.0,
+        \\          "td_on_pad_in_zone": false,
+        \\          "td_target_name": "td_track_end",
+        \\          "td_width_to_size_filter_ratio": 0.9
+        \\        }
+        \\      ],
+        \\      "track_widths": [
+        \\        0.0,
+        \\        0.127,
+        \\        0.15,
+        \\        0.2,
+        \\        0.35,
+        \\        0.5
+        \\      ],
+        \\      "tuning_pattern_settings": {
+        \\        "diff_pair_defaults": {
+        \\          "corner_radius_percentage": 80,
+        \\          "corner_style": 1,
+        \\          "max_amplitude": 1.0,
+        \\          "min_amplitude": 0.2,
+        \\          "single_sided": false,
+        \\          "spacing": 1.0
+        \\        },
+        \\        "diff_pair_skew_defaults": {
+        \\          "corner_radius_percentage": 80,
+        \\          "corner_style": 1,
+        \\          "max_amplitude": 1.0,
+        \\          "min_amplitude": 0.2,
+        \\          "single_sided": false,
+        \\          "spacing": 0.6
+        \\        },
+        \\        "single_track_defaults": {
+        \\          "corner_radius_percentage": 80,
+        \\          "corner_style": 1,
+        \\          "max_amplitude": 1.0,
+        \\          "min_amplitude": 0.2,
+        \\          "single_sided": false,
+        \\          "spacing": 0.6
+        \\        }
+        \\      },
+        \\      "via_dimensions": [
+        \\        {
+        \\          "diameter": 0.0,
+        \\          "drill": 0.0
+        \\        },
+        \\        {
+        \\          "diameter": 0.4,
+        \\          "drill": 0.3
+        \\        },
+        \\        {
+        \\          "diameter": 0.45,
+        \\          "drill": 0.3
+        \\        },
+        \\        {
+        \\          "diameter": 0.65,
+        \\          "drill": 0.5
+        \\        }
+        \\      ],
+        \\      "zones_allow_external_fillets": true
+        \\    },
+        \\    "ipc2581": {
+        \\      "dist": "",
+        \\      "distpn": "",
+        \\      "internal_id": "",
+        \\      "mfg": "",
+        \\      "mpn": ""
+        \\    },
+        \\    "layer_pairs": [],
+        \\    "layer_presets": [],
+        \\    "viewports": []
+        \\  },
+        \\  "boards": [],
+        \\  "cvpcb": {
+        \\    "equivalence_files": []
+        \\  },
+        \\  "libraries": {
+        \\    "pinned_footprint_libs": [],
+        \\    "pinned_symbol_libs": []
+        \\  },
+        \\  "meta": {
+        \\    "filename": "
+    );
+    try w.interface.writeAll(basename);
+    try w.interface.writeAll(
+        \\",
+        \\    "version": 3
+        \\  },
+        \\  "net_settings": {
+        \\    "classes": [
+        \\      {
+        \\        "bus_width": 12,
+        \\        "clearance": 0.125,
+        \\        "diff_pair_gap": 0.2,
+        \\        "diff_pair_via_gap": 0.25,
+        \\        "diff_pair_width": 0.2,
+        \\        "line_style": 0,
+        \\        "microvia_diameter": 0.15,
+        \\        "microvia_drill": 0.2,
+        \\        "name": "Default",
+        \\        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        \\        "priority": 2147483647,
+        \\        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        \\        "track_width": 0.15,
+        \\        "via_diameter": 0.45,
+        \\        "via_drill": 0.3,
+        \\        "wire_width": 6
+        \\      },
+        \\      {
+        \\        "clearance": 0.125,
+        \\        "name": "50ohm",
+        \\        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        \\        "priority": 0,
+        \\        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        \\        "track_width": 0.35,
+        \\        "via_diameter": 0.45,
+        \\        "via_drill": 0.3
+        \\      },
+        \\      {
+        \\        "clearance": 0.125,
+        \\        "name": "65ohm",
+        \\        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        \\        "priority": 1,
+        \\        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        \\        "track_width": 0.2,
+        \\        "via_diameter": 0.45,
+        \\        "via_drill": 0.3
+        \\      },
+        \\      {
+        \\        "clearance": 0.125,
+        \\        "name": "Ground",
+        \\        "pcb_color": "rgb(114, 196, 80)",
+        \\        "priority": 2,
+        \\        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        \\        "track_width": 0.35,
+        \\        "via_diameter": 0.45,
+        \\        "via_drill": 0.3
+        \\      },
+        \\      {
+        \\        "clearance": 0.125,
+        \\        "name": "Power",
+        \\        "pcb_color": "rgb(255, 113, 102)",
+        \\        "priority": 3,
+        \\        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        \\        "track_width": 0.35,
+        \\        "via_diameter": 0.45,
+        \\        "via_drill": 0.3
+        \\      }
+        \\    ],
+        \\    "meta": {
+        \\      "version": 4
+        \\    },
+        \\    "net_colors": null,
+        \\    "netclass_assignments": null,
+        \\    "netclass_patterns": [
+        \\      {
+        \\        "netclass": "Power",
+        \\        "pattern": "p*v*"
+        \\      },
+        \\      {
+        \\        "netclass": "Ground",
+        \\        "pattern": "gnd"
+        \\      }
+        \\    ]
+        \\  },
+        \\  "pcbnew": {
+        \\    "last_paths": {
+        \\      "gencad": "",
+        \\      "idf": "",
+        \\      "netlist": "",
+        \\      "plot": "../../gerber/
+    );
+    try w.interface.writeAll(stem);
+    try w.interface.writeAll(
+        \\/",
+        \\      "pos_files": "",
+        \\      "specctra_dsn": "",
+        \\      "step": "",
+        \\      "svg": "",
+        \\      "vrml": ""
+        \\    },
+        \\    "page_layout_descr_file": ""
+        \\  },
+        \\  "schematic": {
+        \\    "legacy_lib_dir": "",
+        \\    "legacy_lib_list": []
+        \\  },
+        \\  "sheets": [],
+        \\  "text_variables": {}
+        \\}
+        \\
+    );
+
+    try w.interface.flush();
 }
 
 pub fn generate_or_update_kicad_pcb_file(self: *Board, temp: std.mem.Allocator, path: []const u8, options: kicad.Writer_Options) !void {
@@ -573,15 +971,15 @@ fn write_setup(w: *sx.Writer) !void {
 
     try write_stackup_layer(w, "F.SilkS", "Top Silk Screen", .{ .color = "White" });
     try write_stackup_layer(w, "F.Paste", "Top Solder Paste", .{});
-    try write_stackup_layer(w, "F.Mask", "Top Solder Mask", .{ .color = "Green", .thickness = 0.01 });
+    try write_stackup_layer(w, "F.Mask", "Top Solder Mask", .{ .color = "Green", .thickness = 0.01, .epsilon_r = 3.8 });
     try write_stackup_layer(w, "F.Cu", "copper", .{ .thickness = 0.035 });
-    try write_stackup_layer(w, "dielectric 1", "prepreg", .{ .thickness = 0.2, .material = "FR4", .epsilon_r = 4.6, .loss_tangent = 0.02 });
-    try write_stackup_layer(w, "In1.Cu", "copper", .{ .thickness = 0.0175 });
-    try write_stackup_layer(w, "dielectric 2", "core", .{ .thickness = 1.065, .material = "FR4", .epsilon_r = 4.6, .loss_tangent = 0.02 });
-    try write_stackup_layer(w, "In2.Cu", "copper", .{ .thickness = 0.0175 });
-    try write_stackup_layer(w, "dielectric 3", "prepreg", .{ .thickness = 0.2, .material = "FR4", .epsilon_r = 4.6, .loss_tangent = 0.02 });
+    try write_stackup_layer(w, "dielectric 1", "prepreg", .{ .thickness = 0.2104, .material = "FR4", .epsilon_r = 4.4, .loss_tangent = 0.02 });
+    try write_stackup_layer(w, "In1.Cu", "copper", .{ .thickness = 0.0152 });
+    try write_stackup_layer(w, "dielectric 2", "core", .{ .thickness = 1.065, .material = "FR4", .epsilon_r = 4.5, .loss_tangent = 0.02 });
+    try write_stackup_layer(w, "In2.Cu", "copper", .{ .thickness = 0.0152 });
+    try write_stackup_layer(w, "dielectric 3", "prepreg", .{ .thickness = 0.2104, .material = "FR4", .epsilon_r = 4.4, .loss_tangent = 0.02 });
     try write_stackup_layer(w, "B.Cu", "copper", .{ .thickness = 0.035 });
-    try write_stackup_layer(w, "B.Mask", "Bottom Solder Mask", .{ .color = "Green", .thickness = 0.01 });
+    try write_stackup_layer(w, "B.Mask", "Bottom Solder Mask", .{ .color = "Green", .thickness = 0.01, .epsilon_r = 3.8 });
     try write_stackup_layer(w, "B.Paste", "Bottom Solder Paste", .{});
     try write_stackup_layer(w, "B.SilkS", "Bottom Silk Screen", .{ .color = "White" });
 
@@ -596,11 +994,11 @@ fn write_setup(w: *sx.Writer) !void {
     try w.close();
 
     try w.expression("pad_to_mask_clearance");
-    try w.float(0.05);
+    try w.float(0);
     try w.close();
 
     try w.expression("solder_mask_min_width");
-    try w.float(0.2);
+    try w.float(0);
     try w.close();
 
     try w.expression("pad_to_paste_clearance");

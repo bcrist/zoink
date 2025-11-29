@@ -20,6 +20,26 @@ pub fn init_inches(nominal: f64) Micron {
     return .{ .um = @intFromFloat(@round(nominal * 25400)) };
 }
 
+pub fn plus_um(self: Micron, offset: f64) Micron {
+    const offset_um: isize = @intFromFloat(@round(offset));
+    return .{ .um = self.um + offset_um };
+}
+
+pub fn plus_mm(self: Micron, offset: f64) Micron {
+    const offset_um: isize = @intFromFloat(@round(offset * 1000));
+    return .{ .um = self.um + offset_um };
+}
+
+pub fn plus_mil(self: Micron, offset: f64) Micron {
+    const offset_um: isize = @intFromFloat(@round(offset * 25.4));
+    return .{ .um = self.um + offset_um };
+}
+
+pub fn plus_inches(self: Micron, offset: f64) Micron {
+    const offset_um: isize = @intFromFloat(@round(offset * 25400));
+    return .{ .um = self.um + offset_um };
+}
+
 pub fn mm(self: Micron, comptime F: type) F {
     const um: F = @floatFromInt(self.um);
     return um / 1000;

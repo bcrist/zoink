@@ -301,6 +301,12 @@ pub const SN74ALVCH16721DGG = _74.x16721(.p3v3, C0402_Decoupler, LVCMOS, pkg.TSS
 // TODO DS90LV031
 // TODO DS90LV032
 
+pub const trident = @import("parts/trident.zig");
+
+pub const Trident_JTAG_1v8 = trident.JTAG(.p1v8);
+pub const Trident_JTAG_3v3 = trident.JTAG(.p3v3);
+pub const Trident_SWD_3v3 = trident.SWD(.p3v3);
+
 pub const LC4k = @import("parts/ispmach4000.zig").LC4k;
 
 pub const LC4032ZE_TQFP48_3v3 = LC4k(.LC4032ZE_TQFP48, .p1v8, .p3v3, .p3v3, C0402_Decoupler);
@@ -308,7 +314,7 @@ pub const LC4064ZE_TQFP48_3v3 = LC4k(.LC4064ZE_TQFP48, .p1v8, .p3v3, .p3v3, C040
 pub const LC4064ZE_TQFP100_3v3 = LC4k(.LC4064ZE_TQFP100, .p1v8, .p3v3, .p3v3, C0402_Decoupler);
 pub const LC4064ZC_TQFP100_3v3 = LC4k(.LC4064ZC_TQFP100, .p1v8, .p3v3, .p3v3, C0402_Decoupler);
 pub const LC4128ZC_csBGA132_3v3 = LC4k(.LC4128ZC_csBGA132, .p1v8, .p3v3, .p3v3, C0402_Decoupler);
-pub const LC4128ZC_BMC151_3v3 = LC4k(.LC4128ZC_BMC151, .p3v3, .p3v3, .p3v3, void);
+pub const LC4128ZC_BMC149_3v3 = LC4k(.LC4128ZC_BMC149, .p3v3, .p3v3, .p3v3, void);
 
 pub const alu = @import("parts/alu.zig");
 
@@ -375,6 +381,10 @@ pub const i2c = @import("parts/i2c.zig");
 pub const EMC1702 = i2c.EMC1702(C0402_Decoupler);
 
 pub const regulator = @import("parts/regulator.zig");
+
+pub const TLV77318PDBV = regulator.Linear_SOT23(C0805_Decoupler, C0805_Decoupler, .p1v8, .from_float(5.5), "TLV77318PDBV");
+pub const TLV77325PDBV = regulator.Linear_SOT23(C0805_Decoupler, C0805_Decoupler, .p2v5, .from_float(5.5), "TLV77325PDBV");
+pub const TLV77333PDBV = regulator.Linear_SOT23(C0805_Decoupler, C0805_Decoupler, .p3v3, .from_float(5.5), "TLV77333PDBV");
 
 pub const AP62300TWU = regulator.AP62300TWU;
 

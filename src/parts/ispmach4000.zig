@@ -22,7 +22,7 @@ pub fn LC4k(
         .csBGA132 => pkg.lattice.csBGA132,
         .ucBGA132 => pkg.lattice.ucBGA132,
         .csBGA144 => pkg.lattice.csBGA144,
-        .BMC151 => pkg.bmc.BGA151,
+        .BMC149 => pkg.bmc.BGA149,
     };
 
     switch (Device.family) {
@@ -32,7 +32,11 @@ pub fn LC4k(
             .p1v8 => {}, // C
             else => unreachable,
         },
-        .zero_power, .zero_power_enhanced => std.debug.assert(vcc == .p1v8),
+        .zero_power, .zero_power_enhanced => {
+            if (Device.package != .BMC149) {
+                std.debug.assert(vcc == .p1v8);
+            }
+        },
     }
 
     std.debug.assert(Device.num_mcs_per_glb == 16);

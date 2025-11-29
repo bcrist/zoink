@@ -62,6 +62,7 @@ pub const VTable = struct {
             }
 
             fn dump_nets(comptime T: type, value: T, b: *Board, base: *Part.Base, comptime prefix: []const u8) void {
+                @setEvalBranchQuota(100_000);
                 if (T == Part.Base or T == void) return;
                 if (T == Net_ID) {
                     std.log.err("{s}{s} = {s}", .{ base.name, prefix, b.net_name(value) });
