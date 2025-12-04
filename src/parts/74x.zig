@@ -2322,8 +2322,98 @@ pub fn x139(comptime options: Options) type {
 // TODO x3251
 // TODO x3253
 // TODO x3257
+// TODO x823
 // TODO x161
-// TODO x163
+
+pub fn x163(comptime options: Options) type {
+    return struct {
+        base: Part.Base = options.base("163"),
+
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
+
+        d: [4]Net_ID = @splat(.unset),
+        q: [4]Net_ID = @splat(.unset),
+        c: Net_ID = .unset, // ripple carry out
+
+        clk: Net_ID = .unset,
+
+        // operation enables, from highest to lowest priority:
+        n_clear_enable: Net_ID = .unset,
+        n_load_enable: Net_ID = .unset,
+        count_enable: Net_ID = .unset, // does not affect `c`
+        count_enable_ripple: Net_ID = .unset, // affects `c` asynchronously
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.n_clear_enable,
+                2 => self.clk,
+                3 => self.d[0],
+                4 => self.d[1],
+                5 => self.d[2],
+                6 => self.d[3],
+                7 => self.count_enable,
+
+                9 => self.n_load_enable,
+                10 => self.count_enable_ripple,
+                11 => self.q[3],
+                12 => self.q[2],
+                13 => self.q[1],
+                14 => self.q[0],
+                15 => self.c,
+
+                8 => self.pwr.gnd,
+                16 => @field(self.pwr, @tagName(options.pwr)),
+
+                else => unreachable,
+            };
+        }
+
+        const Validate_State = struct {
+            data: u4,
+            clk: bool,
+        };
+        
+        pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.data = 0xA;
+                    state.clk = true;
+                },
+                .commit => {
+                    try v.expect_valid(self.d, options.levels);
+                    try v.expect_valid(self.clk, options.levels);
+                    try v.expect_valid(self.n_clear_enable, options.levels);
+                    try v.expect_valid(self.n_load_enable, options.levels);
+                    try v.expect_valid(self.count_enable, options.levels);
+                    try v.expect_valid(self.count_enable_ripple, options.levels);
+
+                    const count_enable_ripple = v.read_logic(self.count_enable_ripple, options.levels);
+
+                    try v.expect_output_valid(self.q, state.data, options.levels);
+                    try v.expect_output_valid(self.c, state.data == 0xF and count_enable_ripple, options.levels);
+
+                    const new_clk = v.read_logic(self.clk, options.levels);
+                    if (new_clk and !state.clk) {
+                        if (!v.read_logic(self.n_clear_enable, options.levels)) {
+                            state.data = 0;
+                        } else if (!v.read_logic(self.n_load_enable, options.levels)) {
+                            state.data = @truncate(v.read_bus(self.d, options.levels));
+                        } else if (count_enable_ripple and v.read_logic(self.count_enable, options.levels)) {
+                            state.data +%= 1;
+                        }
+                    }
+                    state.clk = new_clk;
+                },
+                .nets_only => {
+                    try v.drive_bus(self.q, state.data, options.levels);
+                    try v.drive_logic(self.c, state.data == 0xF and v.read_logic(self.count_enable_ripple, options.levels), options.levels);
+                },
+            }
+        }
+    };
+}
 
 fn Dual_4b_Tristate_Buffer(comptime value_suffix: []const u8, comptime options: Options, comptime invert_outputs: bool) type {
     return struct {

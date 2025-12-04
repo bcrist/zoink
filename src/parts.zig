@@ -193,6 +193,14 @@ pub const SN74LVC573ADGV = _74.x573(.init(.LVC, pkg.TVSOP_20));
 pub const SN74LVC573ADW  = _74.x573(.init(.LVC, pkg.SOIC_20_300));
 pub const SN74LVC573APW  = _74.x573(.init(.LVC, pkg.TSSOP_20));
 
+// Counter
+pub const SN74LV163ADB = _74.x163(.init(.LV, pkg.SSOP_16));
+pub const SN74LV163ADGV = _74.x163(.init(.LV, pkg.TVSOP_16));
+pub const SN74LV163AD = _74.x163(.init(.LV, pkg.SOIC_16_150));
+pub const SN74LV163APW = _74.x163(.init(.LV, pkg.TSSOP_16));
+pub const @"74LVC163D" = _74.x163(.init(.LVC, pkg.SOIC_16_150)); // Nexperia
+pub const @"74LVC163PW" = _74.x163(.init(.LVC, pkg.TSSOP_16)); // Nexperia
+
 // Tristate buffer
 pub const SN74LVC1G125DBV = _74.x1G125(.init(.LVC, pkg.SOT23_5));
 pub const SN74LVC1G125DCK = _74.x1G125(.init(.LVC, pkg.SOT323_5));
