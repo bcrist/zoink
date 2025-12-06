@@ -20,6 +20,7 @@ pub fn CY7C0xx(
             14 => "CY7C026",
             15 => "CY7C027",
             16 => "CY7C028",
+            else => unreachable,
         },
         9 => switch (addr_bits) {
             12 => "CY7C0241",
@@ -27,12 +28,15 @@ pub fn CY7C0xx(
             14 => "CY7C036",
             15 => "CY7C037",
             16 => "CY7C038",
+            else => unreachable,
         },
+        else => unreachable,
     };
 
     const value: []const u8 = switch (pwr) {
         .p5v => base_part,
         .p3v3 => base_part ++ "V",
+        else => unreachable,
     };
 
     return struct {
@@ -110,7 +114,7 @@ pub fn CY7C0xx(
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (Pkg) {
-                packages.TQFP_100 => if (addr_bits >= 15 and byte_bits == 8) switch (@intFromEnum(pin_id)) {
+                packages.TQFP_100_14mm => if (addr_bits >= 15 and byte_bits == 8) switch (@intFromEnum(pin_id)) {
                     // CY7C027/CY7C028
                     87 => self.master,
 
@@ -463,7 +467,7 @@ pub fn CY7C0xx(
 
                     1, 2, 24, 25, 51, 52, 53, 73, 74, 75 => .no_connect,
                 },
-                packages.PLCC_84 => switch (@intFromEnum(pin_id)) {
+                packages.PLCC_84M => switch (@intFromEnum(pin_id)) {
                     // CY7C024/CY7C025
                     63 => self.master,
 
@@ -559,6 +563,7 @@ pub fn CY7C0xx(
                     21 => @field(self.pwr, @tagName(pwr))[1],
                     26 => @field(self.pwr, @tagName(pwr))[2],
                 },
+                else => unreachable,
             };
         }
 
