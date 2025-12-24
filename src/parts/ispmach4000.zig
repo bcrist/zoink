@@ -8,7 +8,7 @@ pub fn LC4k(
     const Chip_Config = lc4k.Chip_Config(device_type);
     const Signal = Chip_Config.Signal;
     const Device = Chip_Config.Device;
-    const Simulator = lc4k.Simulator(Device);
+    const Simulator = Chip_Config.Simulator;
 
     const Pkg = switch (Device.package) {
         .TQFP44 => pkg.TQFP_44_10mm,

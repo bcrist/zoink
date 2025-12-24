@@ -1117,6 +1117,8 @@ pub const BGA_Data = struct {
 
     pin_1_mark: ?Pin1_Mark_Type = null,
     body_mark: ?Body_Mark_Type = null,
+
+    courtyard_expansion_scale: ?f64 = null,
     
     pub fn format(self: BGA_Data, writer: std.io.Writer) !void {
         try writer.writeAll(self.package_name);
@@ -1140,7 +1142,7 @@ pub fn BGA(comptime data: BGA_Data, comptime density: Density) *const Footprint 
         .dense => 500,
         .normal => 1000,
         .loose => 2000,
-    };
+    } * (data.courtyard_expansion_scale orelse 1.0);
 
     result.rects = &.{
         .{
