@@ -1755,17 +1755,25 @@ pub fn x1G74(comptime options: Options) type {
                     try v.expect_valid(self.n_async_clr, options.levels);
                     try v.expect_valid(self.n_async_set, options.levels);
 
-                    try v.expect_output_valid(self.q, state.q, options.levels);
-                    try v.expect_output_valid(self.n_q, !state.q, options.levels);
+                    const ac = !v.read_logic(self.n_async_clr, options.levels);
+                    const as = !v.read_logic(self.n_async_set, options.levels);
+
+                    if (ac and !as) {
+                        try v.expect_output_valid(self.q, false, options.levels);
+                        try v.expect_output_valid(self.n_q, true, options.levels);
+                    } else if (as and !ac) {
+                        try v.expect_output_valid(self.q, true, options.levels);
+                        try v.expect_output_valid(self.n_q, false, options.levels);
+                    } else {
+                        try v.expect_output_valid(self.q, state.q, options.levels);
+                        try v.expect_output_valid(self.n_q, !state.q, options.levels);
+                    }
 
                     const new_clk = v.read_logic(self.clk, options.levels);
                     if (new_clk and !state.clk) {
                         state.q = v.read_logic(self.d, options.levels);
                     }
                     state.clk = new_clk;
-
-                    const ac = !v.read_logic(self.n_async_clr, options.levels);
-                    const as = !v.read_logic(self.n_async_set, options.levels);
 
                     if (ac and !as) {
                         state.q = false;
@@ -2026,7 +2034,13 @@ pub fn x1G175(comptime options: Options) type {
                     try v.expect_valid(self.clk, options.levels);
                     try v.expect_valid(self.n_async_clr, options.levels);
 
-                    try v.expect_output_valid(self.q, state.q, options.levels);
+                    const ac = !v.read_logic(self.n_async_clr, options.levels);
+
+                    if (ac) {
+                        try v.expect_output_valid(self.q, false, options.levels);
+                    } else {
+                        try v.expect_output_valid(self.q, state.q, options.levels);
+                    }
 
                     const new_clk = v.read_logic(self.clk, options.levels);
                     if (new_clk and !state.clk) {
@@ -2034,9 +2048,7 @@ pub fn x1G175(comptime options: Options) type {
                     }
                     state.clk = new_clk;
 
-                    if (!v.read_logic(self.n_async_clr, options.levels)) {
-                        state.q = false;
-                    }
+                    if (ac) state.q = false;
                 },
                 .nets_only => {
                     if (!v.read_logic(self.n_async_clr, options.levels)) {
@@ -3026,6 +3038,289 @@ pub fn x574(comptime options: Options) type {
                     const oe = v.read_logic(self.n_oe, options.levels);
                     if (oe == false) {
                         try v.drive_bus(self.q, state.data, options.levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+/// 8b serial-in, parallel-out shift register
+pub fn x164(comptime options: Options) type {
+    return struct {
+        base: Part.Base = options.base("164"),
+
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
+
+        clk: Net_ID = .unset,
+        n_async_clr: Net_ID = .unset,
+        d: [2]Net_ID = @splat(.unset), // ANDed together
+        q: [8]Net_ID = @splat(.unset),
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.d_in[0],
+                2 => self.d_in[1],
+                8 => self.clk,
+                9 => self.n_async_clr,
+
+                3 => self.q[0],
+                4 => self.q[1],
+                5 => self.q[2],
+                6 => self.q[3],
+                10 => self.q[4],
+                11 => self.q[5],
+                12 => self.q[6],
+                13 => self.q[7],
+
+                7 => self.pwr.gnd,
+                14 => @field(self.pwr, @tagName(options.pwr)),
+
+                else => unreachable,
+            };
+        }
+
+        const Validate_State = struct {
+            data: u8,
+            clk: bool,
+        };
+        
+        pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.data = 0xAA;
+                    state.clk = true;
+                },
+                .commit => {
+                    try v.expect_valid(self.clk, options.levels);
+                    try v.expect_valid(self.n_async_clr, options.levels);
+                    try v.expect_valid(self.d, options.levels);
+
+                    const ac = !v.read_logic(self.n_async_clr, options.levels);
+
+                    if (ac) {
+                        try v.expect_output_valid(self.q, 0, options.levels);
+                    } else {
+                        try v.expect_output_valid(self.q, state.data, options.levels);
+                    }
+
+                    const new_clk = v.read_logic(self.clk, options.levels);
+                    if (new_clk and !state.clk) {
+                        state.data = (state.data << 1) | @intFromBool(v.read_logic(self.d[0], options.levels) and v.read_logic(self.d[1], options.levels));
+                    }
+                    state.clk = new_clk;
+
+                    if (ac) state.data = 0;
+                },
+                .nets_only => {
+                    if (!v.read_logic(self.n_async_clr, options.levels)) {
+                        try v.drive_bus(self.q, 0, options.levels);
+                    } else {
+                        try v.drive_bus(self.q, state.data, options.levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+/// 8b parallel-in, serial-out shift register
+pub fn x165(comptime options: Options) type {
+    return struct {
+        base: Part.Base = options.base("165"),
+
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
+
+        clk: Net_ID = .unset,
+        n_ce: Net_ID = .unset, // N.B. must be stable when clk is low
+        in: Net_ID = .unset,
+        out: Net_ID = .unset,
+        n_out: Net_ID = .unset,
+        n_async_load: Net_ID = .unset,
+        d: [8]Net_ID = @splat(.unset),
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                1 => self.n_async_load,
+                2 => self.clk,
+                15 => self.n_ce,
+                10 => self.in,
+                9 => self.out,
+                7 => self.n_out,
+
+                11 => self.q[0],
+                12 => self.q[1],
+                13 => self.q[2],
+                14 => self.q[3],
+                3 => self.q[4],
+                4 => self.q[5],
+                5 => self.q[6],
+                6 => self.q[7],
+
+                8 => self.pwr.gnd,
+                16 => @field(self.pwr, @tagName(options.pwr)),
+
+                else => unreachable,
+            };
+        }
+
+        const Validate_State = struct {
+            data: u8,
+            clk: bool,
+        };
+        
+        pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.data = 0xAA;
+                    state.clk = true;
+                },
+                .commit => {
+                    try v.expect_valid(self.clk, options.levels);
+                    try v.expect_valid(self.n_ce, options.levels);
+                    try v.expect_valid(self.n_async_load, options.levels);
+                    try v.expect_valid(self.in, options.levels);
+                    try v.expect_valid(self.d, options.levels);
+
+                    const load = !v.read_logic(self.n_async_load, options.levels);
+
+                    if (load) {
+                        const out: bool = v.read_logic(state.d[7], options.levels);
+                        try v.expect_output_valid(self.out, out, options.levels);
+                        try v.expect_output_valid(self.n_out, !out, options.levels);
+                    } else {
+                        const out: u1 = @truncate(state.data >> 7);
+                        try v.expect_output_valid(self.out, out != 0, options.levels);
+                        try v.expect_output_valid(self.n_out, out == 0, options.levels);
+                    }
+
+                    const new_clk = v.read_logic(self.clk, options.levels) or v.read_logic(self.n_ce, options.levels);
+                    if (new_clk and !state.clk) {
+                        state.data = (state.data << 1) | @intFromBool(v.read_logic(self.in, options.levels));
+                    }
+                    state.clk = new_clk;
+
+                    if (load) {
+                        state.data = @intCast(v.read_bus(self.d, options.levels));
+                    }
+                },
+                .nets_only => {
+                    if (!v.read_logic(self.n_async_load, options.levels)) {
+                        const out: bool = v.read_logic(state.d[7], options.levels);
+                        try v.drive_logic(self.out, out, options.levels);
+                        try v.drive_logic(self.n_out, !out, options.levels);
+                    } else {
+                        const out: u1 = @truncate(state.data >> 7);
+                        try v.drive_logic(self.out, out != 0, options.levels);
+                        try v.drive_logic(self.n_out, out == 0, options.levels);
+                    }
+                },
+            }
+        }
+    };
+}
+
+/// 8b serial-in, parallel-out shift register with holding register and output enable
+pub fn x595(comptime options: Options) type {
+    return struct {
+        base: Part.Base = options.base("595"),
+
+        pwr: power.Single(options.pwr, options.Decoupler) = .{},
+
+        serial: struct {
+            clk: Net_ID = .unset,
+            n_async_clr: Net_ID = .unset,
+            in: Net_ID = .unset,
+            out: Net_ID = .unset,
+        } = .{},
+        out: struct {
+            clk: Net_ID = .unset,
+            n_oe: Net_ID = .unset,
+            q: [8]Net_ID = @splat(.unset),
+        } = .{},
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+
+                9 => self.serial.out,
+                10 => self.serial.n_async_clr,
+                11 => self.serial.clk,
+                12 => self.out.clk,
+                13 => self.out.n_oe,
+                14 => self.serial.in,
+
+                15 => self.out.q[0],
+                1 => self.out.q[1],
+                2 => self.out.q[2],
+                3 => self.out.q[3],
+                4 => self.out.q[4],
+                5 => self.out.q[5],
+                6 => self.out.q[6],
+                7 => self.out.q[7],
+
+                8 => self.pwr.gnd,
+                16 => @field(self.pwr, @tagName(options.pwr)),
+
+                else => unreachable,
+            };
+        }
+
+        const Validate_State = struct {
+            serial: u8,
+            out: u8,
+            sclk: bool,
+            oclk: bool,
+        };
+        
+        pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
+            switch (mode) {
+                .reset => {
+                    state.serial = 0xCC;
+                    state.out = 0xAA;
+                    state.clk = true;
+                },
+                .commit => {
+                    const s_out: u1 = @truncate(state.serial >> 7);
+
+                    try v.expect_valid(self.serial.clk, options.levels);
+                    try v.expect_valid(self.serial.n_async_clr, options.levels);
+                    try v.expect_valid(self.serial.in, options.levels);
+                    try v.expect_output_valid(self.serial.out, s_out != 0, options.levels);
+
+                    try v.expect_valid(self.out.clk, options.levels);
+                    try v.expect_valid(self.out.n_oe, options.levels);
+
+                    if (!v.read_logic(self.out.n_oe, options.levels)) {
+                        try v.expect_output_valid(self.out.q, state.out, options.levels);
+                    }
+
+                    const new_oclk = v.read_logic(self.out.clk, options.levels);
+                    if (new_oclk & !state.oclk) {
+                        state.out = state.serial;
+                    }
+                    state.oclk = new_oclk;
+
+                    const new_sclk = v.read_logic(self.serial.clk, options.levels);
+                    if (new_sclk and !state.sclk) {
+                        state.serial = (state.serial << 1) | @intFromBool(v.read_logic(self.serial.in, options.levels));
+                    }
+                    state.sclk = new_sclk;
+
+                    if (!v.read_logic(self.serial.n_async_clr, options.levels)) {
+                        state.serial = 0;
+                    }
+                },
+                .nets_only => {
+                    const s_out: u1 = @truncate(state.serial >> 7);
+                    try v.drive_logic(self.serial.out, s_out != 0, options.levels);
+
+                    if (!v.read_logic(self.out.n_oe, options.levels)) {
+                        try v.drive_bus(self.out.q, state.out, options.levels);
                     }
                 },
             }

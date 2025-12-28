@@ -267,6 +267,20 @@ pub const SN74ALVCH16245DL   = _74.x16245(.init(.ALVC, pkg.SSOP_48), true);
 pub const SN74ALVCH16245DGG  = _74.x16245(.init(.ALVC, pkg.TSSOP_48), true);
 pub const SN74ALVCH16245DGV  = _74.x16245(.init(.ALVC, pkg.TVSOP_48), true);
 
+// Shift Register
+pub const SN74LV164AD = _74.x164(.init(.LV, pkg.SOIC_14_150));
+pub const SN74LV164ADB = _74.x164(.init(.LV, pkg.SSOP_14));
+pub const SN74LV164APW = _74.x164(.init(.LV, pkg.TSSOP_14));
+pub const SN74LV164ADGV = _74.x164(.init(.LV, pkg.TVSOP_14));
+
+pub const SN74LV165AD = _74.x165(.init(.LV, pkg.SOIC_14_150));
+pub const SN74LV165ADB = _74.x165(.init(.LV, pkg.SSOP_14));
+pub const SN74LV165APW = _74.x165(.init(.LV, pkg.TSSOP_14));
+pub const SN74LV165ADGV = _74.x165(.init(.LV, pkg.TVSOP_14));
+
+pub const SN74LV595AD = _74.x595(.init(.LV, pkg.SOIC_16_150));
+pub const SN74LV595APW = _74.x595(.init(.LV, pkg.TSSOP_16));
+
 // 2x12b bus exchange switch
 pub const SN74CBTLV16212DL   = _74.CBT16212(.init(.CBTLV, pkg.SSOP_56));
 pub const SN74CBTLV16212G    = _74.CBT16212(.init(.CBTLV, pkg.TSSOP_56));
