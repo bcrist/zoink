@@ -9,6 +9,7 @@ pub const Base = struct {
     prefix: enums.Prefix,
     designator: u16 = 0,
     name: []const u8 = "",
+    bom_name: []const u8 = "", // if not set, defaults to `{prefix}: {value}`
     value: []const u8 = "",
     description: []const u8 = "",
     layer: ?kicad.Layer = null,

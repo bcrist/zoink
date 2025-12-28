@@ -28,7 +28,7 @@ pub const DIP64 = jedec.MS_015A(64, 900, "DIP-64");
 
 pub const PGA68 = pga.PGA68;
 
-pub const SOT323 = jedec.MO_203E(3, "SOT323-5");
+pub const SOT323 = jedec.MO_203E(3, "SOT323");
 pub const SOT323_5 = jedec.MO_203E(5, "SOT323-5");
 pub const SOT323_6 = jedec.MO_203E(6, "SOT323-6");
 pub const SOT323_8 = jedec.MO_203E(8, "SOT323-8");

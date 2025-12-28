@@ -470,11 +470,12 @@ pub const L0603 = Inductor(pkg.L0603);
 pub const L0402 = Inductor(pkg.L0402);
 pub const L0201 = Inductor(pkg.L0201);
 
-pub fn Connector(comptime n: comptime_int, comptime Pkg: type) type {
+pub fn Connector(comptime name: []const u8, comptime n: comptime_int, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
             .package = if (Pkg == void) undefined else &Pkg.pkg,
             .prefix = .J,
+            .bom_name = "J: " ++ name,
         },
 
         p: [n + 1]Net_ID = initial: {

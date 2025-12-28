@@ -823,7 +823,7 @@ pub fn M16(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
 // - Cypress CY7C517
 // - AMD Am29517, Am29C517
 // - LOGIC LMU217
-pub fn M17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime package_type: Multiplier_Package_Type) type {
+pub fn M17(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type, comptime package_type: Multiplier_Package_Type) type {
     return struct {
         base: Part.Base = .{
             .prefix = .U,
@@ -834,6 +834,7 @@ pub fn M17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
                 .pga68 => &packages.PGA68.pkg,
                 .flatpack64 => @compileError("not currently supported"),
             },
+            .value = value,
         },
 
         pwr: power.Multi(2, 2, pwr, Decoupler) = .{},
@@ -880,8 +881,8 @@ pub fn M17(comptime pwr: Net_ID, comptime Decoupler: type, comptime levels: type
         n_ce_y: Net_ID = .unset,
         n_ce_p: Net_ID = .unset,
 
-        pub const Input_Format = M16(pwr, Decoupler, levels, package_type).Input_Format;
-        pub const Output_Format = M16(pwr, Decoupler, levels, package_type).Output_Format;
+        pub const Input_Format = M16(value, pwr, Decoupler, levels, package_type).Input_Format;
+        pub const Output_Format = M16(value, pwr, Decoupler, levels, package_type).Output_Format;
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (package_type) {

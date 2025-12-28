@@ -3,6 +3,9 @@ pub fn JTAG(comptime vcc: Net_ID) type {
         base: Part.Base = .{
             .package = &pkg.bmc.Trident.pkg,
             .prefix = .J,
+            .value = "JTAG",
+            .bom_name = "Trident",
+            .include_in_bom = false,
         },
 
         pwr: power.Single(vcc, void) = .{},
@@ -33,6 +36,9 @@ pub fn SWD(comptime vcc: Net_ID) type {
         base: Part.Base = .{
             .package = &pkg.bmc.Trident.pkg,
             .prefix = .J,
+            .value = "SWD",
+            .bom_name = "Trident",
+            .include_in_bom = false,
         },
 
         pwr: power.Single(vcc, void) = .{},
@@ -63,6 +69,8 @@ pub fn Generic(comptime vcc: Net_ID) type {
         base: Part.Base = .{
             .package = &pkg.bmc.Trident.pkg,
             .prefix = .J,
+            .bom_name = "Trident",
+            .include_in_bom = false,
         },
 
         pwr: power.Single(vcc, void) = .{},

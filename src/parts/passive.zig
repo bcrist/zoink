@@ -8,6 +8,7 @@ pub fn Cap(comptime Pkg: type) type {
         b: Net_ID = .unset,
         value_nf: f32 = 100,
         voltage_rating: f32 = 50,
+        dielectric: []const u8 = "",
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -25,6 +26,13 @@ pub fn Cap(comptime Pkg: type) type {
                     self.base.value = b.fmt("{} nF", .{ self.value_nf });
                 } else {
                     self.base.value = b.fmt("{} µF", .{ self.value_nf / 1000 });
+                }
+            }
+            if (self.base.bom_name.len == 0) {
+                if (self.dielectric.len > 0) {
+                    self.base.bom_name = b.fmt("{t}: {s} {d}V {s}", .{ self.base.prefix, self.base.value, self.voltage_rating, self.dielectric });
+                } else {
+                    self.base.bom_name = b.fmt("{t}: {s} {d}V", .{ self.base.prefix, self.base.value, self.voltage_rating });
                 }
             }
         }
@@ -51,6 +59,7 @@ pub fn Cap_Decoupler(comptime Pkg: type) type {
         external: Net_ID = .unset,
         value_nf: f32 = 100,
         voltage_rating: f32 = 50,
+        dielectric: []const u8 = "",
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -70,6 +79,13 @@ pub fn Cap_Decoupler(comptime Pkg: type) type {
                     self.base.value = b.fmt("{} nF", .{ self.value_nf });
                 } else {
                     self.base.value = b.fmt("{} µF", .{ self.value_nf / 1000 });
+                }
+            }
+            if (self.base.bom_name.len == 0) {
+                if (self.dielectric.len > 0) {
+                    self.base.bom_name = b.fmt("{t}: {s} {d}V {s}", .{ self.base.prefix, self.base.value, self.voltage_rating, self.dielectric });
+                } else {
+                    self.base.bom_name = b.fmt("{t}: {s} {d}V", .{ self.base.prefix, self.base.value, self.voltage_rating });
                 }
             }
         }
@@ -95,6 +111,7 @@ pub fn Resistor(comptime Pkg: type) type {
         b: Net_ID = .unset,
         value: f32 = 1_000,
         max_power: f32 = 0.1,
+        tolerance_percent: ?f32 = null,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -112,6 +129,13 @@ pub fn Resistor(comptime Pkg: type) type {
                     self.base.value = b.fmt("{} k", .{ self.value / 1000 });
                 } else {
                     self.base.value = b.fmt("{} M", .{ self.value / 1000000 });
+                }
+            }
+            if (self.base.bom_name.len == 0) {
+                if (self.tolerance_percent) |tolerance| {
+                    self.base.bom_name = b.fmt("{t}: {s}Ω {d}%", .{ self.base.prefix, self.base.value, tolerance });
+                } else {
+                    self.base.bom_name = b.fmt("{t}: {s}", .{ self.base.prefix, self.base.value });
                 }
             }
         }
@@ -139,6 +163,7 @@ pub fn Resistor_Kelvin(comptime Pkg: type) type {
         b_sense: Net_ID = .unset,
         value: f32 = 1,
         max_power: f32 = 1,
+        tolerance_percent: ?f32 = null,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
@@ -158,6 +183,13 @@ pub fn Resistor_Kelvin(comptime Pkg: type) type {
                     self.base.value = b.fmt("{} k", .{ self.value / 1000 });
                 } else {
                     self.base.value = b.fmt("{} M", .{ self.value / 1000000 });
+                }
+            }
+            if (self.base.bom_name.len == 0) {
+                if (self.tolerance_percent) |tolerance| {
+                    self.base.bom_name = b.fmt("{t}: {s}Ω {d}% (Current Sense)", .{ self.base.prefix, self.base.value, tolerance });
+                } else {
+                    self.base.bom_name = b.fmt("{t}: {s} (Current Sense)", .{ self.base.prefix, self.base.value });
                 }
             }
         }
@@ -181,7 +213,7 @@ pub fn Inductor(comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
-            .prefix = .R,
+            .prefix = .L,
         },
         a: Net_ID = .unset,
         b: Net_ID = .unset,
