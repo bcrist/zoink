@@ -17,16 +17,16 @@ pub const Text_Box = @import("kicad/Text_Box.zig");
 pub const Text_Style = @import("kicad/Text_Style.zig");
 pub const Writer_Options = @import("kicad/Writer_Options.zig");
 
-pub const Pin_Name_Format_Func = *const fn (pin: Pin_ID, writer: *std.io.Writer) std.io.Writer.Error!void;
+pub const Pin_Name_Format_Func = *const fn (pin: Pin_ID, writer: *std.Io.Writer) std.Io.Writer.Error!void;
 pub fn format_pin_name(comptime E: type) Pin_Name_Format_Func {
     return struct {
-        pub fn func(pin: Pin_ID, writer: *std.io.Writer) std.io.Writer.Error!void {
+        pub fn func(pin: Pin_ID, writer: *std.Io.Writer) std.Io.Writer.Error!void {
             try writer.writeAll(@tagName(E.from_generic(pin)));
         }
     }.func;
 }
 
-pub fn default_format_pin_name(pin: Pin_ID, writer: *std.io.Writer) std.io.Writer.Error!void {
+pub fn default_format_pin_name(pin: Pin_ID, writer: *std.Io.Writer) std.Io.Writer.Error!void {
     if (pin == .heatsink) {
         try writer.writeAll("EP");
     } else {
@@ -281,7 +281,7 @@ pub const Layer = enum (u8) {
             return result;
         } else if (std.mem.startsWith(u8, name, "*.")) {
             var buf: [64]u8 = undefined;
-            var w = std.io.Writer.fixed(&buf);
+            var w = std.Io.Writer.fixed(&buf);
             w.print("F.{s}", .{ name["*.".len ..] }) catch return .initEmpty();
             if (from_kicad_name(w.buffered())) |layer| {
                 return .initMany(&.{ layer, layer.flip_sides() });
@@ -290,7 +290,7 @@ pub const Layer = enum (u8) {
             }
         } else if (std.mem.startsWith(u8, name, "F&B.")) {
             var buf: [64]u8 = undefined;
-            var w = std.io.Writer.fixed(&buf);
+            var w = std.Io.Writer.fixed(&buf);
             w.print("F.{s}", .{ name["F&B.".len ..] }) catch return .initEmpty();
             if (from_kicad_name(w.buffered())) |layer| {
                 return .initMany(&.{ layer, layer.flip_sides() });

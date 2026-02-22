@@ -1,5 +1,5 @@
 pub fn Pins_8b_Alliance(comptime Self: type, comptime Pkg: type) type {
-    if (Pkg == packages.TSOP_II_32 or Pkg == packages.SOJ_32) return struct {
+    if (Pkg == packages.TSOP_II_32 or Pkg == packages.SOJ_32_400 or Pkg == packages.SOJ_32_300) return struct {
         pub fn pin(self: Self, pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 28 => self.n_oe,
@@ -34,20 +34,22 @@ pub fn Pins_8b_Alliance(comptime Self: type, comptime Pkg: type) type {
                 27 => self.data[self.remap_data[7]],
 
                 9 => self.pwr.gnd[0],
-                8 => self.pwr.p3v3[0],
+                8 => self.pwr.vcc(0),
                 25 => self.pwr.gnd[1],
-                24 => self.pwr.p3v3[1],
+                24 => self.pwr.vcc(1),
 
                 else => unreachable,
             };
         }
     };
+    
+    @compileError("Alliance SRAM pinout is not known for " ++ @typeName(Pkg));
 }
 
 pub fn Pins_16b_GSI(comptime Self: type, comptime Pkg: type) type {
-    if (Pkg == packages.FBGA_48) return struct {
+    if (Pkg == packages.BGA_48_6mm_8mm) return struct {
         pub fn pin(self: Self, pin_id: Pin_ID) Net_ID {
-            return switch (packages.FBGA_48.Pin_ID.from_generic(pin_id)) {
+            return switch (packages.BGA_48_6mm_8mm.Pin_ID.from_generic(pin_id)) {
                 .A1 => self.n_lower_byte_enable,
                 .B2 => self.n_upper_byte_enable,
 

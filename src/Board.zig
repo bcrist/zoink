@@ -36,7 +36,7 @@ pub fn net_name(self: *const Board, net_id: Net_ID) []const u8 {
     return self.net_names.items[idx];
 }
 
-pub fn print_bus_name(self: *const Board, nets: anytype, writer: *std.io.Writer) !void {
+pub fn print_bus_name(self: *const Board, nets: anytype, writer: *std.Io.Writer) !void {
     if (nets.len == 0) return;
 
     var base_name = self.net_name(nets[0]);
@@ -171,7 +171,7 @@ pub fn bus(self: *Board, comptime name: []const u8, comptime bits: comptime_int)
             @compileError(std.fmt.comptimePrint("Subscript indicates bus length of {} but result has length {}", .{ bits_written, bits }));
         }
         if (bits_written > 1 and be_marker == null and le_marker == null) {
-            @compileError("Expected little-endian marker '<' or big-endian marker '>' when extracting multiple bits from bus");
+            @compileError("Expected little-endian marker '<' or big-endian marker '>' when extracting multiple bits from bus.  Previous default behavior was to assume little-endian '<'.");
         }
     };
 
@@ -316,15 +316,15 @@ pub fn get_dimensions(self: *Board) Dimensions {
     };
 }
 
-pub fn generate_bom_file(self: *Board, temp: std.mem.Allocator, path: []const u8) !void {
-    if (std.fs.path.dirname(path)) |dirname| {
-        try std.fs.cwd().makePath(dirname);
+pub fn generate_bom_file(self: *Board, io: std.Io, temp: std.mem.Allocator, path: []const u8) !void {
+    if (std.Io.Dir.path.dirname(path)) |dirname| {
+        try std.Io.Dir.cwd().createDirPath(io, dirname);
     }
-    var f = try std.fs.cwd().createFile(path, .{});
-    defer f.close();
+    var f = try std.Io.Dir.cwd().createFile(io, path, .{});
+    defer f.close(io);
 
-    const basename = std.fs.path.basename(path);
-    const extension = std.fs.path.extension(basename);
+    const basename = std.Io.Dir.path.basename(path);
+    const extension = std.Io.Dir.path.extension(basename);
     const stem = basename[0 .. basename.len - extension.len];
 
     var buf: [16384]u8 = undefined;
@@ -334,7 +334,7 @@ pub fn generate_bom_file(self: *Board, temp: std.mem.Allocator, path: []const u8
     try writer.interface.flush();
 }
 
-pub fn generate_bom(self: *Board, temp: std.mem.Allocator, name: []const u8, writer: *std.io.Writer) !void {
+pub fn generate_bom(self: *Board, temp: std.mem.Allocator, name: []const u8, writer: *std.Io.Writer) !void {
     const BOM_Part = struct {
         footprint_name: []const u8,
         name: []const u8,
@@ -434,25 +434,25 @@ pub fn generate_bom(self: *Board, temp: std.mem.Allocator, name: []const u8, wri
     try w.done();
 }
 
-pub fn generate_kicad_project_file(_: *Board, path: []const u8) !void {
-    if (std.fs.path.dirname(path)) |dirname| {
-        try std.fs.cwd().makePath(dirname);
+pub fn generate_kicad_project_file(_: *Board, io: std.Io, path: []const u8) !void {
+    if (std.Io.Dir.path.dirname(path)) |dirname| {
+        try std.Io.Dir.cwd().createDirPath(io, dirname);
     }
-    var f = std.fs.cwd().createFile(path, .{
+    var f = std.Io.Dir.cwd().createFile(io, path, .{
         .truncate = false,
         .exclusive = true,
     }) catch |err| switch (err) {
         error.PathAlreadyExists => return,
         else => return err,
     };
-    defer f.close();
+    defer f.close(io);
 
-    const basename = std.fs.path.basename(path);
-    const extension = std.fs.path.extension(basename);
+    const basename = std.Io.Dir.path.basename(path);
+    const extension = std.Io.Dir.path.extension(basename);
     const stem = basename[0 .. basename.len - extension.len];
 
     var buf: [16384]u8 = undefined;
-    var w = f.writer(&buf);
+    var w = f.writer(io, &buf);
 
     try w.interface.writeAll(
         \\{
@@ -832,30 +832,35 @@ pub fn generate_kicad_project_file(_: *Board, path: []const u8) !void {
     try w.interface.flush();
 }
 
-pub fn generate_or_update_kicad_pcb_file(self: *Board, temp: std.mem.Allocator, path: []const u8, options: kicad.Writer_Options) !void {
-    const prev_contents = std.fs.cwd().readFileAlloc(temp, path, 1_000_000_000) catch |err| switch (err) {
+pub fn generate_or_update_kicad_pcb_file(self: *Board, io: std.Io, temp: std.mem.Allocator, path: []const u8, options: kicad.Writer_Options) !void {
+    const prev_contents = std.Io.Dir.cwd().readFileAlloc(io, path, temp, .limited(1_000_000_000)) catch |err| switch (err) {
         error.FileNotFound => try temp.alloc(u8, 0),
         else => return err,
     };
     defer temp.free(prev_contents);
 
-    var buf: [16384]u8 = undefined;
-    var af = try std.fs.cwd().atomicFile(path, .{
+    var af = try std.Io.Dir.cwd().createFileAtomic(io, path, .{
         .make_path = true,
-        .write_buffer = &buf,
+        .replace = true,
     });
-    defer af.deinit();
-    try self.generate_or_update_kicad_pcb(temp, &af.file_writer.interface, prev_contents, options);
-    try af.finish();
+    defer af.deinit(io);
+
+    var buf: [16384]u8 = undefined;
+    var af_writer = af.file.writer(io, &buf);
+
+    try self.generate_or_update_kicad_pcb(temp, &af_writer.interface, prev_contents, options);
+
+    try af_writer.interface.flush();
+    try af.replace(io);
 }
 
-pub fn generate_or_update_kicad_pcb(self: *Board, temp: std.mem.Allocator, writer: *std.io.Writer, prev_contents: []const u8, options: kicad.Writer_Options) !void {
+pub fn generate_or_update_kicad_pcb(self: *Board, temp: std.mem.Allocator, writer: *std.Io.Writer, prev_contents: []const u8, options: kicad.Writer_Options) !void {
     var w = sx.writer(temp, writer);
     w.indent = "\t";
     defer w.deinit();
 
     if (prev_contents.len > 0) {
-        var reader = std.io.Reader.fixed(prev_contents);
+        var reader = std.Io.Reader.fixed(prev_contents);
         var r = sx.reader(temp, &reader);
         defer r.deinit();
 
@@ -863,11 +868,12 @@ pub fn generate_or_update_kicad_pcb(self: *Board, temp: std.mem.Allocator, write
         self.update_kicad_pcb(&r, &w, options) catch |err| switch (err) {
             error.SExpressionSyntaxError => {
                 var buf: [64]u8 = undefined;
-                var stderr = std.fs.File.stderr().writer(&buf);
+                var stderr = std.debug.lockStderr(&buf);
+                defer std.debug.unlockStderr();
 
                 const ctx = try r.token_context();
-                try ctx.print_for_string(prev_contents, &stderr.interface, 160);
-                try stderr.interface.flush();
+                try ctx.print_for_string(prev_contents, &stderr.file_writer.interface, 160);
+                try stderr.file_writer.interface.flush();
                 return err;
             },
             else => return err,
@@ -1365,7 +1371,7 @@ fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, remap: *co
 
 fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Location, existing_fp: ?kicad.Footprint, arena: std.mem.Allocator, w: *sx.Writer, remap: *const Net_Remap, options: kicad.Writer_Options) !void {
     var designator_buf: [64]u8 = undefined;
-    var designator = std.io.Writer.fixed(&designator_buf);
+    var designator = std.Io.Writer.fixed(&designator_buf);
     try designator.print("{t}{}", .{ p.base.prefix, p.base.designator });
 
     if (p.base.footprint) |base_fp| {
@@ -1783,5 +1789,4 @@ const Net_ID = enums.Net_ID;
 const Prefix = enums.Prefix;
 const enums = @import("enums.zig");
 const sx = @import("sx");
-const zm = @import("zm");
 const std = @import("std");

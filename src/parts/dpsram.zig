@@ -466,6 +466,7 @@ pub fn CY7C0xx(
                     88 => @field(self.pwr, @tagName(pwr))[2],
 
                     1, 2, 24, 25, 51, 52, 53, 73, 74, 75 => .no_connect,
+                    else => unreachable,
                 },
                 packages.PLCC_84M => switch (@intFromEnum(pin_id)) {
                     // CY7C024/CY7C025
@@ -562,6 +563,7 @@ pub fn CY7C0xx(
                     1 => @field(self.pwr, @tagName(pwr))[0],
                     21 => @field(self.pwr, @tagName(pwr))[1],
                     26 => @field(self.pwr, @tagName(pwr))[2],
+                    else => unreachable,
                 },
                 else => unreachable,
             };

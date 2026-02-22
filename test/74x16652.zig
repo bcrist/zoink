@@ -1,10 +1,10 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(SN74LVTH16652DGG);
-    U1.u[0].a = b.bus("A[0:7]", 8);
-    U1.u[1].a = b.bus("A[8:15]", 8);
+    const U1 = b.part(SN74LVTH16652DGG, "chip", .{});
+    U1.u[0].a = b.bus("A[<0:7]", 8);
+    U1.u[1].a = b.bus("A[<8:15]", 8);
 
-    U1.u[0].b = b.bus("B[0:7]", 8);
-    U1.u[1].b = b.bus("B[8:15]", 8);
+    U1.u[0].b = b.bus("B[<0:7]", 8);
+    U1.u[1].b = b.bus("B[<8:15]", 8);
 
     U1.u[0].a_to_b.oe = b.net("OEAB");
     U1.u[1].a_to_b.oe = b.net("OEAB");

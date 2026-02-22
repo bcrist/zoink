@@ -9,9 +9,9 @@ pub const cw: Rotation = .{ .deg = -90 };
 pub const cw45: Rotation = .{ .deg = -45 };
 pub const _180: Rotation = .{ .deg = 180 };
 
-pub fn formatNumber(self: Rotation, options: std.fmt.Number, writer: *std.io.Writer) !void {
+pub fn formatNumber(self: Rotation, options: std.fmt.Number, writer: *std.Io.Writer) !void {
     var buf: [32]u8 = undefined;
-    var w = std.io.Writer.fixed(&buf);
+    var w = std.Io.Writer.fixed(&buf);
     try w.printInt(self.deg, options.mode.base() orelse 10, options.case, .{
         .precision = options.precision,
         .width = if (options.width) |width| (if (width > 0) 1 else null) else null,

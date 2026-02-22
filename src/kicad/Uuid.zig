@@ -59,7 +59,7 @@ pub fn write(self: Uuid, w: *sx.Writer) !void {
     try w.close();
 }
 
-pub fn format(self: Uuid, w: *std.io.Writer) !void {
+pub fn format(self: Uuid, w: *std.Io.Writer) !void {
     try w.print("{x:0>8}-{x:0>4}-{x:0>4}-{x:0>4}-{x:0>12}", .{
         self.raw >> 96,
         @as(u16, @truncate(self.raw >> 80)),

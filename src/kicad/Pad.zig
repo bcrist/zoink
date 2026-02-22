@@ -112,9 +112,9 @@ pub const Teardrops = struct {
 
 pub const Pin_Name_Formatter = struct {
     pin: Pin_ID,
-    impl: *const fn (data: Pin_ID, writer: *std.io.Writer) std.io.Writer.Error!void,
+    impl: *const fn (data: Pin_ID, writer: *std.Io.Writer) std.Io.Writer.Error!void,
 
-    pub inline fn format(self: @This(), writer: *std.io.Writer) std.io.Writer.Error!void {
+    pub inline fn format(self: @This(), writer: *std.Io.Writer) std.Io.Writer.Error!void {
         try self.impl(self.pin, writer);
     }
 };

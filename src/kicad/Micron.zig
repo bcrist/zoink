@@ -59,7 +59,7 @@ pub fn eql(self: Micron, other: Micron) bool {
     return self.um == other.um;
 }
 
-pub fn formatNumber(self: Micron, writer: *std.io.Writer, options: std.fmt.Number) !void {
+pub fn formatNumber(self: Micron, writer: *std.Io.Writer, options: std.fmt.Number) !void {
     const precision = options.precision orelse 0;
     std.debug.assert((options.mode.base() orelse 10) == 10);
 

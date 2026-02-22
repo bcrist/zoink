@@ -1,9 +1,10 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(SN74LVC138);
-    U1.sel = b.bus("SEL", 3);
-    U1.y = b.bus("Y", 8);
-    U1.enable = b.net("EN");
-    U1.n_enable = b.bus("~EN", 2);
+    _ = b.part(SN74LVC138, "chip", .{
+        .sel = b.bus("SEL", 3),
+        .y = b.bus("Y", 8),
+        .enable = b.net("EN"),
+        .n_enable = b.bus("~EN", 2),
+    });
 }
 
 test {

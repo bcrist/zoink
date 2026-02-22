@@ -1,23 +1,24 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(L4C381);
-    U1.a = b.bus("A", 16);
-    U1.b = b.bus("B", 16);
-    U1.f = b.bus("F", 16);
-    U1.operation = b.bus("OP", 3);
-    U1.operand_select = b.bus("OS", 2);
-    U1.carry_in = b.net("Cin");
-    U1.carry_out = b.net("Cout");
-    U1.n_carry_propagate = b.net("~P");
-    U1.n_carry_generate = b.net("~G");
-    U1.zero = b.net("Z");
-    U1.overflow = b.net("V");
-    U1.flowthrough_ab = b.net("FT_AB");
-    U1.flowthrough_f = b.net("FT_F");
-    U1.n_oe = b.net("~OE");
-    U1.clk = b.net("CLK");
-    U1.n_ce_a = b.net("~CEA");
-    U1.n_ce_b = b.net("~CEB");
-    U1.n_ce_f = b.net("~CEF");
+    _ = b.part(L4C381, "chip", .{
+        .a = b.bus("A", 16),
+        .b = b.bus("B", 16),
+        .f = b.bus("F", 16),
+        .operation = b.bus("OP", 3),
+        .operand_select = b.bus("OS", 2),
+        .carry_in = b.net("Cin"),
+        .carry_out = b.net("Cout"),
+        .n_carry_propagate = b.net("~P"),
+        .n_carry_generate = b.net("~G"),
+        .zero = b.net("Z"),
+        .overflow = b.net("V"),
+        .flowthrough_ab = b.net("FT_AB"),
+        .flowthrough_f = b.net("FT_F"),
+        .n_oe = b.net("~OE"),
+        .clk = b.net("CLK"),
+        .n_ce_a = b.net("~CEA"),
+        .n_ce_b = b.net("~CEB"),
+        .n_ce_f = b.net("~CEF"),
+    });
 }
 
 test {

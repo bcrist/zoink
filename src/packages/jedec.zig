@@ -617,7 +617,15 @@ pub fn MS_012G_02(comptime lead_count: comptime_int, comptime package_name: []co
     return struct {
         pub const pkg: Package = .{
             .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
         };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
 
         pub const data: SMD_Data = .{
             .package_name = package_name,

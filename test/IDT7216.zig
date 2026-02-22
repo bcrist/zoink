@@ -1,20 +1,21 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(IDT7216);
-    U1.x = b.bus("X", 16);
-    U1.y = b.bus("Y", 16);
-    U1.p = b.bus("P", 16);
-    U1.xm = b.net("XM");
-    U1.ym = b.net("YM");
-    U1.ft = b.net("FT");
-    U1.fa = b.net("FA");
-    U1.rnd = b.net("RND");
-    U1.n_oe_y = b.net("~OEY");
-    U1.n_oe_p = b.net("~OEP");
-    U1.lsp_sel = b.net("LSP_SEL");
-    U1.clk_x = b.net("CLK_X");
-    U1.clk_y = b.net("CLK_Y");
-    U1.clk_msp = b.net("CLK_MSP");
-    U1.clk_lsp = b.net("CLK_LSP");
+    _ = b.part(IDT7216, "chip", .{
+        .x = b.bus("X", 16),
+        .y = b.bus("Y", 16),
+        .p = b.bus("P", 16),
+        .xm = b.net("XM"),
+        .ym = b.net("YM"),
+        .ft = b.net("FT"),
+        .fa = b.net("FA"),
+        .rnd = b.net("RND"),
+        .n_oe_y = b.net("~OEY"),
+        .n_oe_p = b.net("~OEP"),
+        .lsp_sel = b.net("LSP_SEL"),
+        .clk_x = b.net("CLK_X"),
+        .clk_y = b.net("CLK_Y"),
+        .clk_msp = b.net("CLK_MSP"),
+        .clk_lsp = b.net("CLK_LSP"),
+    });
 }
 
 test {

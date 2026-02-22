@@ -1,14 +1,14 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(SN74ALVCH16244DGG);
-    U1.u[0].a = b.bus("A[0:3]", 4);
-    U1.u[1].a = b.bus("A[4:7]", 4);
-    U1.u[2].a = b.bus("A[8:11]", 4);
-    U1.u[3].a = b.bus("A[12:15]", 4);
+    const U1 = b.part(SN74ALVCH16244DGG, "chip", .{});
+    U1.u[0].a = b.bus("A[<0:3]", 4);
+    U1.u[1].a = b.bus("A[<4:7]", 4);
+    U1.u[2].a = b.bus("A[<8:11]", 4);
+    U1.u[3].a = b.bus("A[<12:15]", 4);
 
-    U1.u[0].y = b.bus("Y[0:3]", 4);
-    U1.u[1].y = b.bus("Y[4:7]", 4);
-    U1.u[2].y = b.bus("Y[8:11]", 4);
-    U1.u[3].y = b.bus("Y[12:15]", 4);
+    U1.u[0].y = b.bus("Y[<0:3]", 4);
+    U1.u[1].y = b.bus("Y[<4:7]", 4);
+    U1.u[2].y = b.bus("Y[<8:11]", 4);
+    U1.u[3].y = b.bus("Y[<12:15]", 4);
 
     U1.u[0].n_oe = b.net("~OE[0]");
     U1.u[1].n_oe = b.net("~OE[1]");

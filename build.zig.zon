@@ -1,26 +1,27 @@
 .{
     .name = .zoink,
-    .version = "0.1.5",
-    .minimum_zig_version = "0.15.1",
     .fingerprint = 0x701de67035fe779a,
+    .version = "0.2.0",
+    .minimum_zig_version = "0.16.0-dev.2626+0e3c6514a",
     .paths = .{
         "src/",
         "tools/",
         "build.zig",
         "build.zig.zon",
+        "license",
     },
     .dependencies = .{
         .sx = .{
-            .url = "git+https://github.com/bcrist/zig-sx#3b711131bba3d1884e6be9d1ba15d0769d4a54b2",
-            .hash = "sx-1.1.8-0vgbavzRAAAMCYztSRXLrwxYzRDU2Ml45KZXtPp5L9YO",
+            .url = "git+https://github.com/bcrist/zig-sx?ref=zig-0.16#8c6a79351a8afd943d27a6aa133f162d607dadb0",
+            .hash = "sx-1.2.0-0vgbarDXAAB63Jg635DdSzgUNvoAEqw3DZyyPJtaf_3d",
         },
         .lc4k = .{
-            .url = "git+https://github.com/bcrist/zig-lc4k#d035bb882377fe9a7d33395eeb9c714b2baecf37",
-            .hash = "lc4k-0.2.12-5R47QiFwFACNwLMR80cLRWSS5Zif6fdwJiEN3AiuSR2f",
+            .url = "git+https://github.com/bcrist/zig-lc4k?ref=zig-0.16#8b126203cb828fe71a10ac6085cc1b816386e397",
+            .hash = "lc4k-0.3.0-5R47QvGJFAC80kQIs1P27LV48RhdHtGI6u9hIbQUFtwG",
         },
         .bit_helper = .{
-            .url = "git+https://github.com/bcrist/zig-bithelper#01fe5f519f54ab42c649096573c45ddaa351e1d5",
-            .hash = "bit_helper-1.0.1-C8c75iguAABAXw3jPh9pvNp-RPvblh1vV7MbQ1w99fFF",
+            .url = "git+https://github.com/bcrist/zig-bithelper#84aafac5eabb8a9384b7bfcec4485b05a811008d",
+            .hash = "bit_helper-1.0.1-C8c75qUzAABMPBP3n0ecBhCp2Sizw4JqzO9bTvR_KdLU",
         },
         .zm = .{
             .url = "git+https://github.com/griush/zm?ref=0.4.0#06753254be28bec05ece164b37ffbbf9c2e50bde",

@@ -43,8 +43,9 @@ fn configure_chip(chip: *Chip) !void {
 
 
 pub fn configure(b: *Board, config: *const Chip) !void {
-    const U1 = b.part(LC4032ZE);
-    U1.config = config;
+    const U1 = b.part(LC4032ZE, "chip", .{
+        .config = config,
+    });
     U1.clk[2] = b.net("CLK");
     U1.set_net_by_pin(oe_pin, b.net("OE"));
     U1.set_bus_by_pins(&output_pins, &b.bus("OUT", output_pins.len));

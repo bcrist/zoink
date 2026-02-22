@@ -712,7 +712,7 @@ pub fn expect_state(self: *const Validator, what: anytype, expected: anytype, co
         .@"enum" => try self.expect_net_state(what, expected, levels),
         else => self.expect_bus_state(what, expected, levels) catch {
             var buf: [256]u8 = undefined;
-            var w = std.io.Writer.fixed(&buf);
+            var w = std.Io.Writer.fixed(&buf);
             self.b.print_bus_name(what, &w) catch {};
             log.err("{s} is {X}\n", .{ w.buffered(), self.read_bus(what, levels) });
             return error.InvalidNetState;

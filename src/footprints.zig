@@ -118,7 +118,7 @@ pub const SIL_Data = struct {
     pin_1_mark: ?Pin1_Mark_Type = null,
     body_mark: ?Body_Mark_Type = null,
 
-    pub fn format(self: SIL_Data, writer: *std.io.Writer) !void {
+    pub fn format(self: SIL_Data, writer: *std.Io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
@@ -266,7 +266,7 @@ pub const DIL_Data = struct {
     pin_1_mark: ?Pin1_Mark_Type = null,
     body_mark: ?Body_Mark_Type = null,
 
-    pub fn format(self: DIL_Data, writer: *std.io.Writer) !void {
+    pub fn format(self: DIL_Data, writer: *std.Io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
@@ -437,7 +437,7 @@ pub const SMD_Data = struct {
     pin_1_mark: ?Pin1_Mark_Type = null,
     body_mark: ?Body_Mark_Type = null,
 
-    pub fn format(self: SMD_Data, writer: *std.io.Writer) !void {
+    pub fn format(self: SMD_Data, writer: *std.Io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 
@@ -664,7 +664,7 @@ pub const SOT_Data = struct {
     pin_1_mark: ?Pin1_Mark_Type = null,
     body_mark: ?Body_Mark_Type = null,
 
-    pub fn format(self: SOT_Data, writer: *std.io.Writer) !void {
+    pub fn format(self: SOT_Data, writer: *std.Io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
@@ -831,7 +831,7 @@ pub const PLCC_PGA_Data = struct {
     pin_1_mark: ?Pin1_Mark_Type = null,
     body_mark: ?Body_Mark_Type = null,
     
-    pub fn format(self: PLCC_PGA_Data, writer: std.io.Writer) !void {
+    pub fn format(self: PLCC_PGA_Data, writer: std.Io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
@@ -994,7 +994,7 @@ pub const PGA_Data = struct {
     pin_1_mark: ?Pin1_Mark_Type = null,
     body_mark: ?Body_Mark_Type = null,
     
-    pub fn format(self: PGA_Data, writer: std.io.Writer) !void {
+    pub fn format(self: PGA_Data, writer: std.Io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
@@ -1120,7 +1120,7 @@ pub const BGA_Data = struct {
 
     courtyard_expansion_scale: ?f64 = null,
     
-    pub fn format(self: BGA_Data, writer: std.io.Writer) !void {
+    pub fn format(self: BGA_Data, writer: std.Io.Writer) !void {
         try writer.writeAll(self.package_name);
     }
 };
