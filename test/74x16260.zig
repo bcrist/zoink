@@ -1,5 +1,5 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(SN74ALVCH16260DGG);
+    const U1 = b.part(SN74ALVCH16260DGG, "chip", .{});
     U1.a.data = b.bus("A", 12);
     U1.bx.data = b.bus("BX", 12);
     U1.by.data = b.bus("BY", 12);

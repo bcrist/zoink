@@ -1,13 +1,14 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(GS71116U);
-    U1.addr = b.bus("A", 16);
-    U1.lower_data = b.bus("D[0:7]", 8);
-    U1.upper_data = b.bus("D[8:15]", 8);
-    U1.n_ce = .gnd;
-    U1.n_lower_byte_enable = .gnd;
-    U1.n_upper_byte_enable = .gnd;
-    U1.n_we = b.net("~WE");
-    U1.n_oe = b.net("~OE");
+    _ = b.part(GS71116U, "ram", .{
+        .addr = b.bus("A", 16),
+        .lower_data = b.bus("D[<0:7]", 8),
+        .upper_data = b.bus("D[<8:15]", 8),
+        .n_ce = .gnd,
+        .n_lower_byte_enable = .gnd,
+        .n_upper_byte_enable = .gnd,
+        .n_we = b.net("~WE"),
+        .n_oe = b.net("~OE"),
+    });
 }
 
 test {

@@ -2441,11 +2441,11 @@ fn Dual_4b_Tristate_Buffer(comptime value_suffix: []const u8, comptime options: 
             n_oe: Net_ID = .unset,
             remap: [4]u2 = .{ 0, 1, 2, 3 },
 
-            fn logical_a_bit(self: Unit, physical_bit: usize) usize {
+            fn logical_a_net(self: Unit, physical_bit: usize) Net_ID {
                 return self.a[self.remap[physical_bit]];
             }
 
-            fn logical_y_bit(self: Unit, physical_bit: usize) usize {
+            fn logical_y_net(self: Unit, physical_bit: usize) Net_ID {
                 return self.y[self.remap[physical_bit]];
             }
         };
@@ -2486,25 +2486,25 @@ fn Dual_4b_Tristate_Buffer(comptime value_suffix: []const u8, comptime options: 
                 10 => self.pwr.gnd,
                 20 => @field(self.pwr, @tagName(options.pwr)),
 
-                2 => self.u[self.remap[0]].logical_a_bit(0),
-                4 => self.u[self.remap[0]].logical_a_bit(1),
-                6 => self.u[self.remap[0]].logical_a_bit(2),
-                8 => self.u[self.remap[0]].logical_a_bit(3),
+                2 => self.u[self.remap[0]].logical_a_net(0),
+                4 => self.u[self.remap[0]].logical_a_net(1),
+                6 => self.u[self.remap[0]].logical_a_net(2),
+                8 => self.u[self.remap[0]].logical_a_net(3),
 
-                17 => self.u[self.remap[1]].logical_a_bit(0),
-                15 => self.u[self.remap[1]].logical_a_bit(1),
-                13 => self.u[self.remap[1]].logical_a_bit(2),
-                11 => self.u[self.remap[1]].logical_a_bit(3),
+                17 => self.u[self.remap[1]].logical_a_net(0),
+                15 => self.u[self.remap[1]].logical_a_net(1),
+                13 => self.u[self.remap[1]].logical_a_net(2),
+                11 => self.u[self.remap[1]].logical_a_net(3),
 
-                18 => self.u[self.remap[0]].logical_y_bit(0),
-                16 => self.u[self.remap[0]].logical_y_bit(1),
-                14 => self.u[self.remap[0]].logical_y_bit(2),
-                12 => self.u[self.remap[0]].logical_y_bit(3),
+                18 => self.u[self.remap[0]].logical_y_net(0),
+                16 => self.u[self.remap[0]].logical_y_net(1),
+                14 => self.u[self.remap[0]].logical_y_net(2),
+                12 => self.u[self.remap[0]].logical_y_net(3),
 
-                3 => self.u[self.remap[1]].logical_y_bit(0),
-                5 => self.u[self.remap[1]].logical_y_bit(1),
-                7 => self.u[self.remap[1]].logical_y_bit(2),
-                9 => self.u[self.remap[1]].logical_y_bit(3),
+                3 => self.u[self.remap[1]].logical_y_net(0),
+                5 => self.u[self.remap[1]].logical_y_net(1),
+                7 => self.u[self.remap[1]].logical_y_net(2),
+                9 => self.u[self.remap[1]].logical_y_net(3),
 
                 else => unreachable,
             };
@@ -2558,10 +2558,10 @@ pub fn x241(comptime options: Options) type {
             n_oe: Net_ID = .unset,
             remap: [4]u2 = .{ 0, 1, 2, 3 },
 
-            fn logical_a_bit(self: Unit_Active_Low_OE, physical_bit: usize) usize {
+            fn logical_a_net(self: Unit_Active_Low_OE, physical_bit: usize) Net_ID {
                 return self.a[self.remap[physical_bit]];
             }
-            fn logical_y_bit(self: Unit_Active_Low_OE, physical_bit: usize) usize {
+            fn logical_y_net(self: Unit_Active_Low_OE, physical_bit: usize) Net_ID {
                 return self.y[self.remap[physical_bit]];
             }
         };
@@ -2571,10 +2571,10 @@ pub fn x241(comptime options: Options) type {
             oe: Net_ID = .unset,
             remap: [4]u2 = .{ 0, 1, 2, 3 },
 
-            fn logical_a_bit(self: Unit_Active_High_OE, physical_bit: usize) usize {
+            fn logical_a_net(self: Unit_Active_High_OE, physical_bit: usize) Net_ID {
                 return self.a[self.remap[physical_bit]];
             }
-            fn logical_y_bit(self: Unit_Active_High_OE, physical_bit: usize) usize {
+            fn logical_y_net(self: Unit_Active_High_OE, physical_bit: usize) Net_ID {
                 return self.y[self.remap[physical_bit]];
             }
         };
@@ -2616,25 +2616,25 @@ pub fn x241(comptime options: Options) type {
                 10 => self.pwr.gnd,
                 20 => @field(self.pwr, @tagName(options.pwr)),
 
-                2 => self.u0.logical_a_bit(0),
-                4 => self.u0.logical_a_bit(1),
-                6 => self.u0.logical_a_bit(2),
-                8 => self.u0.logical_a_bit(3),
+                2 => self.u0.logical_a_net(0),
+                4 => self.u0.logical_a_net(1),
+                6 => self.u0.logical_a_net(2),
+                8 => self.u0.logical_a_net(3),
 
-                17 => self.u1.logical_a_bit(0),
-                15 => self.u1.logical_a_bit(1),
-                13 => self.u1.logical_a_bit(2),
-                11 => self.u1.logical_a_bit(3),
+                17 => self.u1.logical_a_net(0),
+                15 => self.u1.logical_a_net(1),
+                13 => self.u1.logical_a_net(2),
+                11 => self.u1.logical_a_net(3),
 
-                18 => self.u0.logical_y_bit(0),
-                16 => self.u0.logical_y_bit(1),
-                14 => self.u0.logical_y_bit(2),
-                12 => self.u0.logical_y_bit(3),
+                18 => self.u0.logical_y_net(0),
+                16 => self.u0.logical_y_net(1),
+                14 => self.u0.logical_y_net(2),
+                12 => self.u0.logical_y_net(3),
 
-                3 => self.u1.logical_y_bit(0),
-                5 => self.u1.logical_y_bit(1),
-                7 => self.u1.logical_y_bit(2),
-                9 => self.u1.logical_y_bit(3),
+                3 => self.u1.logical_y_net(0),
+                5 => self.u1.logical_y_net(1),
+                7 => self.u1.logical_y_net(2),
+                9 => self.u1.logical_y_net(3),
 
                 else => unreachable,
             };
@@ -3343,12 +3343,16 @@ pub fn x16244(comptime options: Options, comptime bus_hold: bool) type {
             n_oe: Net_ID = .unset,
             remap: [4]u2 = .{ 0, 1, 2, 3 },
 
-            fn logical_a_bit(self: Unit, physical_bit: usize) usize {
-                return self.a[self.remap[physical_bit]];
+            fn logical_bit(self: Unit, physical_bit: usize) usize {
+                return self.remap[physical_bit];
             }
 
-            fn logical_y_bit(self: Unit, physical_bit: usize) usize {
-                return self.y[self.remap[physical_bit]];
+            fn logical_a_net(self: Unit, physical_bit: usize) Net_ID {
+                return self.a[self.logical_bit(physical_bit)];
+            }
+
+            fn logical_y_net(self: Unit, physical_bit: usize) Net_ID {
+                return self.y[self.logical_bit(physical_bit)];
             }
         };
 
@@ -3380,52 +3384,52 @@ pub fn x16244(comptime options: Options, comptime bus_hold: bool) type {
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.u[self.remap[0]].n_oe,
                 48 => self.u[self.remap[1]].n_oe,
                 25 => self.u[self.remap[2]].n_oe,
                 24 => self.u[self.remap[3]].n_oe,
 
-                47 => self.u[self.remap[0]].logical_a_bit(0),
-                46 => self.u[self.remap[0]].logical_a_bit(1),
-                44 => self.u[self.remap[0]].logical_a_bit(2),
-                43 => self.u[self.remap[0]].logical_a_bit(3),
+                47 => self.u[self.remap[0]].logical_a_net(0),
+                46 => self.u[self.remap[0]].logical_a_net(1),
+                44 => self.u[self.remap[0]].logical_a_net(2),
+                43 => self.u[self.remap[0]].logical_a_net(3),
 
-                41 => self.u[self.remap[1]].logical_a_bit(0),
-                40 => self.u[self.remap[1]].logical_a_bit(1),
-                38 => self.u[self.remap[1]].logical_a_bit(2),
-                37 => self.u[self.remap[1]].logical_a_bit(3),
+                41 => self.u[self.remap[1]].logical_a_net(0),
+                40 => self.u[self.remap[1]].logical_a_net(1),
+                38 => self.u[self.remap[1]].logical_a_net(2),
+                37 => self.u[self.remap[1]].logical_a_net(3),
 
-                36 => self.u[self.remap[2]].logical_a_bit(0),
-                35 => self.u[self.remap[2]].logical_a_bit(1),
-                33 => self.u[self.remap[2]].logical_a_bit(2),
-                32 => self.u[self.remap[2]].logical_a_bit(3),
+                36 => self.u[self.remap[2]].logical_a_net(0),
+                35 => self.u[self.remap[2]].logical_a_net(1),
+                33 => self.u[self.remap[2]].logical_a_net(2),
+                32 => self.u[self.remap[2]].logical_a_net(3),
 
-                30 => self.u[self.remap[3]].logical_a_bit(0),
-                29 => self.u[self.remap[3]].logical_a_bit(1),
-                27 => self.u[self.remap[3]].logical_a_bit(2),
-                26 => self.u[self.remap[3]].logical_a_bit(3),
+                30 => self.u[self.remap[3]].logical_a_net(0),
+                29 => self.u[self.remap[3]].logical_a_net(1),
+                27 => self.u[self.remap[3]].logical_a_net(2),
+                26 => self.u[self.remap[3]].logical_a_net(3),
 
-                2 => self.u[self.remap[0]].logical_y_bit(0),
-                3 => self.u[self.remap[0]].logical_y_bit(1),
-                5 => self.u[self.remap[0]].logical_y_bit(2),
-                6 => self.u[self.remap[0]].logical_y_bit(3),
+                2 => self.u[self.remap[0]].logical_y_net(0),
+                3 => self.u[self.remap[0]].logical_y_net(1),
+                5 => self.u[self.remap[0]].logical_y_net(2),
+                6 => self.u[self.remap[0]].logical_y_net(3),
 
-                8 => self.u[self.remap[1]].logical_y_bit(0),
-                9 => self.u[self.remap[1]].logical_y_bit(1),
-                11 => self.u[self.remap[1]].logical_y_bit(2),
-                12 => self.u[self.remap[1]].logical_y_bit(3),
+                8 => self.u[self.remap[1]].logical_y_net(0),
+                9 => self.u[self.remap[1]].logical_y_net(1),
+                11 => self.u[self.remap[1]].logical_y_net(2),
+                12 => self.u[self.remap[1]].logical_y_net(3),
 
-                13 => self.u[self.remap[2]].logical_y_bit(0),
-                14 => self.u[self.remap[2]].logical_y_bit(1),
-                16 => self.u[self.remap[2]].logical_y_bit(2),
-                17 => self.u[self.remap[2]].logical_y_bit(3),
+                13 => self.u[self.remap[2]].logical_y_net(0),
+                14 => self.u[self.remap[2]].logical_y_net(1),
+                16 => self.u[self.remap[2]].logical_y_net(2),
+                17 => self.u[self.remap[2]].logical_y_net(3),
 
-                19 => self.u[self.remap[3]].logical_y_bit(0),
-                20 => self.u[self.remap[3]].logical_y_bit(1),
-                22 => self.u[self.remap[3]].logical_y_bit(2),
-                23 => self.u[self.remap[3]].logical_y_bit(3),
+                19 => self.u[self.remap[3]].logical_y_net(0),
+                20 => self.u[self.remap[3]].logical_y_net(1),
+                22 => self.u[self.remap[3]].logical_y_net(2),
+                23 => self.u[self.remap[3]].logical_y_net(3),
 
                 4 => self.pwr.gnd[0],
                 10 => self.pwr.gnd[1],
@@ -3511,12 +3515,16 @@ pub fn x16245(comptime options: Options, comptime bus_hold: bool) type {
             a_to_b: Net_ID = .unset, // B to A when low
             remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
 
-            fn logical_a_bit(self: Unit, physical_bit: usize) usize {
-                return self.a[self.remap[physical_bit]];
+            fn logical_bit(self: Unit, physical_bit: usize) usize {
+                return self.remap[physical_bit];
             }
 
-            fn logical_b_bit(self: Unit, physical_bit: usize) usize {
-                return self.b[self.remap[physical_bit]];
+            fn logical_a_net(self: Unit, physical_bit: usize) Net_ID {
+                return self.a[self.logical_bit(physical_bit)];
+            }
+
+            fn logical_b_net(self: Unit, physical_bit: usize) Net_ID {
+                return self.b[self.logical_bit(physical_bit)];
             }
         };
 
@@ -3548,48 +3556,48 @@ pub fn x16245(comptime options: Options, comptime bus_hold: bool) type {
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.u[self.remap[0]].a_to_b,
                 48 => self.u[self.remap[0]].n_oe,
                 25 => self.u[self.remap[1]].n_oe,
                 24 => self.u[self.remap[1]].a_to_b,
 
-                47 => self.u[self.remap[0]].logical_a_bit(0),
-                46 => self.u[self.remap[0]].logical_a_bit(1),
-                44 => self.u[self.remap[0]].logical_a_bit(2),
-                43 => self.u[self.remap[0]].logical_a_bit(3),
-                41 => self.u[self.remap[0]].logical_a_bit(4),
-                40 => self.u[self.remap[0]].logical_a_bit(5),
-                38 => self.u[self.remap[0]].logical_a_bit(6),
-                37 => self.u[self.remap[0]].logical_a_bit(7),
+                47 => self.u[self.remap[0]].logical_a_net(0),
+                46 => self.u[self.remap[0]].logical_a_net(1),
+                44 => self.u[self.remap[0]].logical_a_net(2),
+                43 => self.u[self.remap[0]].logical_a_net(3),
+                41 => self.u[self.remap[0]].logical_a_net(4),
+                40 => self.u[self.remap[0]].logical_a_net(5),
+                38 => self.u[self.remap[0]].logical_a_net(6),
+                37 => self.u[self.remap[0]].logical_a_net(7),
 
-                36 => self.u[self.remap[1]].logical_a_bit(0),
-                35 => self.u[self.remap[1]].logical_a_bit(1),
-                33 => self.u[self.remap[1]].logical_a_bit(2),
-                32 => self.u[self.remap[1]].logical_a_bit(3),
-                30 => self.u[self.remap[1]].logical_a_bit(4),
-                29 => self.u[self.remap[1]].logical_a_bit(5),
-                27 => self.u[self.remap[1]].logical_a_bit(6),
-                26 => self.u[self.remap[1]].logical_a_bit(7),
+                36 => self.u[self.remap[1]].logical_a_net(0),
+                35 => self.u[self.remap[1]].logical_a_net(1),
+                33 => self.u[self.remap[1]].logical_a_net(2),
+                32 => self.u[self.remap[1]].logical_a_net(3),
+                30 => self.u[self.remap[1]].logical_a_net(4),
+                29 => self.u[self.remap[1]].logical_a_net(5),
+                27 => self.u[self.remap[1]].logical_a_net(6),
+                26 => self.u[self.remap[1]].logical_a_net(7),
 
-                2 => self.u[self.remap[0]].logical_b_bit(0),
-                3 => self.u[self.remap[0]].logical_b_bit(1),
-                5 => self.u[self.remap[0]].logical_b_bit(2),
-                6 => self.u[self.remap[0]].logical_b_bit(3),
-                8 => self.u[self.remap[0]].logical_b_bit(4),
-                9 => self.u[self.remap[0]].logical_b_bit(5),
-                11 => self.u[self.remap[0]].logical_b_bit(6),
-                12 => self.u[self.remap[0]].logical_b_bit(7),
+                2 => self.u[self.remap[0]].logical_b_net(0),
+                3 => self.u[self.remap[0]].logical_b_net(1),
+                5 => self.u[self.remap[0]].logical_b_net(2),
+                6 => self.u[self.remap[0]].logical_b_net(3),
+                8 => self.u[self.remap[0]].logical_b_net(4),
+                9 => self.u[self.remap[0]].logical_b_net(5),
+                11 => self.u[self.remap[0]].logical_b_net(6),
+                12 => self.u[self.remap[0]].logical_b_net(7),
 
-                13 => self.u[self.remap[1]].logical_b_bit(0),
-                14 => self.u[self.remap[1]].logical_b_bit(1),
-                16 => self.u[self.remap[1]].logical_b_bit(2),
-                17 => self.u[self.remap[1]].logical_b_bit(3),
-                19 => self.u[self.remap[1]].logical_b_bit(4),
-                20 => self.u[self.remap[1]].logical_b_bit(5),
-                22 => self.u[self.remap[1]].logical_b_bit(6),
-                23 => self.u[self.remap[1]].logical_b_bit(7),
+                13 => self.u[self.remap[1]].logical_b_net(0),
+                14 => self.u[self.remap[1]].logical_b_net(1),
+                16 => self.u[self.remap[1]].logical_b_net(2),
+                17 => self.u[self.remap[1]].logical_b_net(3),
+                19 => self.u[self.remap[1]].logical_b_net(4),
+                20 => self.u[self.remap[1]].logical_b_net(5),
+                22 => self.u[self.remap[1]].logical_b_net(6),
+                23 => self.u[self.remap[1]].logical_b_net(7),
                 
                 4 => self.pwr.gnd[0],
                 10 => self.pwr.gnd[1],
@@ -3880,7 +3888,7 @@ pub fn x16260(comptime options: Options, comptime bus_hold: bool) type {
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.a.n_oe,
                 28 => self.a.enable_bx,
@@ -4093,11 +4101,11 @@ pub fn x16652(comptime options: Options, comptime bus_hold: bool) type {
             } = .{},
             remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
             
-            fn logical_a_bit(self: Unit, physical_bit: usize) usize {
+            fn logical_a_net(self: Unit, physical_bit: usize) Net_ID {
                 return self.a[self.remap[physical_bit]];
             }
 
-            fn logical_b_bit(self: Unit, physical_bit: usize) usize {
+            fn logical_b_net(self: Unit, physical_bit: usize) Net_ID {
                 return self.b[self.remap[physical_bit]];
             }
         };
@@ -4130,7 +4138,7 @@ pub fn x16652(comptime options: Options, comptime bus_hold: bool) type {
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.u[self.remap[0]].a_to_b.oe,
                 2 => self.u[self.remap[0]].a_to_b.clk,
@@ -4146,41 +4154,41 @@ pub fn x16652(comptime options: Options, comptime bus_hold: bool) type {
                 26 => self.u[self.remap[1]].b_to_a.clk,
                 31 => self.u[self.remap[1]].b_to_a.output_register,
 
-                5 => self.u[self.remap[0]].logical_a_bit(0),
-                6 => self.u[self.remap[0]].logical_a_bit(1),
-                8 => self.u[self.remap[0]].logical_a_bit(2),
-                9 => self.u[self.remap[0]].logical_a_bit(3),
-                10 => self.u[self.remap[0]].logical_a_bit(4),
-                12 => self.u[self.remap[0]].logical_a_bit(5),
-                13 => self.u[self.remap[0]].logical_a_bit(6),
-                14 => self.u[self.remap[0]].logical_a_bit(7),
+                5 => self.u[self.remap[0]].logical_a_net(0),
+                6 => self.u[self.remap[0]].logical_a_net(1),
+                8 => self.u[self.remap[0]].logical_a_net(2),
+                9 => self.u[self.remap[0]].logical_a_net(3),
+                10 => self.u[self.remap[0]].logical_a_net(4),
+                12 => self.u[self.remap[0]].logical_a_net(5),
+                13 => self.u[self.remap[0]].logical_a_net(6),
+                14 => self.u[self.remap[0]].logical_a_net(7),
 
-                15 => self.u[self.remap[1]].logical_a_bit(0),
-                16 => self.u[self.remap[1]].logical_a_bit(1),
-                17 => self.u[self.remap[1]].logical_a_bit(2),
-                19 => self.u[self.remap[1]].logical_a_bit(3),
-                20 => self.u[self.remap[1]].logical_a_bit(4),
-                21 => self.u[self.remap[1]].logical_a_bit(5),
-                23 => self.u[self.remap[1]].logical_a_bit(6),
-                24 => self.u[self.remap[1]].logical_a_bit(7),
+                15 => self.u[self.remap[1]].logical_a_net(0),
+                16 => self.u[self.remap[1]].logical_a_net(1),
+                17 => self.u[self.remap[1]].logical_a_net(2),
+                19 => self.u[self.remap[1]].logical_a_net(3),
+                20 => self.u[self.remap[1]].logical_a_net(4),
+                21 => self.u[self.remap[1]].logical_a_net(5),
+                23 => self.u[self.remap[1]].logical_a_net(6),
+                24 => self.u[self.remap[1]].logical_a_net(7),
 
-                52 => self.u[self.remap[0]].logical_b_bit(0),
-                51 => self.u[self.remap[0]].logical_b_bit(1),
-                49 => self.u[self.remap[0]].logical_b_bit(2),
-                48 => self.u[self.remap[0]].logical_b_bit(3),
-                47 => self.u[self.remap[0]].logical_b_bit(4),
-                45 => self.u[self.remap[0]].logical_b_bit(5),
-                44 => self.u[self.remap[0]].logical_b_bit(6),
-                43 => self.u[self.remap[0]].logical_b_bit(7),
+                52 => self.u[self.remap[0]].logical_b_net(0),
+                51 => self.u[self.remap[0]].logical_b_net(1),
+                49 => self.u[self.remap[0]].logical_b_net(2),
+                48 => self.u[self.remap[0]].logical_b_net(3),
+                47 => self.u[self.remap[0]].logical_b_net(4),
+                45 => self.u[self.remap[0]].logical_b_net(5),
+                44 => self.u[self.remap[0]].logical_b_net(6),
+                43 => self.u[self.remap[0]].logical_b_net(7),
 
-                42 => self.u[self.remap[1]].logical_b_bit(0),
-                41 => self.u[self.remap[1]].logical_b_bit(1),
-                40 => self.u[self.remap[1]].logical_b_bit(2),
-                38 => self.u[self.remap[1]].logical_b_bit(3),
-                37 => self.u[self.remap[1]].logical_b_bit(4),
-                36 => self.u[self.remap[1]].logical_b_bit(5),
-                34 => self.u[self.remap[1]].logical_b_bit(6),
-                33 => self.u[self.remap[1]].logical_b_bit(7),
+                42 => self.u[self.remap[1]].logical_b_net(0),
+                41 => self.u[self.remap[1]].logical_b_net(1),
+                40 => self.u[self.remap[1]].logical_b_net(2),
+                38 => self.u[self.remap[1]].logical_b_net(3),
+                37 => self.u[self.remap[1]].logical_b_net(4),
+                36 => self.u[self.remap[1]].logical_b_net(5),
+                34 => self.u[self.remap[1]].logical_b_net(6),
+                33 => self.u[self.remap[1]].logical_b_net(7),
                 
                 4 => self.pwr.gnd[0],
                 11 => self.pwr.gnd[1],
@@ -4331,7 +4339,7 @@ pub fn x16721(comptime options: Options, comptime bus_hold: bool) type {
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
+                0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.n_oe,
                 56 => self.clk,

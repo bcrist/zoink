@@ -1,5 +1,5 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(AS7C1025_J);
+    const U1 = b.part(AS7C1025_J, "chip", .{});
     U1.addr = b.bus("A", 17);
     U1.data = b.bus("D", 8);
     U1.n_ce = .gnd;

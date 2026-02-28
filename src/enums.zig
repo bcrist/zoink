@@ -109,7 +109,7 @@ pub const Voltage = enum (u8) {
         return @intFromEnum(self);
     }
 
-    pub fn format(self: Voltage, writer: *std.io.Writer) !void {
+    pub fn format(self: Voltage, writer: *std.Io.Writer) !void {
         if (self == .saturated) {
             try writer.writeAll("OL V");
         } else {
@@ -174,8 +174,8 @@ pub const Voltage = enum (u8) {
     pub const CMOS = CMOS_V(.p5v, .{});
 
     pub const BiCMOS = struct {
-        pub const Vcc = CMOS.vcc;
-        pub const Vcco = CMOS.vcc;
+        pub const Vcc = CMOS.Vcc;
+        pub const Vcco = CMOS.Vcc;
         pub const Vil = TTL.Vil;
         pub const Vth = TTL.Vth;
         pub const Vih = TTL.Vih;
@@ -188,8 +188,8 @@ pub const Voltage = enum (u8) {
     };
 
     pub const LVBiCMOS = struct {
-        pub const Vcc = LVCMOS.vcc;
-        pub const Vcco = LVCMOS.vcc;
+        pub const Vcc = LVCMOS.Vcc;
+        pub const Vcco = LVCMOS.Vcc;
         pub const Vil = LVTTL.Vil;
         pub const Vth = LVTTL.Vth;
         pub const Vih = LVTTL.Vih;
@@ -202,8 +202,8 @@ pub const Voltage = enum (u8) {
     };
 
     pub const LVBiCMOS_5VT = struct {
-        pub const Vcc = LVCMOS_5VT.vcc;
-        pub const Vcco = LVCMOS_5VT.vcc;
+        pub const Vcc = LVCMOS_5VT.Vcc;
+        pub const Vcco = LVCMOS_5VT.Vcc;
         pub const Vil = LVTTL_5VT.Vil;
         pub const Vth = LVTTL_5VT.Vth;
         pub const Vih = LVTTL_5VT.Vih;

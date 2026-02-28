@@ -1,30 +1,34 @@
 pub fn configure(b: *Board) !void {
-    const U1 = b.part(CY7C024V);
-    U1.master = .p3v3;
+    _ = b.part(CY7C024V, "chip", .{
+        .master = .p3v3,
+        .left = .{
+            .addr = b.bus("LA", 12),
+            .lower_data = b.bus("LD[<0:7]", 8),
+            .upper_data = b.bus("LD[<8:15]", 8),
+            .n_ce = .gnd,
+            .n_lower_byte_enable = .gnd,
+            .n_upper_byte_enable = .gnd,
+            .n_semaphore_enable = .p3v3,
+            .n_interrupt = .no_connect,
+            .n_busy = .no_connect,
+            .n_we = b.net("L~WE"),
+            .n_oe = b.net("L~OE"),
+        },
+        .right = .{
+            .addr = b.bus("RA", 12),
+            .lower_data = b.bus("RD[<0:7]", 8),
+            .upper_data = b.bus("RD[<8:15]", 8),
+            .n_ce = .gnd,
+            .n_lower_byte_enable = .gnd,
+            .n_upper_byte_enable = .gnd,
+            .n_semaphore_enable = .p3v3,
+            .n_interrupt = .no_connect,
+            .n_busy = .no_connect,
+            .n_we = b.net("R~WE"),
+            .n_oe = b.net("R~OE"),
+        },
+    });
 
-    U1.left.addr = b.bus("LA", 12);
-    U1.left.lower_data = b.bus("LD[0:7]", 8);
-    U1.left.upper_data = b.bus("LD[8:15]", 8);
-    U1.left.n_ce = .gnd;
-    U1.left.n_lower_byte_enable = .gnd;
-    U1.left.n_upper_byte_enable = .gnd;
-    U1.left.n_semaphore_enable = .p3v3;
-    U1.left.n_interrupt = .no_connect;
-    U1.left.n_busy = .no_connect;
-    U1.left.n_we = b.net("L~WE");
-    U1.left.n_oe = b.net("L~OE");
-
-    U1.right.addr = b.bus("RA", 12);
-    U1.right.lower_data = b.bus("RD[0:7]", 8);
-    U1.right.upper_data = b.bus("RD[8:15]", 8);
-    U1.right.n_ce = .gnd;
-    U1.right.n_lower_byte_enable = .gnd;
-    U1.right.n_upper_byte_enable = .gnd;
-    U1.right.n_semaphore_enable = .p3v3;
-    U1.right.n_interrupt = .no_connect;
-    U1.right.n_busy = .no_connect;
-    U1.right.n_we = b.net("R~WE");
-    U1.right.n_oe = b.net("R~OE");
 }
 
 test {
