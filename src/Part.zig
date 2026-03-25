@@ -36,13 +36,13 @@ pub const VTable = struct {
         const has_validate = @hasDecl(P, "validate");
         comptime var Validator_State = void;
         comptime var Validator_State_Pointer = void;
-        comptime var validator_state_alignment = 1;
+        comptime var validator_state_alignment: usize = 1;
         if (has_validate and @typeInfo(@TypeOf(P.validate)).@"fn".params.len == 4) {
             Validator_State_Pointer = @typeInfo(@TypeOf(P.validate)).@"fn".params[2].type.?;
             const param_info = @typeInfo(Validator_State_Pointer).pointer;
             std.debug.assert(param_info.size == .one);
             Validator_State = param_info.child;
-            validator_state_alignment = param_info.alignment;
+            validator_state_alignment = param_info.alignment orelse 1;
         }
 
         const impl = struct {
