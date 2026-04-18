@@ -177,7 +177,7 @@ pub fn SIL(comptime data: SIL_Data, comptime density: Density) *const Footprint 
 
     generate_body_and_outline(&result, data.body_mark orelse .outline, data.body, std.math.inf(f64));
 
-    const xf_base: zm.Mat3 = .translation(-pin_pitch * @as(f64, @floatFromInt(data.total_pins - 1)) / 2, 0);
+    const xf_base = translation(-pin_pitch * @as(f64, @floatFromInt(data.total_pins - 1)) / 2, 0);
 
     var pins: [data.total_pins]bool = @splat(true);
     for (data.omitted_pins) |pin| {
@@ -189,7 +189,7 @@ pub fn SIL(comptime data: SIL_Data, comptime density: Density) *const Footprint 
         if (pins[raw_pin]) {
             defer pin += 1;
 
-            const xf: zm.Mat3 = xf_base.multiply(.translation(pin_pitch * @as(f64, @floatFromInt(raw_pin)), 0));
+            const xf: zm.Mat3 = xf_base.multiply(translation(pin_pitch * @as(f64, @floatFromInt(raw_pin)), 0));
 
             result.pads = result.pads ++ .{
                 kicad.Pad {
@@ -209,7 +209,7 @@ pub fn SIL(comptime data: SIL_Data, comptime density: Density) *const Footprint 
                             
             if (pin == 1) {
                 generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
-                    .pad_origin = xf.multiply(.translation(0, pad_length / 2 - @min(pad_width, pad_length) / 2)),
+                    .pad_origin = xf.multiply(translation(0, pad_length / 2 - @min(pad_width, pad_length) / 2)),
                     .pin_pitch = pin_pitch,
                     .pad_width = pad_width,
                     .pad_length = pad_length,
@@ -331,7 +331,7 @@ pub fn DIL(comptime data: DIL_Data, comptime density: Density) *const Footprint 
 
     const pins_per_side = data.total_pins / 2;
 
-    var xf_base: zm.Mat3 = .translation(-pin_pitch * @as(f64, @floatFromInt(pins_per_side - 1)) / 2, row_spacing / 2);
+    var xf_base = translation(-pin_pitch * @as(f64, @floatFromInt(pins_per_side - 1)) / 2, row_spacing / 2);
 
     var pins: [data.total_pins]bool = @splat(true);
     for (data.omitted_pins) |pin| {
@@ -351,7 +351,7 @@ pub fn DIL(comptime data: DIL_Data, comptime density: Density) *const Footprint 
         if (pins[raw_pin]) {
             defer pin += 1;
 
-            const xf: zm.Mat3 = xf_base.multiply(.translation(pin_pitch * @as(f64, @floatFromInt(x_offset)), 0));
+            const xf: zm.Mat3 = xf_base.multiply(translation(pin_pitch * @as(f64, @floatFromInt(x_offset)), 0));
 
             result.pads = result.pads ++ .{
                 kicad.Pad {
@@ -371,7 +371,7 @@ pub fn DIL(comptime data: DIL_Data, comptime density: Density) *const Footprint 
                             
             if (pin == 1) {
                 generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
-                    .pad_origin = xf.multiply(.translation(0, pad_length / 2 - @min(pad_width, pad_length) / 2)),
+                    .pad_origin = xf.multiply(translation(0, pad_length / 2 - @min(pad_width, pad_length) / 2)),
                     .pin_pitch = pin_pitch,
                     .pad_width = pad_width,
                     .pad_length = pad_length,
@@ -579,12 +579,12 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint 
         const pin_offset = -pin_pitch * (pins_on_side_f - 1) / 2;
         const side_origin = overall_dim / 2;
 
-        xf = xf.multiply(.translation(pin_offset, side_origin));
+        xf = xf.multiply(translation(pin_offset, side_origin));
 
         for (0..raw_pins_on_side) |po| {
             var pin = first_raw_pin_on_side + po;
             if (pin > data.total_pins) pin -= data.total_pins;
-            defer xf = xf.multiply(.translation(pin_pitch, 0));
+            defer xf = xf.multiply(translation(pin_pitch, 0));
 
             if (std.mem.indexOfScalar(usize, data.omitted_pins, pin)) |_| {
                 continue;
@@ -603,7 +603,7 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint 
                 },
             };
 
-            const xf2 = xf.multiply(.translation(0, pad_length - seating - @min(pad_width, pad_length) / 2));
+            const xf2 = xf.multiply(translation(0, pad_length - seating - @min(pad_width, pad_length) / 2));
 
             result.pads = result.pads ++ .{
                 kicad.Pad {
@@ -753,7 +753,7 @@ pub fn SOT(comptime data: SOT_Data, comptime density: Density) *const Footprint 
         const pin_offset: f64 = @floatFromInt(pin.position_um);
         const side_origin = body_dim / 2;
 
-        xf = xf.multiply(.translation(pin_offset, side_origin));
+        xf = xf.multiply(translation(pin_offset, side_origin));
 
         result.rects = result.rects ++ .{
             kicad.Rect {
@@ -765,7 +765,7 @@ pub fn SOT(comptime data: SOT_Data, comptime density: Density) *const Footprint 
             },
         };
 
-        const xf2 = xf.multiply(.translation(0, nom_pin_length - nom_seating + pad_length - @min(pad_width, pad_length) / 2));
+        const xf2 = xf.multiply(translation(0, nom_pin_length - nom_seating + pad_length - @min(pad_width, pad_length) / 2));
 
         result.pads = result.pads ++ .{
             kicad.Pad {
@@ -898,7 +898,7 @@ pub fn PLCC_PGA(comptime data: PLCC_PGA_Data, comptime density: Density) *const 
             .south => .identity(),
         };
 
-        xf = xf.multiply(.translation(-pin_pitch * @as(f64, @floatFromInt(pairs)) / 2, pin_pitch * y_offset));
+        xf = xf.multiply(translation(-pin_pitch * @as(f64, @floatFromInt(pairs)) / 2, pin_pitch * y_offset));
 
         for (0..pairs) |pair| {
             var outer_pin = first_pin + pair * 2;
@@ -906,7 +906,7 @@ pub fn PLCC_PGA(comptime data: PLCC_PGA_Data, comptime density: Density) *const 
             if (outer_pin > total_pins) outer_pin -= total_pins;
             if (inner_pin > total_pins) inner_pin -= total_pins;
 
-            defer xf = xf.multiply(.translation(pin_pitch, 0));
+            defer xf = xf.multiply(translation(pin_pitch, 0));
 
             result.pads = result.pads ++ .{
                 kicad.Pad {
@@ -939,7 +939,7 @@ pub fn PLCC_PGA(comptime data: PLCC_PGA_Data, comptime density: Density) *const 
 
             if (outer_pin == 1 or inner_pin == 1) {
                 generate_pin1_mark(&result, data.body_mark orelse .arrow, .{
-                    .pad_origin = xf.multiply(.translation(0, -pin_pitch * y_offset + overall_height / 2)),
+                    .pad_origin = xf.multiply(translation(0, -pin_pitch * y_offset + overall_height / 2)),
                     .pin_pitch = pin_pitch,
                     .pad_width = pad_diameter,
                     .pad_length = pad_diameter,
@@ -1038,7 +1038,7 @@ pub fn PGA(comptime data: PGA_Data, comptime density: Density) *const Footprint 
     const pin_pitch_x: f64 = @floatFromInt(data.col_pitch.nominal_um);
     const pin_pitch_y: f64 = @floatFromInt(data.row_pitch.nominal_um);
 
-    const xf_base: zm.Mat3 = .translation(
+    const xf_base: zm.Mat3 = translation(
         -pin_pitch_x * @as(f64, @floatFromInt(data.cols - 1)) / 2,
         -pin_pitch_y * @as(f64, @floatFromInt(data.rows - 1)) / 2,
     );
@@ -1057,7 +1057,7 @@ pub fn PGA(comptime data: PGA_Data, comptime density: Density) *const Footprint 
             if (pins[y][x]) {
                 defer pin += 1;
 
-                const xf: zm.Mat3 = xf_base.multiply(.translation(
+                const xf: zm.Mat3 = xf_base.multiply(translation(
                     pin_pitch_x * @as(f64, @floatFromInt(x)),
                     pin_pitch_y * @as(f64, @floatFromInt(y)),
                 ));
@@ -1083,7 +1083,7 @@ pub fn PGA(comptime data: PGA_Data, comptime density: Density) *const Footprint 
     }
 
     generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
-        .pad_origin = zm.Mat3.translation(
+        .pad_origin = translation(
             -@as(f64, @floatFromInt(data.body.width.max_um())) / 2,
             -@as(f64, @floatFromInt(data.body.height.max_um())) / 2,
         ).multiply(.rotation(@as(f64, std.math.pi) * 0.75)),
@@ -1160,7 +1160,7 @@ pub fn BGA(comptime data: BGA_Data, comptime density: Density) *const Footprint 
     const pitch_x: f64 = @floatFromInt(data.col_pitch.nominal_um);
     const pitch_y: f64 = @floatFromInt(data.row_pitch.nominal_um);
 
-    const xf_base: zm.Mat3 = .translation(
+    const xf_base: zm.Mat3 = translation(
         -pitch_x * @as(f64, @floatFromInt(data.cols - 1)) / 2,
         -pitch_y * @as(f64, @floatFromInt(data.rows - 1)) / 2,
     );
@@ -1179,7 +1179,7 @@ pub fn BGA(comptime data: BGA_Data, comptime density: Density) *const Footprint 
             if (balls[y][x]) {
                 defer pin += 1;
 
-                const xf: zm.Mat3 = xf_base.multiply(.translation(
+                const xf: zm.Mat3 = xf_base.multiply(translation(
                     pitch_x * @as(f64, @floatFromInt(x)),
                     pitch_y * @as(f64, @floatFromInt(y)),
                 ));
@@ -1203,10 +1203,10 @@ pub fn BGA(comptime data: BGA_Data, comptime density: Density) *const Footprint 
     }
 
     generate_pin1_mark(&result, data.pin_1_mark orelse .arrow, .{
-        .pad_origin = zm.Mat3.translation(
+        .pad_origin = translation(
             -@as(f64, @floatFromInt(data.body.width.max_um())) / 2,
             -@as(f64, @floatFromInt(data.body.height.max_um())) / 2,
-        ).multiply(.rotation(@as(f64, std.math.pi) * 0.75)),
+        ).multiply(rotation(@as(f64, std.math.pi) * 0.75)),
         .pin_pitch = 1000,
         .pad_width = 1000,
         .pad_length = 1000,
@@ -1305,11 +1305,11 @@ pub fn generate_pin1_mark(result: *Footprint, mark: Pin1_Mark_Type, extra: Pin1_
 
             var xf = extra.pad_origin;
             if (extra.is_first_pin_on_side and !extra.is_last_pin_on_side) {
-                xf = xf.multiply(.rotation(@as(f64, std.math.pi) / 5));
+                xf = xf.multiply(rotation(@as(f64, std.math.pi) / 5));
             } else if (extra.is_last_pin_on_side and !extra.is_first_pin_on_side) {
-                xf = xf.multiply(.rotation(-@as(f64, std.math.pi) / 5));
+                xf = xf.multiply(rotation(-@as(f64, std.math.pi) / 5));
             }
-            const xf2 = xf.multiply(.translation(0, @min(extra.pad_width, extra.pad_length) * 0.75 + @min(500, scale * 0.25)));
+            const xf2 = xf.multiply(translation(0, @min(extra.pad_width, extra.pad_length) * 0.75 + @min(500, scale * 0.25)));
 
             result.polygons = result.polygons ++ .{
                 kicad.Polygon {
@@ -1517,27 +1517,50 @@ pub const npth_layers: std.EnumSet(Layer) = .initMany(&.{
     .soldermask_back,
 });
 
+fn translation(x: f64, y: f64) zm.Mat3 {
+    return .{
+        .data = .{
+            .{ 1, 0, x },
+            .{ 0, 1, y },
+            .{ 0, 0, 1 },
+        },
+    };
+}
+
+fn rotation(angle: f64) zm.Mat3 {
+    const rads = angle;
+    const cos = std.math.cos(rads);
+    const sin = std.math.sin(rads);
+    return .{
+        .data = .{
+            .{ cos, -sin, 0 },
+            .{ sin,  cos, 0 },
+            .{ 0,    0,   1 },
+        },
+    };
+}
+
 pub const rotate_90: zm.Mat3 = .{
     .data = .{
-        0, -1, 0,
-        1,  0, 0,
-        0,  0, 1,
+        .{ 0, -1, 0 },
+        .{ 1,  0, 0 },
+        .{ 0,  0, 1 },
     },
 };
 
 pub const rotate_180: zm.Mat3 = .{
     .data = .{
-        -1,  0, 0,
-         0, -1, 0,
-         0,  0, 1,
+        .{ -1,  0, 0 },
+        .{  0, -1, 0 },
+        .{  0,  0, 1 },
     },
 };
 
 pub const rotate_270: zm.Mat3 = .{
     .data = .{
-         0, 1, 0,
-        -1, 0, 0,
-         0, 0, 1,
+        .{  0, 1, 0 },
+        .{ -1, 0, 0 },
+        .{  0, 0, 1 },
     },
 };
 

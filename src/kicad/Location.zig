@@ -14,10 +14,10 @@ pub fn init_um(x: f64, y: f64) Location {
 }
 
 pub fn init_um_transformed(xf: zm.Mat3, x: f64, y: f64) Location {
-    const vec = xf.multiplyVec3(.{ x, y, 1 });
+    const vec = xf.multiplyVec(.{ .data = .{ x, y, 1 } });
     return .{
-        .x = .init_um(vec[0]),
-        .y = .init_um(vec[1]),
+        .x = .init_um(vec.data[0]),
+        .y = .init_um(vec.data[1]),
     };
 }
 
@@ -29,7 +29,7 @@ pub fn init_mm(x: f64, y: f64) Location {
 }
 
 pub fn init_mm_transformed(xf: zm.Mat3, x: f64, y: f64) Location {
-    const vec = xf.multiplyVec3(.{ x, y, 1 });
+    const vec = xf.multiplyVec(.{ .data = .{ x, y, 1 } });
     return .{
         .x = .init_mm(vec[0]),
         .y = .init_mm(vec[1]),
