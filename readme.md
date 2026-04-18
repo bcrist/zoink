@@ -11,7 +11,7 @@
 If you answered "yes" to many of the above questions, you may be interested in _Zoink!_
 
 ## Usage
-First, create a new zig project and add _Zoink!_ as a dependency with `zig fetch --save git+https://github.com/bcrist/zoink`.  Create a source file for your board and import `zoink`.
+First, create a new zig project and add _Zoink!_ as a dependency with `zig fetch --save git+https://codeberg.org/bcrist/zoink`.  Create a source file for your board and import `zoink`.
 
 ### Netlist Configuration
 Create a function to configure your board's netlist like so:
