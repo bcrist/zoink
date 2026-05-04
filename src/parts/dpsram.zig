@@ -79,7 +79,7 @@ pub fn CY7C0xx(
             };
 
         pub fn check_config(self: @This()) !void {
-            var mapped_lower_data_bits: [byte_bits]bool = .{ false } ** byte_bits;
+            var mapped_lower_data_bits: [byte_bits]bool = @splat(false);
             for (self.remap_lower_data) |logical| {
                 mapped_lower_data_bits[logical] = true;
             }
@@ -89,7 +89,7 @@ pub fn CY7C0xx(
                     return error.InvalidRemap;
                 }
             }
-            var mapped_upper_data_bits: [byte_bits]bool = .{ false } ** byte_bits;
+            var mapped_upper_data_bits: [byte_bits]bool = @splat(false);
             for (self.remap_upper_data) |logical| {
                 mapped_upper_data_bits[logical] = true;
             }
@@ -100,7 +100,7 @@ pub fn CY7C0xx(
                 }
             }
 
-            var mapped_addr_bits: [addr_bits]bool = .{ false } ** addr_bits;
+            var mapped_addr_bits: [addr_bits]bool = @splat(false);
             for (self.remap_addr) |logical| {
                 mapped_addr_bits[logical] = true;
             }

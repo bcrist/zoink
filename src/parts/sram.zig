@@ -189,7 +189,7 @@ pub fn Async_8b(
         remap_addr: [addr_bits]u5 = Part.identity_remap(u5, addr_bits),
 
         pub fn check_config(self: @This()) !void {
-            var mapped_data_bits: [8]bool = .{ false } ** 8;
+            var mapped_data_bits: [8]bool = @splat(false);
             for (self.remap_data) |logical| {
                 mapped_data_bits[logical] = true;
             }
@@ -199,7 +199,7 @@ pub fn Async_8b(
                     return error.InvalidRemap;
                 }
             }
-            var mapped_addr_bits: [addr_bits]bool = .{ false } ** addr_bits;
+            var mapped_addr_bits: [addr_bits]bool = @splat(false);
             for (self.remap_addr) |logical| {
                 mapped_addr_bits[logical] = true;
             }
@@ -283,7 +283,7 @@ pub fn Async_16b(
         remap_addr: [addr_bits]u5 = Part.identity_remap(u5, addr_bits),
 
         pub fn check_config(self: @This()) !void {
-            var mapped_lower_data_bits: [8]bool = .{ false } ** 8;
+            var mapped_lower_data_bits: [8]bool = @splat(false);
             for (self.remap_lower_data) |logical| {
                 mapped_lower_data_bits[logical] = true;
             }
@@ -293,7 +293,7 @@ pub fn Async_16b(
                     return error.InvalidRemap;
                 }
             }
-            var mapped_upper_data_bits: [8]bool = .{ false } ** 8;
+            var mapped_upper_data_bits: [8]bool = @splat(false);
             for (self.remap_upper_data) |logical| {
                 mapped_upper_data_bits[logical] = true;
             }
@@ -304,7 +304,7 @@ pub fn Async_16b(
                 }
             }
 
-            var mapped_addr_bits: [addr_bits]bool = .{ false } ** addr_bits;
+            var mapped_addr_bits: [addr_bits]bool = @splat(false);
             for (self.remap_addr) |logical| {
                 mapped_addr_bits[logical] = true;
             }

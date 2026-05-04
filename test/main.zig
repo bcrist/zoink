@@ -1,6 +1,6 @@
 
 test Grid_Region {
-    const empty: [7][14]bool = .{ .{ false } ** 14 } ** 7;
+    const empty: [7][14]bool = @splat(@splat(false));
 
     var data = empty;
 
