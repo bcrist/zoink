@@ -20,8 +20,8 @@
             .hash = "lc4k-0.4.0-5R47QlKSFABsCL4Rco8V-GlC_pf9ewlIEh_73OLAz7BC",
         },
         .bit_helper = .{
-            .url = "git+https://codeberg.org/bcrist/zig-bithelper#dd96f7539407aed32963acff2f107c92959f7141",
-            .hash = "bit_helper-1.0.1-C8c75qUzAAD-7o4nHBgdrS2fTlcnhAgDiUn-WTw-Drjz",
+            .url = "git+https://codeberg.org/bcrist/zig-bithelper?ref=zig-master#bb073ca63ad779a87feb8fb8cd7fd423ad69a621",
+            .hash = "bit_helper-1.0.1-C8c75mUzAACGXtGTFJ6vEL3-aTEo2kPsDXPAMq4fanax",
         },
         .zm = .{
             .url = "git+https://codeberg.org/grius/zm#21b71aef4e28b91994e67b6ce002411776f4ea7e",
