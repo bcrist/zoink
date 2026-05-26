@@ -16,8 +16,8 @@
             .hash = "sx-1.2.1-0vgbanLYAAB7fetrpL29eq7qwrZrDMHgLdP4qqThJvJa",
         },
         .lc4k = .{
-            .url = "git+https://codeberg.org/bcrist/zig-lc4k?ref=zig-master#16466baf07a0756eea89c6bab304ab7bdc27582f",
-            .hash = "lc4k-0.4.0-5R47QlKSFABsCL4Rco8V-GlC_pf9ewlIEh_73OLAz7BC",
+            .url = "git+https://codeberg.org/bcrist/zig-lc4k?ref=zig-master#901b88f7a2c018ee03555f6abea387a7a5c6ea9d",
+            .hash = "lc4k-0.4.0-5R47QjqSFAAOVfpaxL5Z5irV7bDCSkpf7E1Rqhzw5NbO",
         },
         .bit_helper = .{
             .url = "git+https://codeberg.org/bcrist/zig-bithelper?ref=zig-master#bb073ca63ad779a87feb8fb8cd7fd423ad69a621",
