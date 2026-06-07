@@ -37,12 +37,12 @@ pub const VTable = struct {
         comptime var Validator_State = void;
         comptime var Validator_State_Pointer = void;
         comptime var validator_state_alignment: usize = 1;
-        if (has_validate and @typeInfo(@TypeOf(P.validate)).@"fn".params.len == 4) {
-            Validator_State_Pointer = @typeInfo(@TypeOf(P.validate)).@"fn".params[2].type.?;
+        if (has_validate and @typeInfo(@TypeOf(P.validate)).@"fn".param_types.len == 4) {
+            Validator_State_Pointer = @typeInfo(@TypeOf(P.validate)).@"fn".param_types[2].?;
             const param_info = @typeInfo(Validator_State_Pointer).pointer;
             std.debug.assert(param_info.size == .one);
             Validator_State = param_info.child;
-            validator_state_alignment = param_info.alignment orelse 1;
+            validator_state_alignment = param_info.attrs.@"align" orelse 1;
         }
 
         const impl = struct {
@@ -55,7 +55,7 @@ pub const VTable = struct {
                 const part: *P = @fieldParentPtr("base", base);
                 errdefer dump_nets(P, part.*, b, base, "");
                 const func_info: std.builtin.Type.Fn = @typeInfo(@TypeOf(P.check_config)).@"fn";
-                if (func_info.params.len == 2) {
+                if (func_info.param_types.len == 2) {
                     try part.check_config(b);
                 } else {
                     try part.check_config();
@@ -72,12 +72,12 @@ pub const VTable = struct {
 
                 switch (@typeInfo(T)) {
                     .int, .float => {},
-                    .@"struct" => |struct_info| inline for (struct_info.fields) |field_info| {
-                        dump_nets(field_info.type, @field(value, field_info.name), b, base, prefix ++ "." ++ field_info.name);
+                    .@"struct" => |struct_info| inline for (struct_info.field_names, struct_info.field_types) |field_name, field_type| {
+                        dump_nets(field_type, @field(value, field_name), b, base, prefix ++ "." ++ field_name);
                     },
-                    .@"union" => |union_info| inline for (union_info.fields) |field_info| {
-                        if (value == @field(union_info.tag_type.?, field_info.name)) {
-                            dump_nets(field_info.type, @field(value, field_info.name), b, base, prefix ++ "." ++ field_info.name);
+                    .@"union" => |union_info| inline for (union_info.field_names, union_info.field_types) |field_name, field_type| {
+                        if (value == @field(union_info.tag_type.?, field_name)) {
+                            dump_nets(field_type, @field(value, field_name), b, base, prefix ++ "." ++ field_name);
                         }
                     },
                     .pointer => |info| if (info.size == .slice) {
@@ -104,19 +104,21 @@ pub const VTable = struct {
                 var decoupler_buf_index: usize = 0;
                 var decoupler_number: usize = 1;
 
-                inline for (@typeInfo(P).@"struct".fields) |field| {
-                    if (comptime std.mem.startsWith(u8, field.name, "pwr")) {
-                        const Pwr = field.type;
-                        const pwr = &@field(part.*, field.name);
-                        inline for (@typeInfo(Pwr).@"struct".fields) |info| {
-                            const field_ptr = &@field(pwr, info.name);
-                            const slice: []Net_ID = if (info.type == Net_ID) field_ptr[0..1] else field_ptr;
-                            if (comptime std.mem.eql(u8, info.name, "gnd")) {
+                const struct_info = @typeInfo(P).@"struct";
+                inline for (struct_info.field_names, struct_info.field_types) |field_name, field_type| {
+                    if (comptime std.mem.startsWith(u8, field_name, "pwr")) {
+                        const Pwr = field_type;
+                        const pwr = &@field(part.*, field_name);
+                        const pwr_struct_info = @typeInfo(Pwr).@"struct";
+                        inline for (pwr_struct_info.field_names, pwr_struct_info.field_types) |pwr_field_name, pwr_field_type| {
+                            const field_ptr = &@field(pwr, pwr_field_name);
+                            const slice: []Net_ID = if (pwr_field_type == Net_ID) field_ptr[0..1] else field_ptr;
+                            if (comptime std.mem.eql(u8, pwr_field_name, "gnd")) {
                                 for (slice) |*net_ptr| {
                                     if (net_ptr.* == .unset) net_ptr.* = .gnd;
                                 }
                             } else {
-                                const power_net = comptime std.meta.stringToEnum(Net_ID, info.name) orelse .unset;
+                                const power_net = comptime std.meta.stringToEnum(Net_ID, pwr_field_name) orelse .unset;
                                 for (slice) |*net_ptr| {
                                     if (maybe_set_power_net_or_generate_decoupler(Pwr, power_net, net_ptr, b, base.name, decoupler_number)) |decoupler| {
                                         if (decoupler_buf_index < buf.len) {
@@ -181,12 +183,12 @@ pub const VTable = struct {
 
                 switch (@typeInfo(T)) {
                     .int, .float => {},
-                    .@"struct" => |struct_info| inline for (struct_info.fields) |field_info| {
-                        try check_for_unset_nets_generic(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
+                    .@"struct" => |struct_info| inline for (struct_info.field_names, struct_info.field_types) |field_name, field_type| {
+                        try check_for_unset_nets_generic(field_type, @field(value, field_name), base, prefix ++ "." ++ field_name);
                     },
-                    .@"union" => |union_info| inline for (union_info.fields) |field_info| {
-                        if (value == @field(union_info.tag_type.?, field_info.name)) {
-                            try check_for_unset_nets_generic(field_info.type, @field(value, field_info.name), base, prefix ++ "." ++ field_info.name);
+                    .@"union" => |union_info| inline for (union_info.field_names, union_info.field_types) |field_name, field_type| {
+                        if (value == @field(union_info.tag_type.?, field_name)) {
+                            try check_for_unset_nets_generic(field_type, @field(value, field_name), base, prefix ++ "." ++ field_name);
                         }
                     },
                     .pointer => |info| if (info.size == .slice) {

@@ -1,8 +1,8 @@
 .{
     .name = .zoink,
     .fingerprint = 0x701de67035fe779a,
-    .version = "0.3.0",
-    .minimum_zig_version = "0.17.0-dev.260+a79428757",
+    .version = "0.3.1",
+    .minimum_zig_version = "0.17.0-dev.812+5434f85c4",
     .paths = .{
         "src/",
         "tools/",
