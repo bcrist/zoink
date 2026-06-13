@@ -13,6 +13,7 @@ pub fn Single(comptime v: Net_ID, comptime Decoupler: type) type {
         .p1v8 => Single_1V8(Decoupler),
         .p1v5 => Single_1V5(Decoupler),
         .p1v2 => Single_1V2(Decoupler),
+        .p1v1 => Single_1V1(Decoupler),
         .p1v => Single_1V(Decoupler),
         .unset => Single_Unknown(Decoupler),
         else => @compileError(unreachable),
@@ -206,6 +207,20 @@ pub fn Single_1V2(comptime Decoupler: type) type {
     };
 }
 
+pub fn Single_1V1(comptime Decoupler: type) type {
+    return struct {
+        gnd: Net_ID = .unset,
+        p1v1: Net_ID = .unset,
+        
+        pub fn vcc(self: @This(), _: usize) Net_ID {
+            return self.p1v1;
+        }
+        
+        pub const Decouple = Decoupler;
+        pub const V = Voltage.p1v1;
+    };
+}
+
 pub fn Single_1V(comptime Decoupler: type) type {
     return struct {
         gnd: Net_ID = .unset,
@@ -235,6 +250,7 @@ pub fn Multi(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int,
         .p1v8 => Multi_1V8(vcc_count, gnd_count, Decoupler),
         .p1v5 => Multi_1V5(vcc_count, gnd_count, Decoupler),
         .p1v2 => Multi_1V2(vcc_count, gnd_count, Decoupler),
+        .p1v1 => Multi_1V1(vcc_count, gnd_count, Decoupler),
         .p1v => Multi_1V(vcc_count, gnd_count, Decoupler),
         .unset => Multi_Unknown(vcc_count, gnd_count, Decoupler),
         else => @compileError(unreachable),
@@ -430,6 +446,20 @@ pub fn Multi_1V2(comptime vcc_count: comptime_int, comptime gnd_count: comptime_
         
         pub const Decouple = Decoupler;
         pub const V = Voltage.p1v2;
+    };
+}
+
+pub fn Multi_1V1(comptime vcc_count: comptime_int, comptime gnd_count: comptime_int, comptime Decoupler: type) type {
+    return struct {
+        gnd: [gnd_count]Net_ID = @splat(.unset),
+        p1v1: [vcc_count]Net_ID = @splat(.unset),
+        
+        pub fn vcc(self: @This(), index: usize) Net_ID {
+            return self.p1v1[index];
+        }
+        
+        pub const Decouple = Decoupler;
+        pub const V = Voltage.p1v1;
     };
 }
 

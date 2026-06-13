@@ -121,7 +121,13 @@ pub const LQFP_100_14mm = jedec.MS_026D(100, 14, 14, .low_profile, "LQFP-100 (14
 pub const LQFP_128_14mm = jedec.MS_026D(128, 14, 14, .low_profile, "LQFP-128 (14mm)");
 pub const LQFP_144_20mm = jedec.MS_026D(144, 20, 20, .low_profile, "LQFP-144 (20mm)");
 
-pub const QFN_12_4x4_EP = jedec.MO_220K01(12, 3, 800, .@"4x4", true, .very_very_thin, "QFN-12 (4mm x 4mm)");
+pub const QFN_12_4x4_EP = jedec.MO_220K01(12, 3, 800, .@"4x4", true, .very_very_thin, "QFN-12 (4mm) EP");
+pub const QFN_56_7x7_EP = jedec.MO_220K01(56, 14, 400, .@"7x7", true, .very_thin, "QFN-56 (7mm) EP");
+pub const QFN_60_7x7_EP = jedec.MO_220K01(60, 15, 400, .@"7x7", true, .very_thin, "QFN-60 (7mm) EP");
+pub const QFN_80_10x10_EP = jedec.MO_220K01(80, 20, 400, .@"10x10", true, .very_thin, "QFN-80 (10mm) EP");
+
+pub const DFN_8_2x2_EP = jedec.MO_229(8, 500, .@"2x2", true, .very_very_thin, "DFN-8 (2mm) EP");
+pub const @"DFN_10_2.5x2_EP" = jedec.MO_229(10, 500, .@"2x2.5", true, .very_thin, "DFN-10 (2.5mm x 2mm) EP");
 
 pub const TSOP_II_32 = jedec.MS_024H(32, 1270, "TSOP-II-32");
 pub const TSOP_II_44 = jedec.MS_024H(44, 800, "TSOP-II-44");

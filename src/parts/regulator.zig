@@ -34,6 +34,31 @@ pub fn Linear_SOT23(comptime part_number: []const u8, comptime Input_Cap: type, 
     };
 }
 
+pub fn Linear_5pin(comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .U,
+        },
+
+        v_in: Net_ID = .unset,
+        enable: Net_ID = .unset,
+        gnd: Net_ID = .gnd,
+        v_out: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.v_in,
+                2 => self.gnd,
+                3 => self.enable,
+                4 => .no_connect,
+                5 => self.v_out,
+                else => unreachable,
+            };
+        }
+    };
+}
+
 pub const AP62300TWU = struct {
     base: Part.Base = .{
         .package = &pkg.SOT23_6.pkg,

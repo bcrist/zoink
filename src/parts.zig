@@ -397,6 +397,18 @@ pub const GS72116U  = sram.Async_16b("GS72116", 17, power.Multi(2, 2, .p3v3, C04
 pub const i2c = @import("parts/i2c.zig");
 
 pub const EMC1702 = i2c.EMC1702(C0402_Decoupler);
+pub const EMC1812 = i2c.EMC1812(C0402_Decoupler);
+pub const EMC1813 = i2c.EMC1813(C0402_Decoupler);
+pub const EMC1814 = i2c.EMC1814(C0402_Decoupler);
+pub const EMC1815 = i2c.EMC1815(C0402_Decoupler);
+
+pub const mcu = @import("parts/mcu.zig");
+
+pub const RP2040 = mcu.RP2040(C0402_Decoupler);
+pub const RP2350A = mcu.RP235xA("RP2350A", C0402_Decoupler);
+pub const RP2354A = mcu.RP235xA("RP2354A", C0402_Decoupler);
+pub const RP2350B = mcu.RP235xB("RP2350B", C0402_Decoupler);
+pub const RP2354B = mcu.RP235xB("RP2354B", C0402_Decoupler);
 
 pub const regulator = @import("parts/regulator.zig");
 

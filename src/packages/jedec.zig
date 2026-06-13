@@ -1561,6 +1561,69 @@ pub const MO_207AD = struct {
     };
 };
 
+// DFN
+pub fn MO_209(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
+    // "length" in jedec spec (dimension D)
+    const width_mm: comptime_float = switch (lead_count) {
+        6 => 2,
+        8 => 3,
+        10 => 3.5,
+        20 => 5,
+        24 => 6.5,
+        28 => 7.8,
+        36 => 9.7,
+        48 => 12.5,
+        else => unreachable,
+    };
+
+    // "width" in jedec spec (dimension E)
+    const height_mm: comptime_float = switch (lead_count) {
+        6 => 2.4,
+        8, 10 => 4.9,
+        20, 24, 28, 36 => 6.4,
+        48 => 8.1,
+        else => unreachable,
+    };
+
+    const pitch_um = switch (lead_count) {
+        6, 8 => 650,
+        10, 20, 24, 28, 36, 48 => 500,
+        else => unreachable,
+    };
+
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
+        };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...lead_count => true,
+                else => false,
+            };
+        }
+
+        pub const data: SMD_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_mm(width_mm, 0.1),
+                .height = .init_mm(height_mm, 0.1),
+            },
+            .overall = .{
+                .width  = .init_mm(width_mm, 0.1),
+                .height = .init_mm(height_mm, 0.1),
+            },
+            .max_z = .init_mm(1.2, 0),
+            .total_pins = lead_count,
+            .pins_on_first_side = lead_count / 2,
+            .pin_pitch = .{ .nominal_um = pitch_um, .tolerance_um = 0 },
+            .pin_width = .init_mm_range(0.25, 0.35),
+            .pin_seating = .init_mm_range(0.5, 0.7),
+        };
+    };
+}
+
 
 // height x width
 pub const MO_220_Body_Dimensions = enum {
@@ -2100,6 +2163,261 @@ pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_si
                     .height = .init_mm_range(0.5, height_mm - 1.25),
                 },
                 else => unreachable,
+            } else null,
+        };
+    };
+}
+
+
+// height x width (D x E)
+pub const MO_229_Body_Dimensions = enum {
+    @"1.5x1",
+    @"1.5x1.5",
+    @"2x1",
+    @"2x1.5",
+    @"2x2",
+    @"2x2.5",
+    @"2x3",
+    @"2.5x1.5",
+    @"2.5x2",
+    @"2.5x2.5",
+    @"2.5x3",
+    @"3x1.5",
+    @"3x2",
+    @"3x2.5",
+    @"3x3",
+    @"3x4",
+    @"3.5x2.5",
+    @"3.5x3",
+    @"3.5x3.5",
+    @"4x3",
+    @"4x4",
+    @"4x5",
+    @"5x3",
+    @"5x4",
+    @"5x5",
+    @"6x5",
+};
+pub const MO_229_Body_Thickness = enum {
+    very_thin, // up to 1.0mm thick
+    very_very_thin, // up to 0.8mm thick
+    ultra_thin, // up to 0.65mm thick
+};
+/// DFN
+pub fn MO_229(comptime lead_count: comptime_int, comptime pitch_um: comptime_int, comptime dim: MO_229_Body_Dimensions, comptime has_heat_slug: bool, comptime thickness: MO_229_Body_Thickness, comptime package_name: []const u8) type {
+    switch (thickness) {
+        .very_thin => {},
+        .very_very_thin => switch (dim) {
+            .@"2x2" => {
+                std.debug.assert(lead_count != 8);
+                std.debug.assert(lead_count != 6 or pitch_um == 500);
+            },
+            .@"3x2" => {
+                std.debug.assert(lead_count != 6);
+                std.debug.assert(lead_count != 8);
+            },
+            else => {},
+        },
+        .ultra_thin => {
+            std.debug.assert(dim == .@"2x3");
+            std.debug.assert(lead_count == 8);
+        },
+    }
+
+    const width_mm: comptime_float, const height_mm: comptime_float = switch (dim) {
+        .@"1.5x1.5"         => .{ 1.5, 1.5 },
+        .@"2x1"             => .{ 1, 2 },
+        .@"2x1.5"           => .{ 1.5, 2 },
+        .@"2x2"             => .{ 2, 2 },
+        .@"2x2.5"           => .{ 2.5, 2 },
+        .@"2x3"             => .{ 3, 2 },
+        .@"2.5x1.5"         => .{ 1.5, 2.5 },
+        .@"2.5x2"           => .{ 2, 2.5 },
+        .@"2.5x2.5"         => .{ 2.5, 2.5 },
+        .@"2.5x3"           => .{ 3, 2.5 },
+        .@"3x1.5"           => .{ 1.5, 3 },
+        .@"3x2"             => .{ 2, 3 },
+        .@"3x2.5"           => .{ 2.5, 3 },
+        .@"3x3"             => .{ 3, 3 },
+        .@"3x4"             => .{ 4, 3 },
+        .@"3.5x2.5"         => .{ 2.5, 3.5 },
+        .@"3.5x3"           => .{ 3, 3.5 },
+        .@"3.5x3.5"         => .{ 3.5, 3.5 },
+        .@"4x3"             => .{ 3, 4 },
+        .@"4x4"             => .{ 4, 4 },
+        .@"4x5"             => .{ 5, 4 },
+        .@"5x3"             => .{ 3, 5 },
+        .@"5x4"             => .{ 4, 5 },
+        .@"5x5"             => .{ 5, 5 },
+        .@"6x5"             => .{ 5, 6 },
+    };
+
+    const lead_count_first_side = lead_count / 2;
+
+    switch (dim) {
+        .@"1.5x1" => switch (lead_count) {
+            4 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"1.5x1.5" => switch (lead_count) {
+            4 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"2x1" => switch (lead_count) {
+            4, 6 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"2x1.5" => switch (lead_count) {
+            4, 6 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"2x2" => switch (lead_count) {
+            6 => std.debug.assert(pitch_um == 500 or pitch_um == 650),
+            4, 8 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"2x2.5" => switch (lead_count) {
+            4 => std.debug.assert(pitch_um == 800),
+            6, 8 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"2x3" => switch (lead_count) {
+            6, 8 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"2.5x1.5" => switch (lead_count) {
+            6, 8 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"2.5x2" => switch (lead_count) {
+            4, 6, 8 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"2.5x2.5" => switch (lead_count) {
+            6 => std.debug.assert(pitch_um == 800 or pitch_um == 500),
+            8 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"2.5x3" => switch (lead_count) {
+            6 => std.debug.assert(pitch_um == 800),
+            8 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"3x1.5" => switch (lead_count) {
+            8, 10 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"3x2" => switch (lead_count) {
+            6 => std.debug.assert(pitch_um == 950),
+            8 => std.debug.assert(pitch_um == 650 or pitch_um == 500),
+            10 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"3x2.5" => switch (lead_count) {
+            8, 10 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"3x3" => switch (lead_count) {
+            6 => std.debug.assert(pitch_um == 950 or pitch_um == 800),
+            8 => std.debug.assert(pitch_um == 650 or pitch_um == 500),
+            10 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"3x4" => switch (lead_count) {
+            6 => std.debug.assert(pitch_um == 800),
+            10 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"3.5x2.5" => switch (lead_count) {
+            10, 12 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"3.5x3" => switch (lead_count) {
+            10, 12 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"3.5x3.5" => switch (lead_count) {
+            10, 12 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"4x3" => switch (lead_count) {
+            10, 12, 14 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"4x4" => switch (lead_count) {
+            8 => std.debug.assert(pitch_um == 800),
+            10 => std.debug.assert(pitch_um == 650 or pitch_um == 500),
+            12, 14 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"4x5" => switch (lead_count) {
+            10 => std.debug.assert(pitch_um == 800),
+            14 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"5x3" => switch (lead_count) {
+            16, 18 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"5x4" => switch (lead_count) {
+            14, 16, 18 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"5x5" => switch (lead_count) {
+            16, 18 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+        .@"6x5" => switch (lead_count) {
+            8 => std.debug.assert(pitch_um == 800),
+            16, 18 => std.debug.assert(pitch_um == 500),
+            else => unreachable,
+        },
+    }
+
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
+        };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                0 => has_heat_slug,
+                1...lead_count => true,
+                else => false,
+            };
+        }
+
+        pub const data: SMD_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .init_mm(width_mm, 0.1),
+                .height = .init_mm(height_mm, 0.1),
+            },
+            .overall = .{
+                .width  = .init_mm(width_mm, 0.1),
+                .height = .init_mm(height_mm + 0.26, 0.1),
+            },
+            .max_z = .init_mm(switch (thickness) {
+                .very_thin => 1.0,
+                .very_very_thin => 0.8,
+                .ultra_thin => 0.65,
+            }, 0),
+            .total_pins = lead_count,
+            .pins_on_first_side = lead_count_first_side,
+            .pin_pitch = .{ .nominal_um = pitch_um, .tolerance_um = 0 },
+            .pin_width = switch (pitch_um) {
+                950 => .init_mm_range(0.3, 0.45),
+                800 => .init_mm_range(0.25, 0.35),
+                650 => .init_mm_range(0.25, 0.35),
+                500 => .init_mm_range(0.18, 0.30),
+                400 => .init_mm_range(0.15, 0.25),
+                else => unreachable,
+            },
+            .pin_seating = .init_mm_range(0.28, 0.3),
+            .heat_slug = if (has_heat_slug) .{
+                .width = .init_mm_range(0.5, width_mm - 0.64),
+                .height = .init_mm_range(0.5, height_mm - 0.7),
             } else null,
         };
     };

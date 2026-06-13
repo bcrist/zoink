@@ -1,3 +1,5 @@
+/// I2C voltage/current monitor + 2-channel temperature sensor (1 internal + 1 external diode)
+/// https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/EMC1702-Data-Sheet-DS20006455A.pdf
 pub fn EMC1702(comptime Decoupler: type) type {
     return struct {
         base: Part.Base = .{
@@ -42,28 +44,163 @@ pub fn EMC1702(comptime Decoupler: type) type {
     };
 }
 
-pub fn Linear_5pin(comptime Pkg: type) type {
+/// I2C 2-channel temperature sensor (1 internal + 1 external diodes)
+/// https://ww1.microchip.com/downloads/en/DeviceDoc/20005751D.pdf
+pub fn EMC1812(comptime Decoupler: type) type {
     return struct {
         base: Part.Base = .{
-            .package = &Pkg.pkg,
+            .package = &pkg.DFN_8_2x2_EP.pkg,
             .prefix = .U,
+            .value = "EMC1812",
         },
 
-        v_in: Net_ID = .unset,
-        enable: Net_ID = .unset,
-        gnd: Net_ID = .gnd,
-        v_out: Net_ID = .unset,
+        pwr: power.Single(.unset, Decoupler) = .{},
+        @"d+": Net_ID = .unset,
+        @"d-": Net_ID = .unset,
+        @"n_therm/address_sel": Net_ID = .unset,
+        @"n_alert/n_therm2": Net_ID = .unset,
+        sda: Net_ID = .unset,
+        scl: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                1 => self.v_in,
-                2 => self.gnd,
-                3 => self.enable,
-                4 => .no_connect,
-                5 => self.v_out,
-                else => unreachable,
+                0 => self.pwr.gnd,
+                1 => self.pwr.vcc,
+                2 => self.@"d+",
+                3 => self.@"d-",
+                4 => self.@"n_therm/address_sel",
+                5 => self.pwr.gnd,
+                6 => self.@"n_alert/n_therm2",
+                7 => self.sda,
+                8 => self.scl,
+                else => std.debug.panic("EMC1812 does not have pin {}", .{ @intFromEnum(pin_id) }),
             };
         }
+
+        // TODO check voltages in valid range during validation
+    };
+}
+
+/// I2C 3-channel temperature sensor (1 internal + 2 external diodes)
+/// https://ww1.microchip.com/downloads/en/DeviceDoc/20005751D.pdf
+pub fn EMC1813(comptime Decoupler: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &pkg.@"DFN_10_2.5x2_EP".pkg,
+            .prefix = .U,
+            .value = "EMC1813",
+        },
+
+        pwr: power.Single(.unset, Decoupler) = .{},
+        @"d1+": Net_ID = .unset,
+        @"d1-": Net_ID = .unset,
+        @"d2+": Net_ID = .unset,
+        @"d2-": Net_ID = .unset,
+        @"n_therm/address_sel": Net_ID = .unset,
+        @"n_alert/n_therm2": Net_ID = .unset,
+        sda: Net_ID = .unset,
+        scl: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => self.pwr.gnd,
+                1 => self.pwr.vcc,
+                2 => self.@"d1+",
+                3 => self.@"d1-",
+                4 => self.@"d2+",
+                5 => self.@"d2-",
+                6 => self.pwr.gnd,
+                7 => self.@"n_therm/address_sel",
+                8 => self.@"n_alert/n_therm2",
+                9 => self.sda,
+                10 => self.scl,
+                else => std.debug.panic("EMC1813 does not have pin {}", .{ @intFromEnum(pin_id) }),
+            };
+        }
+
+        // TODO check voltages in valid range during validation
+    };
+}
+
+/// I2C 4-channel temperature sensor (1 internal + 3 external diodes)
+/// https://ww1.microchip.com/downloads/en/DeviceDoc/20005751D.pdf
+pub fn EMC1814(comptime Decoupler: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &pkg.@"DFN_10_2.5x2_EP".pkg,
+            .prefix = .U,
+            .value = "EMC1814",
+        },
+
+        pwr: power.Single(.unset, Decoupler) = .{},
+        @"d1+": Net_ID = .unset,
+        @"d1-": Net_ID = .unset,
+        @"d2+/d3-": Net_ID = .unset,
+        @"d2-/d3+": Net_ID = .unset,
+        @"n_therm/address_sel": Net_ID = .unset,
+        @"n_alert/n_therm2": Net_ID = .unset,
+        sda: Net_ID = .unset,
+        scl: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => self.pwr.gnd,
+                1 => self.pwr.vcc,
+                2 => self.@"d1+",
+                3 => self.@"d1-",
+                4 => self.@"d2+/d3-",
+                5 => self.@"d2-/d3+",
+                6 => self.pwr.gnd,
+                7 => self.@"n_therm/address_sel",
+                8 => self.@"n_alert/n_therm2",
+                9 => self.sda,
+                10 => self.scl,
+                else => std.debug.panic("EMC1814 does not have pin {}", .{ @intFromEnum(pin_id) }),
+            };
+        }
+
+        // TODO check voltages in valid range during validation
+    };
+}
+
+/// I2C 5-channel temperature sensor (1 internal + 4 external diodes)
+/// https://ww1.microchip.com/downloads/en/DeviceDoc/20005751D.pdf
+pub fn EMC1815(comptime Decoupler: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &pkg.@"DFN_10_2.5x2_EP".pkg,
+            .prefix = .U,
+            .value = "EMC1815",
+        },
+
+        pwr: power.Single(.unset, Decoupler) = .{},
+        @"d1+/d2-": Net_ID = .unset,
+        @"d1-/d2+": Net_ID = .unset,
+        @"d3+/d4-": Net_ID = .unset,
+        @"d3-/d4+": Net_ID = .unset,
+        @"n_therm/address_sel": Net_ID = .unset,
+        @"n_alert/n_therm2": Net_ID = .unset,
+        sda: Net_ID = .unset,
+        scl: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                0 => self.pwr.gnd,
+                1 => self.pwr.vcc,
+                2 => self.@"d1+/d2-",
+                3 => self.@"d1-/d2+",
+                4 => self.@"d3+/d4-",
+                5 => self.@"d3-/d4+",
+                6 => self.pwr.gnd,
+                7 => self.@"n_therm/address_sel",
+                8 => self.@"n_alert/n_therm2",
+                9 => self.sda,
+                10 => self.scl,
+                else => std.debug.panic("EMC1815 does not have pin {}", .{ @intFromEnum(pin_id) }),
+            };
+        }
+
+        // TODO check voltages in valid range during validation
     };
 }
 
