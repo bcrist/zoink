@@ -250,6 +250,108 @@ pub fn Inductor(comptime Pkg: type) type {
     };
 }
 
+pub fn Crystal(comptime Pkg: type) type {
+    if (Pkg.has_pin(@enumFromInt(4))) {
+        return struct {
+            base: Part.Base = .{
+                .package = &Pkg.pkg,
+                .prefix = .X,
+            },
+            gnd: [2]Net_ID = @splat(.gnd),
+            x1: Net_ID = .unset,
+            x2: Net_ID = .unset,
+            value_hz: u64 = 32_768,
+
+            pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+                return switch (@intFromEnum(pin_id)) {
+                    1 => self.x1,
+                    2 => self.gnd[0],
+                    3 => self.x2,
+                    4 => self.gnd[1],
+                    else => .unset
+                };
+            }
+
+            pub fn check_config(self: *@This(), b: *Board) !void {
+                if (self.base.value.len == 0) {
+                    const hz: f64 = @floatFromInt(self.value_hz);
+                    if (self.value_hz < 1000) {
+                        self.base.value = b.fmt("{} Hz", .{ self.value_hz });
+                    } else if (self.value_hz < 1_000_000) {
+                        self.base.value = b.fmt("{} kHz", .{ hz / 1000 });
+                    } else {
+                        self.base.value = b.fmt("{} MHz", .{ hz / 1_000_000 });
+                    }
+                }
+            }
+        };
+    } else if (Pkg.has_pin(@enumFromInt(3))) {
+        return struct {
+            base: Part.Base = .{
+                .package = &Pkg.pkg,
+                .prefix = .X,
+            },
+            gnd: Net_ID = .gnd,
+            x1: Net_ID = .unset,
+            x2: Net_ID = .unset,
+            value_hz: u64 = 32_768,
+
+            pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+                return switch (@intFromEnum(pin_id)) {
+                    1 => self.x1,
+                    2 => self.x2,
+                    3 => self.gnd,
+                    else => .unset
+                };
+            }
+
+            pub fn check_config(self: *@This(), b: *Board) !void {
+                if (self.base.value.len == 0) {
+                    const hz: f64 = @floatFromInt(self.value_hz);
+                    if (self.value_hz < 1000) {
+                        self.base.value = b.fmt("{} Hz", .{ self.value_hz });
+                    } else if (self.value_hz < 1_000_000) {
+                        self.base.value = b.fmt("{} kHz", .{ hz / 1000 });
+                    } else {
+                        self.base.value = b.fmt("{} MHz", .{ hz / 1_000_000 });
+                    }
+                }
+            }
+        };
+    } else {
+        return struct {
+            base: Part.Base = .{
+                .package = &Pkg.pkg,
+                .prefix = .X,
+            },
+            x1: Net_ID = .unset,
+            x2: Net_ID = .unset,
+            value_hz: u64 = 32_768,
+
+            pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+                return switch (@intFromEnum(pin_id)) {
+                    1 => self.x1,
+                    2 => self.x2,
+                    else => .unset
+                };
+            }
+
+            pub fn check_config(self: *@This(), b: *Board) !void {
+                if (self.base.value.len == 0) {
+                    const hz: f64 = @floatFromInt(self.value_hz);
+                    if (self.value_hz < 1000) {
+                        self.base.value = b.fmt("{} Hz", .{ self.value_hz });
+                    } else if (self.value_hz < 1_000_000) {
+                        self.base.value = b.fmt("{} kHz", .{ hz / 1000 });
+                    } else {
+                        self.base.value = b.fmt("{} MHz", .{ hz / 1_000_000 });
+                    }
+                }
+            }
+        };
+    }
+}
+
 const Package = @import("../Package.zig");
 const Net_ID = enums.Net_ID;
 const Pin_ID = enums.Pin_ID;

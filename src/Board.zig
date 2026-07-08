@@ -328,7 +328,7 @@ pub fn generate_bom_file(self: *Board, io: std.Io, temp: std.mem.Allocator, path
     const stem = basename[0 .. basename.len - extension.len];
 
     var buf: [16384]u8 = undefined;
-    var writer = f.writer(&buf);
+    var writer = f.writer(io, &buf);
 
     try self.generate_bom(temp, stem, &writer.interface);
     try writer.interface.flush();

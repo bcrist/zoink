@@ -1,7 +1,8 @@
 pub const jedec = @import("packages/jedec.zig");
-pub const lcr = @import("packages/lcr.zig");
 pub const pga = @import("packages/pga.zig");
 pub const jae = @import("packages/jae.zig");
+pub const molex = @import("packages/molex.zig");
+pub const xtal = @import("packages/xtal.zig");
 
 pub const DIP8 = jedec.MS_001D(8, "DIP-8");
 pub const DIP14 = jedec.MS_001D(14, "DIP-14");
@@ -46,7 +47,7 @@ pub const SOT223_5 = jedec.TO_261AB;
 pub const MSOP_8 = jedec.MO_187F_AA(false, "MSOP-8");
 pub const MSOP_10 = jedec.MO_187F_BA(false, "MSOP-10");
 pub const VSSOP_8 = jedec.MO_187F_CA("VSSOP-8");
-pub const TSSOP_8 = jedec.MO_187F_DA("TSSOP-8");
+pub const TSSOP_8_110 = jedec.MO_187F_DA("TSSOP-8");
 
 pub const SOJ_14 = jedec.MS_027A__MO_065A_077D_088A(14, 300, "SOJ-14");
 pub const SOJ_16 = jedec.MS_027A__MO_065A_077D_088A(16, 300, "SOJ-16");
@@ -99,6 +100,7 @@ pub const PLCC_84M_PGA = pga.PLCC(21, 21, "PLCC-84M (PGA Socket)");
 pub const SOIC_8_150 = jedec.MS_012G_02(8, "SOIC-8 (150 mil)");
 pub const SOIC_14_150 = jedec.MS_012G_02(14, "SOIC-14 (150 mil)");
 pub const SOIC_16_150 = jedec.MS_012G_02(16, "SOIC-16 (150 mil)");
+pub const SOIC_8_208 = jedec.MO_046B(8, "SOIC-8 (208 mil)");
 pub const SOIC_14_208 = jedec.MO_046B(14, "SOIC-14 (208 mil)");
 pub const SOIC_16_208 = jedec.MO_046B(16, "SOIC-16 (208 mil)");
 pub const SOIC_20_208 = jedec.MO_046B(20, "SOIC-20 (208 mil)");
@@ -126,6 +128,7 @@ pub const QFN_56_7x7_EP = jedec.MO_220K01(56, 14, 400, .@"7x7", true, .very_thin
 pub const QFN_60_7x7_EP = jedec.MO_220K01(60, 15, 400, .@"7x7", true, .very_thin, "QFN-60 (7mm) EP");
 pub const QFN_80_10x10_EP = jedec.MO_220K01(80, 20, 400, .@"10x10", true, .very_thin, "QFN-80 (10mm) EP");
 
+pub const DFN_8_3x2_EP = jedec.MO_229(8, 500, .@"2x3", true, .ultra_thin, "DFN-8 (3mm x 2mm) EP"); // a.k.a. USON-8
 pub const DFN_8_2x2_EP = jedec.MO_229(8, 500, .@"2x2", true, .very_very_thin, "DFN-8 (2mm) EP");
 pub const @"DFN_10_2.5x2_EP" = jedec.MO_229(10, 500, .@"2x2.5", true, .very_thin, "DFN-10 (2.5mm x 2mm) EP");
 
@@ -147,6 +150,7 @@ pub const SSOP_48 = jedec.MO_118B(48, "SSOP-48");
 pub const SSOP_56 = jedec.MO_118B(56, "SSOP-56");
 pub const SSOP_64 = jedec.MO_118B(64, "SSOP-64");
 
+pub const TSSOP_8_173 = jedec.MO_153H(8, 650, .b, "TSSOP-8"); // often used for serial flash memory
 pub const TSSOP_14 = jedec.MO_153H(14, 650, .b, "TSSOP-14");
 pub const TSSOP_16 = jedec.MO_153H(16, 650, .b, "TSSOP-16");
 pub const TSSOP_20 = jedec.MO_153H(20, 650, .b, "TSSOP-20");
@@ -164,6 +168,9 @@ pub const TVSOP_100 = jedec.MO_194B(100, "TVSOP-100");
 
 pub const BGA_48_6mm_8mm = jedec.MO_207AD;
 
+pub const TO92 = jedec.TO_226G_AA("TO92");
+pub const TO92_2 = jedec.TO_226G_AC("TO92-2");
+
 pub const bmc = @import("packages/bmc.zig");
 
 pub const BGA_BMC149 = bmc.BGA149;
@@ -179,8 +186,7 @@ pub const BGA_p050_144_7mm = lattice.csBGA144;
 pub const BGA_p040_64_4mm = lattice.ucBGA64;
 pub const BGA_p040_132_6mm = lattice.ucBGA132;
 
-pub const TO92 = jedec.TO_226G_AA("TO92");
-pub const TO92_2 = jedec.TO_226G_AC("TO92-2");
+pub const lcr = @import("packages/lcr.zig");
 
 pub const R1206 = lcr._1206(550, "R1206");
 pub const R0805 = lcr._0805(550, "R0805");

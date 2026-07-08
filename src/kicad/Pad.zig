@@ -25,6 +25,13 @@ pub const Kind = enum {
     smd,
     edge_connector,
     stencil_aperture,
+
+    pub fn is_conductor(self: Kind) bool {
+        return switch (self) {
+            .through_hole, .smd, .edge_connector => true,
+            .non_plated_through_hole, .stencil_aperture => false,
+        };
+    }
 };
 
 pub const Fab_Property = enum {
@@ -225,7 +232,7 @@ pub fn read(r: *sx.Reader) !?Pad {
             try r.ignore_remaining_expression();
 
         } else if (try r.expression("layers")) {
-            self.layers = .initEmpty();
+            self.layers = .empty;
             while (try r.any_string()) |layer_spec| {
                 self.layers.setUnion(Layer.parse_set(layer_spec));
             }
@@ -408,12 +415,14 @@ pub fn write(self: Pad, w: *sx.Writer, b: *Board, p: Part, remap: *const Net_Rem
         else => {},
     }
 
-    const net = remap.get_merged_net(p.vt.pin_to_net(p.base, self.pin));
-    const net_name = b.net_name(net);
-    try w.expression("net");
-    try w.int(remap.get_kicad_id_from_name(net_name), 10);
-    try w.string_quoted(net_name);
-    try w.close();
+    if (self.kind.is_conductor()) {
+        const net = remap.get_merged_net(p.vt.pin_to_net(p.base, self.pin));
+        const net_name = b.net_name(net);
+        try w.expression("net");
+        try w.int(remap.get_kicad_id_from_name(net_name), 10);
+        try w.string_quoted(net_name);
+        try w.close();
+    }
 
     if (self.pad_to_die_length.um > 0) {
         try w.expression("die_length");

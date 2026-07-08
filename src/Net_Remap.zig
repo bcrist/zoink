@@ -33,7 +33,9 @@ pub fn merge_overlapping_pad_nets(self: *Net_Remap, board: *Board) !void {
 pub fn merge_overlapping_pad_nets_in_part(self: *Net_Remap, board: *Board, part: *const Part) !void {
     if (part.base.footprint) |base_fp| {
         for (0.., base_fp.pads) |i, pad| {
+            if (!pad.kind.is_conductor()) continue;
             for (base_fp.pads[i + 1 ..]) |other_pad| {
+                if (!other_pad.kind.is_conductor()) continue;
                 if (pad.location.eql(other_pad.location)) {
                     const net = part.vt.pin_to_net(part.base, pad.pin);
                     const other_net = part.vt.pin_to_net(part.base, other_pad.pin);
@@ -108,6 +110,7 @@ pub fn generate_mapping(self: *Net_Remap, board: *Board) !void {
     for (board.parts.items) |p| {
         if (p.base.footprint) |base_fp| {
             for (base_fp.pads) |pad| {
+                if (!pad.kind.is_conductor()) continue;
                 const unmerged_net_id = p.vt.pin_to_net(p.base, pad.pin);
                 const net_id = self.merges.get(unmerged_net_id) orelse unmerged_net_id;
                 const net_name = board.net_name(net_id);

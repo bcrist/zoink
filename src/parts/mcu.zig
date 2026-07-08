@@ -10,8 +10,8 @@ pub fn RP2040(comptime Decoupler: type) type {
         },
 
         pwr_io: power.Multi(6, 1, .unset, Decoupler) = .{}, // 1.8V - 3.3V
-        pwr_vreg_in: power.Single(.unset, .Decoupler) = .{}, // 1.8V - 3.3V
-        pwr_vreg_out: power.Single(.unset, .Decoupler) = .{}, // 1.1V
+        pwr_vreg_in: power.Single(.unset, Decoupler) = .{}, // 1.8V - 3.3V
+        pwr_vreg_out: power.Single(.unset, Decoupler) = .{}, // 1.1V
         pwr_int: power.Multi(2, 1, .unset, Decoupler) = .{}, // 1.1V
         pwr_adc: power.Single(.unset, Decoupler) = .{}, // 3.3V
         pwr_usb: power.Single_3V3(Decoupler) = .{},
@@ -24,9 +24,9 @@ pub fn RP2040(comptime Decoupler: type) type {
         } = .{},
 
         qspi: struct {
-            n_ss: Net_ID = .unset,
-            sd: [4]Net_ID = .unset,
-            sclk: Net_ID = .unset,
+            n_cs: Net_ID = .unset,
+            data: [4]Net_ID = @splat(.unset),
+            clk: Net_ID = .unset,
         } = .{},
 
         xtal: struct {
@@ -95,17 +95,17 @@ pub fn RP2040(comptime Decoupler: type) type {
                 48 => self.pwr_usb.vcc(0),
                 49 => self.pwr_io.vcc(5),
                 50 => self.pwr_int.vcc(1),
-                51 => self.qspi.sd[3],
-                52 => self.qspi.sclk,
-                53 => self.qspi.sd[0],
-                54 => self.qspi.sd[2],
-                55 => self.qspi.sd[1],
-                56 => self.qspi.n_ss,
+                51 => self.qspi.data[3],
+                52 => self.qspi.clk,
+                53 => self.qspi.data[0],
+                54 => self.qspi.data[2],
+                55 => self.qspi.data[1],
+                56 => self.qspi.n_cs,
                 else => std.debug.panic("RP2040 does not have pin {}", .{ @intFromEnum(pin_id) }),
             };
         }
 
-        pub fn check_config(self: @This(), b: *Board) !void {
+        pub fn check_config(self: *@This(), b: *Board) !void {
             for (&self.pwr_io.v) |*net| {
                 if (net.* == .unset) net.* = .p3v3;
             }
@@ -186,9 +186,9 @@ pub fn RP235xA(comptime device_name: []const u8, comptime Decoupler: type) type 
         } = .{},
 
         qspi: struct {
-            n_ss: Net_ID = .unset,
-            sd: [4]Net_ID = .unset,
-            sclk: Net_ID = .unset,
+            n_cs: Net_ID = .unset,
+            data: [4]Net_ID = .unset,
+            clk: Net_ID = .unset,
         } = .{},
 
         xtal: struct {
@@ -260,12 +260,12 @@ pub fn RP235xA(comptime device_name: []const u8, comptime Decoupler: type) type 
                 52 => self.usb.@"d+",
                 53 => self.pwr_usb_otp.vcc(0),
                 54 => self.pwr_qspi.vcc(0),
-                55 => self.qspi.sd[3],
-                56 => self.qspi.sclk,
-                57 => self.qspi.sd[0],
-                58 => self.qspi.sd[2],
-                59 => self.qspi.sd[1],
-                60 => self.qspi.n_ss,
+                55 => self.qspi.data[3],
+                56 => self.qspi.clk,
+                57 => self.qspi.data[0],
+                58 => self.qspi.data[2],
+                59 => self.qspi.data[1],
+                60 => self.qspi.n_cs,
                 else => std.debug.panic("RP2350A does not have pin {}", .{ @intFromEnum(pin_id) }),
             };
         }
@@ -318,9 +318,9 @@ pub fn RP235xB(comptime device_name: []const u8, comptime Decoupler: type) type 
         } = .{},
 
         qspi: struct {
-            n_ss: Net_ID = .unset,
-            sd: [4]Net_ID = .unset,
-            sclk: Net_ID = .unset,
+            n_cs: Net_ID = .unset,
+            data: [4]Net_ID = .unset,
+            clk: Net_ID = .unset,
         } = .{},
 
         xtal: struct {
@@ -407,12 +407,12 @@ pub fn RP235xB(comptime device_name: []const u8, comptime Decoupler: type) type 
                 67 => self.usb.@"d+",
                 68 => self.pwr_usb_otp.vcc(0),
                 69 => self.pwr_qspi.vcc(0),
-                70 => self.qspi.sd[3],
-                71 => self.qspi.sclk,
-                72 => self.qspi.sd[0],
-                73 => self.qspi.sd[2],
-                74 => self.qspi.sd[1],
-                75 => self.qspi.n_ss,
+                70 => self.qspi.data[3],
+                71 => self.qspi.clk,
+                72 => self.qspi.data[0],
+                73 => self.qspi.data[2],
+                74 => self.qspi.data[1],
+                75 => self.qspi.n_cs,
                 76 => self.pwr_io.vcc(0),
                 77 => self.gpio[0],
                 78 => self.gpio[1],

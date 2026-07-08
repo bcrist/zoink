@@ -650,8 +650,9 @@ pub fn MS_012G_02(comptime lead_count: comptime_int, comptime package_name: []co
 /// SOIC (208mil)
 pub fn MO_046B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
-        14, 16 => 10300,
-        20 => 12800,
+        8 => 5_250, // Not actually defined by MO-046, but it should be; it is a JEITA SOIC-8 that's commonly used for serial flash chips
+        14, 16 => 10_300,
+        20 => 12_800,
         else => unreachable,
     };
     return struct {
@@ -900,10 +901,10 @@ pub fn MO_118B(comptime lead_count: comptime_int, comptime package_name: []const
 
 /// Corresponds to E1 nominal dimension
 pub const MO_153_Body_Size = enum {
-    a, // 2.8mm
-    b, // 4.4mm
-    c, // 6.1mm
-    d, // 8mm
+    a, // 2.8mm / 110mil
+    b, // 4.4mm / 173mil
+    c, // 6.1mm / 240mil
+    d, // 8mm / 315mil
 };
 /// TSSOP
 pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_int, comptime body: MO_153_Body_Size, comptime package_name: []const u8) type {
@@ -981,7 +982,7 @@ pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
             },
         },
         650 => switch (body) {
-            .a => unreachable,
+            .a => unreachable, // might be looking for MO_187F_DA?
             .b => switch (lead_count) {
                 8 => 3000,
                 14, 16 => 5000,
@@ -2414,10 +2415,10 @@ pub fn MO_229(comptime lead_count: comptime_int, comptime pitch_um: comptime_int
                 400 => .init_mm_range(0.15, 0.25),
                 else => unreachable,
             },
-            .pin_seating = .init_mm_range(0.28, 0.3),
+            .pin_seating = .init_mm_range(0.28, 0.4),
             .heat_slug = if (has_heat_slug) .{
                 .width = .init_mm_range(0.5, width_mm - 0.64),
-                .height = .init_mm_range(0.5, height_mm - 0.7),
+                .height = .init_mm_range(0.5, height_mm - 1.2),
             } else null,
         };
     };

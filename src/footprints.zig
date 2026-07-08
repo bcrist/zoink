@@ -386,7 +386,6 @@ pub fn DIL(comptime data: DIL_Data, comptime density: Density) *const Footprint 
     return &final_result;
 }
 
-
 /// Rectangular SMD package, with square leads/pads on the edges of 2 or 4 sides.
 /// The same number of pins are placed on opposite sides.
 /// There may be a different number of pins on vertical vs. horizontal sides
@@ -478,7 +477,17 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint 
                 .location = .origin,
                 .w = .{ .um = @intCast(heat_slug.width.nominal_um) },
                 .h = .{ .um = @intCast(heat_slug.height.nominal_um) },
-                .shape = .default_rounded,
+                .shape = .{ .rect = .{
+                    .round_amount = .{
+                        .numer = 1,
+                        .denom = 10,
+                    },
+                    .chamfer_amount = .{},
+                    .top_left = .rounded,
+                    .top_right = .rounded,
+                    .bottom_left = .rounded,
+                    .bottom_right = .rounded,
+                }},
                 .layers = if (data.heat_slug_paste_areas.len == 0) smd_layers else smd_layers_no_paste,
                 .copper_layers = .all,
                 .teardrops = .{},
@@ -645,6 +654,167 @@ pub fn SMD(comptime data: SMD_Data, comptime density: Density) *const Footprint 
     const final_result = comptime result;
     return &final_result;
 }
+
+
+/// 4-terminal SMD crystal package
+/// Pin 1 is in the southwest corner.
+pub const SMD_Crystal_Data = struct {
+    package_name: []const u8,
+
+    overall: Rect,
+    max_z: Dim,
+
+    land_size: Rect,
+
+    pin_1_mark: ?Pin1_Mark_Type = null,
+    body_mark: ?Body_Mark_Type = null,
+
+    pub fn format(self: SMD_Crystal_Data, writer: *std.Io.Writer) !void {
+        try writer.writeAll(self.package_name);
+    }
+
+    pub fn num_pads(_: SMD_Crystal_Data) usize {
+        return 4;
+    }
+};
+pub fn SMD_Crystal(comptime data: SMD_Crystal_Data, comptime density: Density) *const Footprint {
+    @setEvalBranchQuota(100_000);
+    var result: Footprint = .{
+        .kind = .smd,
+        .name = data.package_name,
+    };
+
+    const courtyard_w: f64 = @floatFromInt(data.overall.width.max_um() + data.max_z.max_um() / 4);
+    const courtyard_h: f64 = @floatFromInt(data.overall.height.max_um() + data.max_z.max_um() / 4);
+
+    result.rects = &.{
+        .{
+            .start = .init_um(-courtyard_w / 2, -courtyard_h / 2),
+            .end = .init_um(courtyard_w / 2, courtyard_h / 2),
+            .layer = .courtyard_front,
+            .stroke = .{
+                .width = .init_mm(0.01),
+            },
+        }
+    };
+
+    generate_body_and_outline(&result, data.body_mark orelse .outline, data.overall, std.math.floatMax(f64));
+
+    const overall_width: f64 = @floatFromInt(data.overall.width.nominal_um);
+    const overall_height: f64 = @floatFromInt(data.overall.height.nominal_um);
+
+    const land_width_max: f64 = @floatFromInt(data.land_size.width.max_um());
+    const land_height_max: f64 = @floatFromInt(data.land_size.height.max_um());
+
+    const pad_interior_offset: f64 = 50;
+
+    const pad_width = land_width_max + switch (density) {
+        .dense => pad_interior_offset * 2,
+        .normal => pad_interior_offset + 500,
+        .loose => pad_interior_offset + 1200,
+    };
+
+    const pad_height = land_height_max + switch (density) {
+        .dense => pad_interior_offset * 2,
+        .normal => pad_interior_offset + 500,
+        .loose => pad_interior_offset + 1200,
+    };
+
+    const pad_x = (overall_width - land_width_max) / 2;
+    const pad_y = (overall_height - land_height_max) / 2;
+
+    for (&[_]Side { .south, .north }) |side| {
+        const xf: zm.Mat3 = switch (side) {
+            .south => .identity(),
+            .north => rotate_180,
+            else => unreachable,
+        };
+
+        result.rects = result.rects ++ .{
+            kicad.Rect {
+                .start = .init_um_transformed(xf, -overall_width / 2, overall_height / 2 - land_height_max),
+                .end = .init_um_transformed(xf, -overall_width / 2 + land_width_max, overall_height / 2),
+                .stroke = .{ .width = .zero },
+                .fill =  true,
+                .layer = .fab_front,
+            },
+            kicad.Rect {
+                .start = .init_um_transformed(xf, overall_width / 2 - land_width_max, overall_height / 2 - land_height_max),
+                .end = .init_um_transformed(xf, overall_width / 2, overall_height / 2),
+                .stroke = .{ .width = .zero },
+                .fill =  true,
+                .layer = .fab_front,
+            },
+        };
+
+        result.pads = result.pads ++ .{
+            kicad.Pad {
+                .pin = @enumFromInt(switch (side) {
+                    .south => 1,
+                    .north => 3,
+                    else => unreachable,
+                }),
+                .kind = .smd,
+                .location = .init_um_transformed(xf, -pad_x, pad_y),
+                .rotation = switch (side) {
+                    .south => .{},
+                    .north => kicad.Rotation._180,
+                    else => unreachable,
+                },
+                .w = .init_um(pad_width),
+                .h = .init_um(pad_height),
+                .shape = .square,
+                .shape_offset = .{
+                    .x = .init_um(-(pad_width / 2 - land_width_max / 2 - pad_interior_offset)),
+                    .y = .init_um(pad_height / 2 - land_height_max / 2 - pad_interior_offset),
+                },
+                .layers = smd_layers,
+                .copper_layers = .all,
+                .teardrops = .{},
+            },
+            kicad.Pad {
+                .pin = @enumFromInt(switch (side) {
+                    .south => 2,
+                    .north => 4,
+                    else => unreachable,
+                }),
+                .kind = .smd,
+                .location = .init_um_transformed(xf, pad_x, pad_y),
+                .rotation = switch (side) {
+                    .south => .{},
+                    .north => kicad.Rotation._180,
+                    else => unreachable,
+                },
+                .w = .init_um(pad_width),
+                .h = .init_um(pad_height),
+                .shape = .square,
+                .shape_offset = .{
+                    .x = .init_um(pad_width / 2 - land_width_max / 2 - pad_interior_offset),
+                    .y = .init_um(pad_height / 2 - land_height_max / 2 - pad_interior_offset),
+                },
+                .layers = smd_layers,
+                .copper_layers = .all,
+                .teardrops = .{},
+            },
+        };
+    }
+
+    generate_pin1_mark(&result, data.pin_1_mark orelse .none, .{
+        .pad_origin = translation(
+            -(overall_width / 2 - land_width_max - pad_interior_offset + pad_width / 2),
+            overall_height / 2 - land_height_max - pad_interior_offset + pad_height / 2,
+        ),
+        .pin_pitch = 0,
+        .pad_width = pad_width,
+        .pad_length = pad_height,
+        .is_first_pin_on_side = true,
+        .is_last_pin_on_side = false,
+    });
+
+    const final_result = comptime result;
+    return &final_result;
+}
+
 
 /// Rectangular SMD package with a small number of non-uniform square leads/pads, e.g. SOT-143, SOT-223, DPAK
 pub const SOT_Data = struct {
@@ -1296,6 +1466,7 @@ const Pin1_Mark_Extra = struct {
     pad_length: f64,
     is_first_pin_on_side: bool,
     is_last_pin_on_side: bool,
+    layer: Layer = .silkscreen_front,
 };
 pub fn generate_pin1_mark(result: *Footprint, mark: Pin1_Mark_Type, extra: Pin1_Mark_Extra) void {
     switch (mark) {
@@ -1322,6 +1493,7 @@ pub fn generate_pin1_mark(result: *Footprint, mark: Pin1_Mark_Type, extra: Pin1_
                         .width = .init_mm(0.1),
                     },
                     .fill = true,
+                    .layer = extra.layer,
                 },
             };
         },
@@ -1333,21 +1505,24 @@ pub fn generate_pin1_mark(result: *Footprint, mark: Pin1_Mark_Type, extra: Pin1_
                 result.lines = result.lines ++ .{
                     kicad.Line {
                         .start = .init_um_transformed(extra.pad_origin, -scale_x, -scale_y * 0.5),
-                        .end = .init_um_transformed(extra.pad_origin, -scale_x, scale_y)
+                        .end = .init_um_transformed(extra.pad_origin, -scale_x, scale_y),
+                        .layer = extra.layer,
                     },
                 };
             }
             result.lines = result.lines ++ .{
                 kicad.Line {
                     .start = .init_um_transformed(extra.pad_origin, -scale_x, scale_y),
-                    .end = .init_um_transformed(extra.pad_origin, scale_x, scale_y)
+                    .end = .init_um_transformed(extra.pad_origin, scale_x, scale_y),
+                    .layer = extra.layer,
                 },
             };
             if (extra.is_last_pin_on_side) {
                 result.lines = result.lines ++ .{
                     kicad.Line {
                         .start = .init_um_transformed(extra.pad_origin, scale_x, scale_y),
-                        .end = .init_um_transformed(extra.pad_origin, scale_x, -scale_y * 0.5)
+                        .end = .init_um_transformed(extra.pad_origin, scale_x, -scale_y * 0.5),
+                        .layer = extra.layer,
                     },
                 };
             }

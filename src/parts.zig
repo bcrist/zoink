@@ -1,4 +1,5 @@
 pub const jae = @import("parts/jae.zig");
+pub const molex = @import("parts/molex.zig");
 
 pub const _74 = @import("parts/74x.zig");
 
@@ -47,7 +48,7 @@ pub const SN74LVC00APW  = _74.x00(.init(.LVC, pkg.TSSOP_14));
 pub const SN74LVC1G00DBV = _74.x1G00(.init(.LVC, pkg.SOT23_5));
 pub const SN74LVC1G00DCK = _74.x1G00(.init(.LVC, pkg.SOT323_5));
 
-pub const SN74LVC2G00DCT = _74.x2G00(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC2G00DCT = _74.x2G00(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC2G00DCU = _74.x2G00(.init(.LVC, pkg.VSSOP_8));
 
 pub const SN74LVC1G10DBV = _74.x1G10(.init(.LVC, pkg.SOT23_6));
@@ -61,7 +62,7 @@ pub const SN74LVC08APW  = _74.x08(.init(.LVC, pkg.TSSOP_14));
 pub const SN74LVC1G08DBV = _74.x1G08(.init(.LVC, pkg.SOT23_5));
 pub const SN74LVC1G08DCK = _74.x1G08(.init(.LVC, pkg.SOT323_5));
 
-pub const SN74LVC2G08DCT = _74.x2G08(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC2G08DCT = _74.x2G08(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC2G08DCU = _74.x2G08(.init(.LVC, pkg.VSSOP_8));
 
 pub const SN74LVC1G11DBV = _74.x1G11(.init(.LVC, pkg.SOT23_6));
@@ -75,7 +76,7 @@ pub const SN74LVC02APW  = _74.x02(.init(.LVC, pkg.TSSOP_14));
 pub const SN74LVC1G02DBV = _74.x1G02(.init(.LVC, pkg.SOT23_5));
 pub const SN74LVC1G02DCK = _74.x1G02(.init(.LVC, pkg.SOT323_5));
 
-pub const SN74LVC2G02DCT = _74.x2G02(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC2G02DCT = _74.x2G02(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC2G02DCU = _74.x2G02(.init(.LVC, pkg.VSSOP_8));
 
 pub const SN74LVC1G27DBV = _74.x1G27(.init(.LVC, pkg.SOT23_6));
@@ -89,7 +90,7 @@ pub const SN74LVC32APW  = _74.x32(.init(.LVC, pkg.TSSOP_14));
 pub const SN74LVC1G32DBV = _74.x1G32(.init(.LVC, pkg.SOT23_5));
 pub const SN74LVC1G32DCK = _74.x1G32(.init(.LVC, pkg.SOT323_5));
 
-pub const SN74LVC2G32DCT = _74.x2G32(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC2G32DCT = _74.x2G32(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC2G32DCU = _74.x2G32(.init(.LVC, pkg.VSSOP_8));
 
 pub const SN74LVC1G332DBV = _74.x1G332(.init(.LVC, pkg.SOT23_6));
@@ -103,7 +104,7 @@ pub const SN74LVC86APW  = _74.x86(.init(.LVC, pkg.TSSOP_14));
 pub const SN74LVC1G86DBV = _74.x1G86(.init(.LVC, pkg.SOT23_5));
 pub const SN74LVC1G86DCK = _74.x1G86(.init(.LVC, pkg.SOT323_5));
 
-pub const SN74LVC2G86DCT = _74.x2G86(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC2G86DCT = _74.x2G86(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC2G86DCU = _74.x2G86(.init(.LVC, pkg.VSSOP_8));
 
 pub const SN74LVC1G386DBV = _74.x1G386(.init(.LVC, pkg.SOT23_6));
@@ -141,7 +142,7 @@ pub const SN74LVC1G19DBV = _74.x1G19(.init(.LVC, pkg.SOT23_6));
 pub const SN74LVC1G19DCK = _74.x1G19(.init(.LVC, pkg.SOT323_6));
 
 // 2:3 Decoder
-pub const SN74LVC1G29DCT = _74.x1G29(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC1G29DCT = _74.x1G29(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC1G29DCU = _74.x1G29(.init(.LVC, pkg.VSSOP_8));
 
 // 2:4 Decoder
@@ -149,7 +150,7 @@ pub const SN74LVC139AD = _74.x139(.init(.LVC, pkg.SOIC_16_150));
 pub const SN74LVC139ADB = _74.x139(.init(.LVC, pkg.SSOP_16));
 pub const SN74LVC139APW = _74.x139(.init(.LVC, pkg.TSSOP_16));
 
-pub const SN74LVC1G139DCT = _74.x1G139(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC1G139DCT = _74.x1G139(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC1G139DCU = _74.x1G139(.init(.LVC, pkg.VSSOP_8));
 
 // 3:8 Decoder
@@ -158,19 +159,19 @@ pub const SN74LVC138ADB = _74.x138(.init(.LVC, pkg.SSOP_16));
 pub const SN74LVC138APW = _74.x138(.init(.LVC, pkg.TSSOP_16));
 
 // D FF
-pub const SN74LVC1G74DCT = _74.x1G74(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC1G74DCT = _74.x1G74(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC1G74DCU = _74.x1G74(.init(.LVC, pkg.VSSOP_8));
 
 pub const SN74LVC1G79DBV = _74.x1G79(.init(.LVC, pkg.SOT23_5));
 pub const SN74LVC1G79DCK = _74.x1G79(.init(.LVC, pkg.SOT323_5));
 
-pub const SN74LVC2G79DCT = _74.x2G79(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC2G79DCT = _74.x2G79(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC2G79DCU = _74.x2G79(.init(.LVC, pkg.VSSOP_8));
 
 pub const SN74LVC1G80DBV = _74.x1G80(.init(.LVC, pkg.SOT23_5));
 pub const SN74LVC1G80DCK = _74.x1G80(.init(.LVC, pkg.SOT323_5));
 
-pub const SN74LVC2G80DCT = _74.x2G80(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC2G80DCT = _74.x2G80(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC2G80DCU = _74.x2G80(.init(.LVC, pkg.VSSOP_8));
 
 pub const SN74LVC1G175DBV = _74.x1G175(.init(.LVC, pkg.SOT23_6));
@@ -208,10 +209,10 @@ pub const SN74LVC1G125DCK = _74.x1G125(.init(.LVC, pkg.SOT323_5));
 pub const SN74LVC1G126DBV = _74.x1G126(.init(.LVC, pkg.SOT23_5));
 pub const SN74LVC1G126DCK = _74.x1G126(.init(.LVC, pkg.SOT323_5));
 
-pub const SN74LVC2G125DCT = _74.x2G125(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC2G125DCT = _74.x2G125(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC2G125DCU = _74.x2G125(.init(.LVC, pkg.VSSOP_8));
 
-pub const SN74LVC2G126DCT = _74.x2G126(.init(.LVC, pkg.TSSOP_8));
+pub const SN74LVC2G126DCT = _74.x2G126(.init(.LVC, pkg.TSSOP_8_110));
 pub const SN74LVC2G126DCU = _74.x2G126(.init(.LVC, pkg.VSSOP_8));
 
 pub const SN74LVC541ADB  = _74.x541(.init(.LVC, pkg.SSOP_20));
@@ -394,6 +395,13 @@ pub const GS72116TP = sram.Async_16b("GS72116", 17, power.Multi(2, 2, .p3v3, C04
 pub const GS72116J  = sram.Async_16b("GS72116", 17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.SOJ_44);
 pub const GS72116U  = sram.Async_16b("GS72116", 17, power.Multi(2, 2, .p3v3, C0402_Decoupler), LVTTL, sram.Pins_16b_GSI, pkg.BGA_48_6mm_8mm);
 
+pub const flash = @import("parts/flash.zig");
+
+pub const ZD25Q80CT = flash.QSPI("ZD25Q80CT", power.Single(.p3v3, C0402_Decoupler), LVCMOS, pkg.SOIC_8_150);
+pub const ZD25Q80CS = flash.QSPI("ZD25Q80CS", power.Single(.p3v3, C0402_Decoupler), LVCMOS, pkg.SOIC_8_208);
+pub const ZD25Q80CO = flash.QSPI("ZD25Q80CO", power.Single(.p3v3, C0402_Decoupler), LVCMOS, pkg.TSSOP_8_173);
+pub const ZD25Q80CU = flash.QSPI("ZD25Q80CU", power.Single(.p3v3, C0402_Decoupler), LVCMOS, pkg.DFN_8_3x2_EP);
+
 pub const i2c = @import("parts/i2c.zig");
 
 pub const EMC1702 = i2c.EMC1702(C0402_Decoupler);
@@ -451,6 +459,7 @@ pub const Resistor_Kelvin = passive.Resistor_Kelvin;
 pub const Cap = passive.Cap;
 pub const Cap_Decoupler = passive.Cap_Decoupler;
 pub const Inductor = passive.Inductor;
+pub const Crystal = passive.Crystal;
 
 pub const R1206 = Resistor(pkg.R1206);
 pub const R0805 = Resistor(pkg.R0805);
@@ -487,7 +496,7 @@ pub fn Connector(comptime name: []const u8, comptime n: comptime_int, comptime P
         base: Part.Base = .{
             .package = if (Pkg == void) undefined else &Pkg.pkg,
             .prefix = .J,
-            .bom_name = "J: " ++ name,
+            .bom_name = if (name.len > 0) "J: " ++ name else "",
         },
 
         p: [n + 1]Net_ID = initial: {
@@ -498,6 +507,50 @@ pub fn Connector(comptime name: []const u8, comptime n: comptime_int, comptime P
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return self.p[@intFromEnum(pin_id)];
+        }
+    };
+}
+
+pub fn Fan_Tach(comptime Power: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .J,
+        },
+
+        pwr: Power = .{},
+        tach_oc: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.pwr.gnd,
+                2 => self.pwr.vcc(0),
+                3 => self.tach_oc,
+                else => unreachable
+            };
+        }
+    };
+}
+
+pub fn Fan_PWM(comptime Power: type, comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .J,
+        },
+
+        pwr: Power = .{},
+        tach_oc: Net_ID = .unset,
+        pwm: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.pwr.gnd,
+                2 => self.pwr.vcc(0),
+                3 => self.tach_oc,
+                4 => self.pwm,
+                else => unreachable,
+            };
         }
     };
 }

@@ -191,7 +191,7 @@ pub const Layer = enum (u8) {
     }
 
     pub fn flip_sides_set(set: std.EnumSet(Layer)) std.EnumSet(Layer) {
-        var new_set: std.EnumSet(Layer) = .initEmpty();
+        var new_set: std.EnumSet(Layer) = .empty;
         var iter = set.iterator();
         while (iter.next()) |layer| {
             new_set.insert(layer.flip_sides());
@@ -274,7 +274,7 @@ pub const Layer = enum (u8) {
 
     pub fn parse_set(name: []const u8) std.EnumSet(Layer) {
         if (std.mem.eql(u8, name, "*.Cu")) {
-            var result: std.EnumSet(Layer) = .initEmpty();
+            var result: std.EnumSet(Layer) = .empty;
             inline for (comptime std.enums.values(Layer)) |layer| {
                 if (comptime layer.is_copper()) result.insert(layer);
             }
@@ -282,23 +282,23 @@ pub const Layer = enum (u8) {
         } else if (std.mem.startsWith(u8, name, "*.")) {
             var buf: [64]u8 = undefined;
             var w = std.Io.Writer.fixed(&buf);
-            w.print("F.{s}", .{ name["*.".len ..] }) catch return .initEmpty();
+            w.print("F.{s}", .{ name["*.".len ..] }) catch return .empty;
             if (from_kicad_name(w.buffered())) |layer| {
                 return .initMany(&.{ layer, layer.flip_sides() });
             } else {
-                return .initEmpty();
+                return .empty;
             }
         } else if (std.mem.startsWith(u8, name, "F&B.")) {
             var buf: [64]u8 = undefined;
             var w = std.Io.Writer.fixed(&buf);
-            w.print("F.{s}", .{ name["F&B.".len ..] }) catch return .initEmpty();
+            w.print("F.{s}", .{ name["F&B.".len ..] }) catch return .empty;
             if (from_kicad_name(w.buffered())) |layer| {
                 return .initMany(&.{ layer, layer.flip_sides() });
             } else {
-                return .initEmpty();
+                return .empty;
             }
         } else {
-            return if (from_kicad_name(name)) |layer| .initOne(layer) else .initEmpty();
+            return if (from_kicad_name(name)) |layer| .initOne(layer) else .empty;
         }
     }
 

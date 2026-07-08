@@ -81,6 +81,8 @@ The generated file can be routed/edited in pcbnew, and if you discover that part
 * Trace spacing optimization
 * Curved traces & teardrops
 * "channels" - autoroute a whole bus at one time by specifying the bounding polygon and entry/exit points for each signal
+* Consider expanding validator logic to store a voltage range for each node rather than a single voltage.  This would allow checking that Vih/Vil are maintained across the entire Voh/Vol range of the driver.  Main question here is how to handle this for complex circuits/MNA?  Maybe if there are more than 2 voltage sources, simulate via MNA twice for each ranged voltage source - once at min and once at max, and all other sources are set to their mean.  Not perfect, but at least has linear complexity instead of exponential, and circuits with more than two ranged voltage sources should be quite rare.  Maybe also two extra checks: one where *every* source is set to min simultaneously, and one where every source is set to max?  Another concern is detection of power overload in resistive elements - may need to either store min/max current through resistive elements or include power rating with impedance information and check during MNA passes instead of only during commit phase.
+* Make Net_ID a strict superset of Voltage, with p15v, p19v, p24v, no_connect, and unset as other non-net sentinel values
 
 ## Non-Features
 These are outside the scope of the project and likely will never be considered:
