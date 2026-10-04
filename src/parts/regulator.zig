@@ -1,7 +1,11 @@
 pub fn Linear_SOT23(comptime part_number: []const u8, comptime Input_Cap: type, comptime Output_Cap: type, comptime vout: Net_ID, comptime max_vin: Voltage) type {
+    return Linear_5pin(part_number, Input_Cap, Output_Cap, vout, max_vin, pkg.SOT23_5);
+}
+
+pub fn Linear_5pin(comptime part_number: []const u8, comptime Input_Cap: type, comptime Output_Cap: type, comptime vout: Net_ID, comptime max_vin: Voltage, comptime Pkg: type) type {
     return struct {
         base: Part.Base = .{
-            .package = &pkg.SOT23_5.pkg,
+            .package = &Pkg.pkg,
             .prefix = .U,
             .value = part_number,
         },
@@ -12,49 +16,24 @@ pub fn Linear_SOT23(comptime part_number: []const u8, comptime Input_Cap: type, 
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
-                1 => self.pwr_in.vcc,
+                1 => self.pwr_in.vcc(0),
                 2 => self.pwr_in.gnd,
                 3 => self.enable,
                 4 => .no_connect,
-                5 => @field(self.pwr_out, @tagName(vout))[0],
+                5 => self.pwr_out.vcc(0),
                 else => unreachable,
             };
         }
-
+        
         pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {},
                 .commit => {
-                    try v.expect_below(self.pwr_in.vcc, max_vin);
+                    try v.expect_below(self.pwr_in.vcc(0), max_vin);
                     try v.expect_below(self.enable, max_vin);
                 },
                 .nets_only => {},
             }
-        }
-    };
-}
-
-pub fn Linear_5pin(comptime Pkg: type) type {
-    return struct {
-        base: Part.Base = .{
-            .package = &Pkg.pkg,
-            .prefix = .U,
-        },
-
-        v_in: Net_ID = .unset,
-        enable: Net_ID = .unset,
-        gnd: Net_ID = .gnd,
-        v_out: Net_ID = .unset,
-
-        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
-                1 => self.v_in,
-                2 => self.gnd,
-                3 => self.enable,
-                4 => .no_connect,
-                5 => self.v_out,
-                else => unreachable,
-            };
         }
     };
 }

@@ -48,7 +48,7 @@ pub fn Cap(comptime Pkg: type) type {
     };
 }
 
-pub fn Cap_Decoupler(comptime Pkg: type) type {
+pub fn Cap_Decoupler(comptime Pkg: type, comptime value_nf: comptime_float) type {
     return struct {
         base: Part.Base = .{
             .package = &Pkg.pkg,
@@ -57,7 +57,7 @@ pub fn Cap_Decoupler(comptime Pkg: type) type {
         gnd: Net_ID = .gnd,
         internal: Net_ID = .unset,
         external: Net_ID = .unset,
-        value_nf: f32 = 100,
+        value_nf: f32 = value_nf,
         voltage_rating: f32 = 50,
         dielectric: []const u8 = "",
 
@@ -245,6 +245,34 @@ pub fn Inductor(comptime Pkg: type) type {
                 .reset => {},
                 .commit => {},
                 .nets_only => try v.connect_nets(self.a, self.b, 0.1),
+            }
+        }
+    };
+}
+
+pub fn Diode(comptime Pkg: type) type {
+    return struct {
+        base: Part.Base = .{
+            .package = &Pkg.pkg,
+            .prefix = .D,
+        },
+        k: Net_ID = .unset,
+        a: Net_ID = .unset,
+
+        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+            return switch (@intFromEnum(pin_id)) {
+                1 => self.k,
+                2 => self.a,
+                else => .unset
+            };
+        }
+
+        pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
+            if (!self.base.populate) return;
+            switch (mode) {
+                .reset => {},
+                .commit => {},
+                .nets_only => try v.connect_nets(self.a, self.k, 0.1),
             }
         }
     };

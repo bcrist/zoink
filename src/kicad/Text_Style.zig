@@ -14,7 +14,7 @@ justify: ?Justification = null,
 baseline: ?Baseline = null,
 
 pub const names_and_descriptions: Text_Style = .{
-    .layer = .names,
+    .layer = .names_front,
     .thickness = .init_mm(0.025),
     .size_y = .init_mm(0.25),
     .aspect_ratio = .{},
@@ -23,7 +23,7 @@ pub const names_and_descriptions: Text_Style = .{
 };
 
 pub const designators: Text_Style = .{
-    .layer = .designators,
+    .layer = .designators_front,
     .thickness = .init_mm(0.05),
     .size_y = .init_mm(0.5),
     .aspect_ratio = .{},
@@ -32,7 +32,7 @@ pub const designators: Text_Style = .{
 };
 
 pub const values: Text_Style = .{
-    .layer = .values,
+    .layer = .values_front,
     .thickness = .init_mm(0.05),
     .size_y = .init_mm(0.5),
     .aspect_ratio = .{},

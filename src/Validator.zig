@@ -20,7 +20,7 @@ const Circuit = union (enum) {
     none,
     simplex: Simplex,
     divider: [2]Simplex,
-    complex: usize,
+    complex: usize, // index into circuits.items
 
     pub const Simplex = struct {
         v: f32,
@@ -39,7 +39,7 @@ const Circuit = union (enum) {
         };
 
         pub const Resistor = struct {
-            r: f32,
+            r: f32, // TODO switch to storing conductance instead of resistance
             node_a: u32,
             node_b: u32,
         };

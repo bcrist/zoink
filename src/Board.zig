@@ -1115,9 +1115,12 @@ fn write_layers(w: *sx.Writer) !void {
         .courtyard_back,
         .fab_front,
         .fab_back,
-        .names,
-        .values,
-        .designators,
+        .names_front,
+        .values_front,
+        .designators_front,
+        .names_back,
+        .values_back,
+        .designators_back,
     };
 
     for (layers) |layer| {
@@ -1439,6 +1442,11 @@ fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Loc
                 },
             },
         });
+        if (fp.layer != .copper_front) {
+            for (properties.items) |*prop| {
+                prop.text.style.layer = prop.text.style.get_layer().flip_sides();
+            }
+        }
         
         if (needed_layer != fp.layer or needed_rotation.deg != fp.rotation.deg) {
             const rotation_delta = needed_rotation.deg - fp.rotation.deg;
@@ -1582,35 +1590,45 @@ fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Loc
                     if (!options.reset_property_attributes) {
                         properties.items[0].text.location = prop.text.location;
                         properties.items[0].text.rotation = prop.text.rotation;
+                        const old_layer = properties.items[0].text.style.get_layer();
                         properties.items[0].text.style = prop.text.style;
+                        properties.items[0].text.style.layer = old_layer;
                     }
                 } else if (std.mem.eql(u8, prop.name, "Reference")) {
                     properties.items[1].text.uuid = prop.text.uuid;
                     if (!options.reset_property_attributes) {
                         properties.items[1].text.location = prop.text.location;
                         properties.items[1].text.rotation = prop.text.rotation;
+                        const old_layer = properties.items[1].text.style.get_layer();
                         properties.items[1].text.style = prop.text.style;
+                        properties.items[1].text.style.layer = old_layer;
                     }
                 } else if (std.mem.eql(u8, prop.name, "Name")) {
                     properties.items[2].text.uuid = prop.text.uuid;
                     if (!options.reset_property_attributes) {
                         properties.items[2].text.location = prop.text.location;
                         properties.items[2].text.rotation = prop.text.rotation;
+                        const old_layer = properties.items[2].text.style.get_layer();
                         properties.items[2].text.style = prop.text.style;
+                        properties.items[2].text.style.layer = old_layer;
                     }
                 } else if (std.mem.eql(u8, prop.name, "Value")) {
                     properties.items[3].text.uuid = prop.text.uuid;
                     if (!options.reset_property_attributes) {
                         properties.items[3].text.location = prop.text.location;
                         properties.items[3].text.rotation = prop.text.rotation;
+                        const old_layer = properties.items[3].text.style.get_layer();
                         properties.items[3].text.style = prop.text.style;
+                        properties.items[3].text.style.layer = old_layer;
                     }
                 } else if (std.mem.eql(u8, prop.name, "Datasheet")) {
-                    properties.items[4].text = prop.text;
+                    properties.items[4].text.uuid = prop.text.uuid;
                     if (!options.reset_property_attributes) {
                         properties.items[4].text.location = prop.text.location;
                         properties.items[4].text.rotation = prop.text.rotation;
+                        const old_layer = properties.items[4].text.style.get_layer();
                         properties.items[4].text.style = prop.text.style;
+                        properties.items[4].text.style.layer = old_layer;
                     }
                 } else {
                     try properties.append(arena, prop);

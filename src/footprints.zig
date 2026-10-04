@@ -1256,7 +1256,7 @@ pub fn PGA(comptime data: PGA_Data, comptime density: Density) *const Footprint 
         .pad_origin = translation(
             -@as(f64, @floatFromInt(data.body.width.max_um())) / 2,
             -@as(f64, @floatFromInt(data.body.height.max_um())) / 2,
-        ).multiply(.rotation(@as(f64, std.math.pi) * 0.75)),
+        ).multiply(rotation(@as(f64, std.math.pi) * 0.75)),
         .pin_pitch = @min(pin_pitch_x, pin_pitch_y),
         .pad_width = pad_diameter,
         .pad_length = pad_diameter,
@@ -1702,7 +1702,7 @@ fn translation(x: f64, y: f64) zm.Mat3 {
     };
 }
 
-fn rotation(angle: f64) zm.Mat3 {
+pub fn rotation(angle: f64) zm.Mat3 {
     const rads = angle;
     const cos = std.math.cos(rads);
     const sin = std.math.sin(rads);

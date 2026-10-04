@@ -1,8 +1,9 @@
+pub const mounting_hole = @import("parts/mounting_hole.zig");
 pub const jae = @import("parts/jae.zig");
 pub const molex = @import("parts/molex.zig");
+pub const sullins = @import("parts/sullins.zig");
 
 pub const _74 = @import("parts/74x.zig");
-
 
 // Buffer
 pub const SN74LVC1G34DBV = _74.x1G34(.init(.LVC, pkg.SOT23_5));
@@ -219,6 +220,7 @@ pub const SN74LVC541ADB  = _74.x541(.init(.LVC, pkg.SSOP_20));
 pub const SN74LVC541ADGV = _74.x541(.init(.LVC, pkg.TVSOP_20));
 pub const SN74LVC541ADW  = _74.x541(.init(.LVC, pkg.SOIC_20_300));
 pub const SN74LVC541APW  = _74.x541(.init(.LVC, pkg.TSSOP_20));
+pub const SN74HCT541APW  = _74.x541(.init(.HCT, pkg.TSSOP_20));
 
 pub const SN74LVT16244BDL    = _74.x16244(.init(.LVT, pkg.SSOP_48), false);
 pub const SN74LVT16244BDGG   = _74.x16244(.init(.LVT, pkg.TSSOP_48), false);
@@ -412,7 +414,7 @@ pub const EMC1815 = i2c.EMC1815(C0402_Decoupler);
 
 pub const mcu = @import("parts/mcu.zig");
 
-pub const RP2040 = mcu.RP2040(C0402_Decoupler);
+pub const RP2040 = mcu.RP2040;
 pub const RP2350A = mcu.RP235xA("RP2350A", C0402_Decoupler);
 pub const RP2354A = mcu.RP235xA("RP2354A", C0402_Decoupler);
 pub const RP2350B = mcu.RP235xB("RP2350B", C0402_Decoupler);
@@ -420,9 +422,9 @@ pub const RP2354B = mcu.RP235xB("RP2354B", C0402_Decoupler);
 
 pub const regulator = @import("parts/regulator.zig");
 
-pub const TLV77318PDBV = regulator.Linear_SOT23("TLV77318PDBV", C0805_Decoupler, C0805_Decoupler, .p1v8, .from_float(5.5));
-pub const TLV77325PDBV = regulator.Linear_SOT23("TLV77325PDBV", C0805_Decoupler, C0805_Decoupler, .p2v5, .from_float(5.5));
-pub const TLV77333PDBV = regulator.Linear_SOT23("TLV77333PDBV", C0805_Decoupler, C0805_Decoupler, .p3v3, .from_float(5.5));
+pub const TLV77318PDBV = regulator.Linear_SOT23("TLV77318PDBV", C0805_Decoupler_1uf, C0805_Decoupler_1uf, .p1v8, .from_float(5.5));
+pub const TLV77325PDBV = regulator.Linear_SOT23("TLV77325PDBV", C0805_Decoupler_1uf, C0805_Decoupler_1uf, .p2v5, .from_float(5.5));
+pub const TLV77333PDBV = regulator.Linear_SOT23("TLV77333PDBV", C0805_Decoupler_1uf, C0805_Decoupler_1uf, .p3v3, .from_float(5.5));
 
 pub const AP62300TWU = regulator.AP62300TWU;
 
@@ -459,6 +461,7 @@ pub const Resistor_Kelvin = passive.Resistor_Kelvin;
 pub const Cap = passive.Cap;
 pub const Cap_Decoupler = passive.Cap_Decoupler;
 pub const Inductor = passive.Inductor;
+pub const Diode = passive.Diode;
 pub const Crystal = passive.Crystal;
 
 pub const R1206 = Resistor(pkg.R1206);
@@ -479,17 +482,29 @@ pub const C0603 = Cap(pkg.C0603);
 pub const C0402 = Cap(pkg.C0402);
 pub const C0201 = Cap(pkg.C0201);
 
-pub const C1206_Decoupler = Cap_Decoupler(pkg.C1206K);
-pub const C0805_Decoupler = Cap_Decoupler(pkg.C0805K);
-pub const C0603_Decoupler = Cap_Decoupler(pkg.C0603K);
-pub const C0402_Decoupler = Cap_Decoupler(pkg.C0402K);
-pub const C0201_Decoupler = Cap_Decoupler(pkg.C0201K);
+pub const C1206_Decoupler = Cap_Decoupler(pkg.C1206K, 100);
+pub const C0805_Decoupler = Cap_Decoupler(pkg.C0805K, 100);
+pub const C0603_Decoupler = Cap_Decoupler(pkg.C0603K, 100);
+pub const C0402_Decoupler = Cap_Decoupler(pkg.C0402K, 100);
+pub const C0201_Decoupler = Cap_Decoupler(pkg.C0201K, 100);
+
+pub const C1206_Decoupler_1uf = Cap_Decoupler(pkg.C1206K, 1000);
+pub const C0805_Decoupler_1uf = Cap_Decoupler(pkg.C0805K, 1000);
+pub const C0603_Decoupler_1uf = Cap_Decoupler(pkg.C0603K, 1000);
+pub const C0402_Decoupler_1uf = Cap_Decoupler(pkg.C0402K, 1000);
+pub const C0201_Decoupler_1uf = Cap_Decoupler(pkg.C0201K, 1000);
 
 pub const L1206 = Inductor(pkg.L1206);
 pub const L0805 = Inductor(pkg.L0805);
 pub const L0603 = Inductor(pkg.L0603);
 pub const L0402 = Inductor(pkg.L0402);
 pub const L0201 = Inductor(pkg.L0201);
+
+pub const D1206 = Diode(pkg.D1206);
+pub const D0805 = Diode(pkg.D0805);
+pub const D0603 = Diode(pkg.D0603);
+pub const D0402 = Diode(pkg.D0402);
+pub const D0201 = Diode(pkg.D0201);
 
 pub fn Connector(comptime name: []const u8, comptime n: comptime_int, comptime Pkg: type) type {
     return struct {

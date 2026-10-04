@@ -92,3 +92,11 @@ These are outside the scope of the project and likely will never be considered:
 * Import of KiCAD files
 * CAM Export (gerbers/drills)
 * 3D Board Rendering
+
+## Branches
+| Zig Version  | Recommended Branch |
+|--------------|--------------------|
+| 0.18.0-dev.* | zig-master         |
+| 0.17.0       | main               |
+| 0.16.0       | zig-0.16           |
+| 0.15.2       | zig-0.15           |

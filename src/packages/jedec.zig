@@ -857,6 +857,47 @@ pub fn MO_150B(comptime lead_count: comptime_int, comptime package_name: []const
     };
 }
 
+/// 64 pin, 0.8mm pitch, ~12mm body width
+/// a.k.a. SSOP-64, PDSO-64, TSOP-II-64
+/// Most common use is dual port graphics DRAM from 90's, e.g.
+/// NEC uPD4824[45]
+/// OKI MSM5416283
+/// Samsung KM4216C256
+/// TI TMS551[67][0156]
+pub fn MO_117A(comptime package_name: []const u8) type {
+    return struct {
+        pub const pkg: Package = .{
+            .default_footprint = fp.SMD(data, .normal),
+            .has_pin = has_pin,
+        };
+
+        pub fn has_pin(pin: Pin_ID) bool {
+            return switch (@intFromEnum(pin)) {
+                1...64 => true,
+                else => false,
+            };
+        }
+
+        pub const data: SMD_Data = .{
+            .package_name = package_name,
+            .body = .{
+                .width  = .{ .nominal_um = 26300, .tolerance_um = 130 },
+                .height = .{ .nominal_um = 11700, .tolerance_um = 1000 },
+            },
+            .overall = .{
+                .width  = .{ .nominal_um = 26300, .tolerance_um = 130 },
+                .height = .{ .nominal_um = 14000, .tolerance_um = 500 },
+            },
+            .max_z = .{ .nominal_um = 2380, .tolerance_um = 0 },
+            .total_pins = 64,
+            .pins_on_first_side = 32,
+            .pin_pitch = .{ .nominal_um = 800, .tolerance_um = 0 },
+            .pin_width = .{ .nominal_um = 375, .tolerance_um = 75 },
+            .pin_seating = .{ .nominal_um = 500, .tolerance_um = 100 },
+        };
+    };
+}
+
 /// SSOP (300mil)
 pub fn MO_118B(comptime lead_count: comptime_int, comptime package_name: []const u8) type {
     const body_width = switch (lead_count) {
@@ -2226,6 +2267,7 @@ pub fn MO_229(comptime lead_count: comptime_int, comptime pitch_um: comptime_int
     }
 
     const width_mm: comptime_float, const height_mm: comptime_float = switch (dim) {
+        .@"1.5x1"           => .{ 1, 1.5 },
         .@"1.5x1.5"         => .{ 1.5, 1.5 },
         .@"2x1"             => .{ 1, 2 },
         .@"2x1.5"           => .{ 1.5, 2 },
@@ -2279,7 +2321,7 @@ pub fn MO_229(comptime lead_count: comptime_int, comptime pitch_um: comptime_int
         },
         .@"2x2.5" => switch (lead_count) {
             4 => std.debug.assert(pitch_um == 800),
-            6, 8 => std.debug.assert(pitch_um == 500),
+            6, 8, 10 => std.debug.assert(pitch_um == 500),
             else => unreachable,
         },
         .@"2x3" => switch (lead_count) {

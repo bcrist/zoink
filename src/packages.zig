@@ -1,7 +1,9 @@
+pub const mounting_hole = @import("packages/mounting_hole.zig");
 pub const jedec = @import("packages/jedec.zig");
 pub const pga = @import("packages/pga.zig");
 pub const jae = @import("packages/jae.zig");
 pub const molex = @import("packages/molex.zig");
+pub const sullins = @import("packages/sullins.zig");
 pub const xtal = @import("packages/xtal.zig");
 
 pub const DIP8 = jedec.MS_001D(8, "DIP-8");
@@ -130,7 +132,7 @@ pub const QFN_80_10x10_EP = jedec.MO_220K01(80, 20, 400, .@"10x10", true, .very_
 
 pub const DFN_8_3x2_EP = jedec.MO_229(8, 500, .@"2x3", true, .ultra_thin, "DFN-8 (3mm x 2mm) EP"); // a.k.a. USON-8
 pub const DFN_8_2x2_EP = jedec.MO_229(8, 500, .@"2x2", true, .very_very_thin, "DFN-8 (2mm) EP");
-pub const @"DFN_10_2.5x2_EP" = jedec.MO_229(10, 500, .@"2x2.5", true, .very_thin, "DFN-10 (2.5mm x 2mm) EP");
+pub const @"DFN_10_2.5x2" = jedec.MO_229(10, 500, .@"2x2.5", false, .very_thin, "DFN-10 (2.5mm x 2mm)");
 
 pub const TSOP_II_32 = jedec.MS_024H(32, 1270, "TSOP-II-32");
 pub const TSOP_II_44 = jedec.MS_024H(44, 800, "TSOP-II-44");
@@ -188,11 +190,11 @@ pub const BGA_p040_132_6mm = lattice.ucBGA132;
 
 pub const lcr = @import("packages/lcr.zig");
 
-pub const R1206 = lcr._1206(550, "R1206");
-pub const R0805 = lcr._0805(550, "R0805");
-pub const R0603 = lcr._0603(450, "R0603");
-pub const R0402 = lcr._0402(350, "R0402");
-pub const R0201 = lcr._0201(230, "R0201");
+pub const R1206 = lcr._1206(550, false, "R1206");
+pub const R0805 = lcr._0805(550, false, "R0805");
+pub const R0603 = lcr._0603(450, false, "R0603");
+pub const R0402 = lcr._0402(350, false, "R0402");
+pub const R0201 = lcr._0201(230, false, "R0201");
 
 pub const R1206K = lcr.K1206(550, "R1206");
 pub const R0805K = lcr.K0805(550, "R0805");
@@ -200,11 +202,17 @@ pub const R0603K = lcr.K0603(450, "R0603");
 pub const R0402K = lcr.K0402(350, "R0402");
 pub const R0201K = lcr.K0201(230, "R0201");
 
-pub const C1206 = lcr._1206(1750, "C1206");
-pub const C0805 = lcr._0805(1350, "C0805");
-pub const C0603 = lcr._0603(950, "C0603");
-pub const C0402 = lcr._0402(550, "C0402");
-pub const C0201 = lcr._0201(330, "C0201");
+pub const C1206 = lcr._1206(1750, false, "C1206");
+pub const C0805 = lcr._0805(1350, false, "C0805");
+pub const C0603 = lcr._0603(950, false, "C0603");
+pub const C0402 = lcr._0402(550, false, "C0402");
+pub const C0201 = lcr._0201(330, false, "C0201");
+
+pub const C1206P = lcr._1206(1750, true, "C1206");
+pub const C0805P = lcr._0805(1350, true, "C0805");
+pub const C0603P = lcr._0603(950, true, "C0603");
+pub const C0402P = lcr._0402(550, true, "C0402");
+pub const C0201P = lcr._0201(330, true, "C0201");
 
 pub const C1206K = lcr.K1206(1750, "C1206");
 pub const C0805K = lcr.K0805(1350, "C0805");
@@ -212,8 +220,14 @@ pub const C0603K = lcr.K0603(950, "C0603");
 pub const C0402K = lcr.K0402(550, "C0402");
 pub const C0201K = lcr.K0201(330, "C0201");
 
-pub const L1206 = lcr._1206(1750, "L1206");
-pub const L0805 = lcr._0805(1350, "L0805");
-pub const L0603 = lcr._0603(950, "L0603");
-pub const L0402 = lcr._0402(550, "L0402");
-pub const L0201 = lcr._0201(330, "L0201");
+pub const L1206 = lcr._1206(1750, false, "L1206");
+pub const L0805 = lcr._0805(1350, false, "L0805");
+pub const L0603 = lcr._0603(950, false, "L0603");
+pub const L0402 = lcr._0402(550, false, "L0402");
+pub const L0201 = lcr._0201(330, false, "L0201");
+
+pub const D1206 = lcr._1206(1750, true, "D1206");
+pub const D0805 = lcr._0805(1350, true, "D0805");
+pub const D0603 = lcr._0603(950, true, "D0603");
+pub const D0402 = lcr._0402(550, true, "D0402");
+pub const D0201 = lcr._0201(330, true, "D0201");

@@ -65,7 +65,7 @@ pub fn EMC1812(comptime Decoupler: type) type {
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 0 => self.pwr.gnd,
-                1 => self.pwr.vcc,
+                1 => self.pwr.vcc(0),
                 2 => self.@"d+",
                 3 => self.@"d-",
                 4 => self.@"n_therm/address_sel",
@@ -86,7 +86,7 @@ pub fn EMC1812(comptime Decoupler: type) type {
 pub fn EMC1813(comptime Decoupler: type) type {
     return struct {
         base: Part.Base = .{
-            .package = &pkg.@"DFN_10_2.5x2_EP".pkg,
+            .package = &pkg.@"DFN_10_2.5x2".pkg,
             .prefix = .U,
             .value = "EMC1813",
         },
@@ -104,7 +104,7 @@ pub fn EMC1813(comptime Decoupler: type) type {
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 0 => self.pwr.gnd,
-                1 => self.pwr.vcc,
+                1 => self.pwr.vcc(0),
                 2 => self.@"d1+",
                 3 => self.@"d1-",
                 4 => self.@"d2+",
@@ -127,7 +127,7 @@ pub fn EMC1813(comptime Decoupler: type) type {
 pub fn EMC1814(comptime Decoupler: type) type {
     return struct {
         base: Part.Base = .{
-            .package = &pkg.@"DFN_10_2.5x2_EP".pkg,
+            .package = &pkg.@"DFN_10_2.5x2".pkg,
             .prefix = .U,
             .value = "EMC1814",
         },
@@ -145,7 +145,7 @@ pub fn EMC1814(comptime Decoupler: type) type {
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 0 => self.pwr.gnd,
-                1 => self.pwr.vcc,
+                1 => self.pwr.vcc(0),
                 2 => self.@"d1+",
                 3 => self.@"d1-",
                 4 => self.@"d2+/d3-",
@@ -168,7 +168,7 @@ pub fn EMC1814(comptime Decoupler: type) type {
 pub fn EMC1815(comptime Decoupler: type) type {
     return struct {
         base: Part.Base = .{
-            .package = &pkg.@"DFN_10_2.5x2_EP".pkg,
+            .package = &pkg.@"DFN_10_2.5x2".pkg,
             .prefix = .U,
             .value = "EMC1815",
         },
@@ -186,7 +186,7 @@ pub fn EMC1815(comptime Decoupler: type) type {
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (@intFromEnum(pin_id)) {
                 0 => self.pwr.gnd,
-                1 => self.pwr.vcc,
+                1 => self.pwr.vcc(0),
                 2 => self.@"d1+/d2-",
                 3 => self.@"d1-/d2+",
                 4 => self.@"d3+/d4-",

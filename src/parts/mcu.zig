@@ -1,157 +1,155 @@
 /// Raspberry Pi dual core ARM Cortex M0+
 /// https://pip-assets.raspberrypi.com/categories/814-rp2040/documents/RP-008371-DS-1-rp2040-datasheet.pdf
 /// https://pip-assets.raspberrypi.com/categories/814-rp2040/documents/RP-008279-DS-1-hardware-design-with-rp2040.pdf
-pub fn RP2040(comptime Decoupler: type) type {
-    return struct {
-        base: Part.Base = .{
-            .package = &pkg.QFN_56_7x7_EP.pkg,
-            .prefix = .U,
-            .value = "RP2040",
-        },
+pub const RP2040 = struct {
+    base: Part.Base = .{
+        .package = &pkg.QFN_56_7x7_EP.pkg,
+        .prefix = .U,
+        .value = "RP2040",
+    },
 
-        pwr_io: power.Multi(6, 1, .unset, Decoupler) = .{}, // 1.8V - 3.3V
-        pwr_vreg_in: power.Single(.unset, Decoupler) = .{}, // 1.8V - 3.3V
-        pwr_vreg_out: power.Single(.unset, Decoupler) = .{}, // 1.1V
-        pwr_int: power.Multi(2, 1, .unset, Decoupler) = .{}, // 1.1V
-        pwr_adc: power.Single(.unset, Decoupler) = .{}, // 3.3V
-        pwr_usb: power.Single_3V3(Decoupler) = .{},
+    pwr_io: power.Multi(6, 1, .unset, parts.C0402_Decoupler) = .{}, // 1.8V - 3.3V
+    pwr_vreg_in: power.Single(.unset, parts.C0402_Decoupler_1uf) = .{}, // 1.8V - 3.3V
+    pwr_vreg_out: power.Single(.unset, parts.C0402_Decoupler_1uf) = .{}, // 1.1V
+    pwr_int: power.Multi(2, 1, .unset, parts.C0402_Decoupler) = .{}, // 1.1V
+    pwr_adc: power.Single(.unset, parts.C0402_Decoupler) = .{}, // 3.3V
+    pwr_usb: power.Single_3V3(parts.C0402_Decoupler) = .{},
 
-        gpio: [30]Net_ID = @splat(.unset),
+    gpio: [30]Net_ID = @splat(.unset),
 
-        usb: struct {
-            @"d+": Net_ID = .unset,
-            @"d-": Net_ID = .unset,
-        } = .{},
+    usb: struct {
+        @"d+": Net_ID = .unset,
+        @"d-": Net_ID = .unset,
+    } = .{},
 
-        qspi: struct {
-            n_cs: Net_ID = .unset,
-            data: [4]Net_ID = @splat(.unset),
-            clk: Net_ID = .unset,
-        } = .{},
+    qspi: struct {
+        n_cs: Net_ID = .unset,
+        data: [4]Net_ID = @splat(.unset),
+        clk: Net_ID = .unset,
+    } = .{},
 
-        xtal: struct {
-            in: Net_ID = .unset,
-            out: Net_ID = .unset,
-        } = .{},
+    xtal: struct {
+        in: Net_ID = .unset,
+        out: Net_ID = .unset,
+    } = .{},
 
-        swd: struct {
-            clk: Net_ID = .unset,
-            io: Net_ID = .unset,
-        } = .{},
+    swd: struct {
+        clk: Net_ID = .unset,
+        io: Net_ID = .unset,
+    } = .{},
 
-        n_reset: Net_ID = .unset, // "RUN"
-        test_en: Net_ID = .gnd, 
+    n_reset: Net_ID = .unset, // "RUN"
+    test_en: Net_ID = .gnd, 
 
-        pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
-                0 => self.pwr_io.gnd[0],
-                1 => self.pwr_io.vcc(0),
-                2 => self.gpio[0],
-                3 => self.gpio[1],
-                4 => self.gpio[2],
-                5 => self.gpio[3],
-                6 => self.gpio[4],
-                7 => self.gpio[5],
-                8 => self.gpio[6],
-                9 => self.gpio[7],
-                10 => self.pwr_io.vcc(1),
-                11 => self.gpio[8],
-                12 => self.gpio[9],
-                13 => self.gpio[10],
-                14 => self.gpio[11],
-                15 => self.gpio[12],
-                16 => self.gpio[13],
-                17 => self.gpio[14],
-                18 => self.gpio[15],
-                19 => self.test_en,
-                20 => self.xtal.in,
-                21 => self.xtal.out,
-                22 => self.pwr_io.vcc(2),
-                23 => self.pwr_int.vcc(0),
-                24 => self.swd.clk,
-                25 => self.swd.io,
-                26 => self.n_reset,
-                27 => self.gpio[16],
-                28 => self.gpio[17],
-                29 => self.gpio[18],
-                30 => self.gpio[19],
-                31 => self.gpio[20],
-                32 => self.gpio[21],
-                33 => self.pwr_io.vcc(3),
-                34 => self.gpio[22],
-                35 => self.gpio[23],
-                36 => self.gpio[24],
-                37 => self.gpio[25],
-                38 => self.gpio[26], // ADC0
-                39 => self.gpio[27], // ADC1
-                40 => self.gpio[28], // ADC2
-                41 => self.gpio[29], // ADC3
-                42 => self.pwr_io.vcc(4),
-                43 => self.pwr_adc.vcc(0),
-                44 => self.pwr_vreg_in.vcc(0),
-                45 => self.pwr_vreg_out.vcc(0),
-                46 => self.usb.@"d-",
-                47 => self.usb.@"d+",
-                48 => self.pwr_usb.vcc(0),
-                49 => self.pwr_io.vcc(5),
-                50 => self.pwr_int.vcc(1),
-                51 => self.qspi.data[3],
-                52 => self.qspi.clk,
-                53 => self.qspi.data[0],
-                54 => self.qspi.data[2],
-                55 => self.qspi.data[1],
-                56 => self.qspi.n_cs,
-                else => std.debug.panic("RP2040 does not have pin {}", .{ @intFromEnum(pin_id) }),
-            };
+    pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
+        return switch (@intFromEnum(pin_id)) {
+            0 => self.pwr_io.gnd[0],
+            1 => self.pwr_io.vcc(0),
+            2 => self.gpio[0],
+            3 => self.gpio[1],
+            4 => self.gpio[2],
+            5 => self.gpio[3],
+            6 => self.gpio[4],
+            7 => self.gpio[5],
+            8 => self.gpio[6],
+            9 => self.gpio[7],
+            10 => self.pwr_io.vcc(1),
+            11 => self.gpio[8],
+            12 => self.gpio[9],
+            13 => self.gpio[10],
+            14 => self.gpio[11],
+            15 => self.gpio[12],
+            16 => self.gpio[13],
+            17 => self.gpio[14],
+            18 => self.gpio[15],
+            19 => self.test_en,
+            20 => self.xtal.in,
+            21 => self.xtal.out,
+            22 => self.pwr_io.vcc(2),
+            23 => self.pwr_int.vcc(0),
+            24 => self.swd.clk,
+            25 => self.swd.io,
+            26 => self.n_reset,
+            27 => self.gpio[16],
+            28 => self.gpio[17],
+            29 => self.gpio[18],
+            30 => self.gpio[19],
+            31 => self.gpio[20],
+            32 => self.gpio[21],
+            33 => self.pwr_io.vcc(3),
+            34 => self.gpio[22],
+            35 => self.gpio[23],
+            36 => self.gpio[24],
+            37 => self.gpio[25],
+            38 => self.gpio[26], // ADC0
+            39 => self.gpio[27], // ADC1
+            40 => self.gpio[28], // ADC2
+            41 => self.gpio[29], // ADC3
+            42 => self.pwr_io.vcc(4),
+            43 => self.pwr_adc.vcc(0),
+            44 => self.pwr_vreg_in.vcc(0),
+            45 => self.pwr_vreg_out.vcc(0),
+            46 => self.usb.@"d-",
+            47 => self.usb.@"d+",
+            48 => self.pwr_usb.vcc(0),
+            49 => self.pwr_io.vcc(5),
+            50 => self.pwr_int.vcc(1),
+            51 => self.qspi.data[3],
+            52 => self.qspi.clk,
+            53 => self.qspi.data[0],
+            54 => self.qspi.data[2],
+            55 => self.qspi.data[1],
+            56 => self.qspi.n_cs,
+            else => std.debug.panic("RP2040 does not have pin {}", .{ @intFromEnum(pin_id) }),
+        };
+    }
+
+    pub fn check_config(self: *@This(), b: *Board) !void {
+        for (&self.pwr_io.v) |*net| {
+            if (net.* == .unset) net.* = .p3v3;
         }
-
-        pub fn check_config(self: *@This(), b: *Board) !void {
-            for (&self.pwr_io.v) |*net| {
-                if (net.* == .unset) net.* = .p3v3;
-            }
-            if (self.pwr_adc.v == .unset) {
-                self.pwr_adc.v = self.pwr_io.v[4];
-            }
-            if (self.pwr_vreg_in.v == .unset) {
-                self.pwr_vreg_in.v = b.unique_net("vreg_in");
-                _ = b.part(Decoupler, b.fmt("{s} Vreg input cap", .{ self.base.name }), .{
-                    .gnd = .gnd,
-                    .internal = self.pwr_vreg_in.v,
-                    .external = self.pwr_io.v[4],
-                });
-            }
-            if (self.pwr_vreg_out.v == .unset and self.pwr_int.v[0] == .unset and self.pwr_int.v[1] == .unset) {
-                const p1v1 = b.unique_net("p1v1");
-
-                self.pwr_vreg_out.v = b.unique_net("vreg_out");
-                _ = b.part(Decoupler, b.fmt("{s} Vreg output cap", .{ self.base.name }), .{
-                    .gnd = .gnd,
-                    .internal = self.pwr_vreg_out.v,
-                    .external = p1v1,
-                });
-
-                self.pwr_int.v[0] = b.unique_net("p1v1");
-                _ = b.part(Decoupler, b.fmt("{s} p1v1 decoupler #0", .{ self.base.name }), .{
-                    .gnd = .gnd,
-                    .internal = self.pwr_int.v[0],
-                    .external = p1v1,
-                });
-
-                self.pwr_int.v[1] = b.unique_net("p1v1");
-                _ = b.part(Decoupler, b.fmt("{s} p1v1 decoupler #1", .{ self.base.name }), .{
-                    .gnd = .gnd,
-                    .internal = self.pwr_int.v[1],
-                    .external = p1v1,
-                });
-
-                self.pwr_vreg_out.gnd = .gnd;
-                self.pwr_int.gnd[0] = .gnd;
-            }
+        if (self.pwr_adc.v == .unset) {
+            self.pwr_adc.v = self.pwr_io.v[4];
         }
+        if (self.pwr_vreg_in.v == .unset) {
+            self.pwr_vreg_in.v = b.unique_net("vreg_in");
+            _ = b.part(parts.C0402_Decoupler_1uf, b.fmt("{s} Vreg input cap", .{ self.base.name }), .{
+                .gnd = .gnd,
+                .internal = self.pwr_vreg_in.v,
+                .external = self.pwr_io.v[4],
+            });
+        }
+        if (self.pwr_vreg_out.v == .unset and self.pwr_int.v[0] == .unset and self.pwr_int.v[1] == .unset) {
+            const p1v1 = b.unique_net("p1v1");
 
-        // TODO check voltages in valid range during validation
-    };
-}
+            self.pwr_vreg_out.v = b.unique_net("vreg_out");
+            _ = b.part(parts.C0402_Decoupler_1uf, b.fmt("{s} Vreg output cap", .{ self.base.name }), .{
+                .gnd = .gnd,
+                .internal = self.pwr_vreg_out.v,
+                .external = p1v1,
+            });
+
+            self.pwr_int.v[0] = b.unique_net("p1v1");
+            _ = b.part(parts.C0402_Decoupler, b.fmt("{s} p1v1 decoupler #0", .{ self.base.name }), .{
+                .gnd = .gnd,
+                .internal = self.pwr_int.v[0],
+                .external = p1v1,
+            });
+
+            self.pwr_int.v[1] = b.unique_net("p1v1");
+            _ = b.part(parts.C0402_Decoupler, b.fmt("{s} p1v1 decoupler #1", .{ self.base.name }), .{
+                .gnd = .gnd,
+                .internal = self.pwr_int.v[1],
+                .external = p1v1,
+            });
+
+            self.pwr_vreg_out.gnd = .gnd;
+            self.pwr_int.gnd[0] = .gnd;
+        }
+    }
+
+    // TODO check voltages in valid range during validation
+};
 
 /// Raspberry Pi dual core ARM Cortex M33 / RISC-V Hazard3
 /// https://pip-assets.raspberrypi.com/categories/1214-rp2350/documents/RP-008373-DS-2-rp2350-datasheet.pdf
@@ -448,4 +446,5 @@ const Part = @import("../Part.zig");
 const power = @import("../power.zig");
 const enums = @import("../enums.zig");
 const pkg = @import("../packages.zig");
+const parts = @import("../parts.zig");
 const std = @import("std");
