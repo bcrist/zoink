@@ -43,7 +43,7 @@ pub fn build(b: *std.Build) void {
 const Context = struct {
     b: *std.Build,
     target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
+    optimize: std.lang.Optimize,
     zoink: *std.Build.Module,
     lc4k: *std.Build.Module,
     bits: *std.Build.Module,

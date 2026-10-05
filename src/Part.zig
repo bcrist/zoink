@@ -54,7 +54,7 @@ pub const VTable = struct {
             pub fn check_config(base: *Part.Base, b: *Board) !void {
                 const part: *P = @fieldParentPtr("base", base);
                 errdefer dump_nets(P, part.*, b, base, "");
-                const func_info: std.builtin.Type.Fn = @typeInfo(@TypeOf(P.check_config)).@"fn";
+                const func_info: std.lang.Type.Fn = @typeInfo(@TypeOf(P.check_config)).@"fn";
                 if (func_info.param_types.len == 2) {
                     try part.check_config(b);
                 } else {

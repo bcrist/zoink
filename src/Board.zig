@@ -102,7 +102,7 @@ pub fn net(self: *Board, name: []const u8) Net_ID {
 }
 
 pub fn fmt(self: *Board, comptime format: []const u8, args: anytype) []const u8 {
-    return std.fmt.allocPrint(self.arena, format, args) catch @panic("OOM");
+    return self.arena.print(format, args) catch @panic("OOM");
 }
 
 pub fn unique_net(self: *Board, comptime name_prefix: []const u8) Net_ID {
