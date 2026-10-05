@@ -22,7 +22,6 @@ pub fn read(r: *sx.Reader, expr: []const u8) !?Circle {
         } else if (try r.expression("fill")) {
             self.fill = try r.string("yes");
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("layer")) {
             if (try r.any_string()) |layer_name| {
                 if (Layer.from_kicad_name(layer_name)) |layer| {
@@ -30,10 +29,8 @@ pub fn read(r: *sx.Reader, expr: []const u8) !?Circle {
                 }
             }
             try r.ignore_remaining_expression();
-
         } else if (try r.any_expression()) |_| {
             try r.ignore_remaining_expression();
-
         } else if (try r.any_string()) |_| {
             // ignore
         } else break;
@@ -63,7 +60,6 @@ pub fn write(self: Circle, w: *sx.Writer, expr: []const u8) !void {
 
     try w.close();
 }
-
 
 const log = std.log.scoped(.zoink);
 

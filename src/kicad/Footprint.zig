@@ -117,7 +117,7 @@ pub fn read(r: *sx.Reader, arena: std.mem.Allocator) !?Footprint {
 
 pub fn write(self: Footprint, w: *sx.Writer, b: *Board, p: Part, remap: *const Net_Remap, options: Writer_Options) !void {
     try w.expression("footprint");
-    try w.print_quoted("fp:{s}", .{ self.name });
+    try w.print_quoted("fp:{s}", .{self.name});
     w.set_compact(false);
 
     if (self.locked) {

@@ -10,7 +10,7 @@ pub fn configure(b: *Board) !void {
             .a = A,
             .b = B,
             .y = Temp,
-        }},
+        } },
     });
 
     _ = b.part(SN74LVC32ADB, "OR", .{
@@ -18,7 +18,7 @@ pub fn configure(b: *Board) !void {
             .a = C,
             .b = Temp,
             .y = Result,
-        }},
+        } },
     });
 
     _ = b.part(GS71116U, "RAM", .{
@@ -31,7 +31,6 @@ pub fn configure(b: *Board) !void {
         .n_we = b.net("~WE"),
         .n_oe = b.net("~OE"),
     });
-    
 
     _ = b.part(zoink.parts.R0402, "r1", .{
         .a = .gnd,

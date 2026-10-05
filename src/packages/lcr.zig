@@ -6,7 +6,7 @@ pub fn _1206(comptime max_z_um: comptime_int, comptime polarized: bool, comptime
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...2 => true,
                 else => false,
             };
@@ -15,11 +15,11 @@ pub fn _1206(comptime max_z_um: comptime_int, comptime polarized: bool, comptime
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 1600, .tolerance_um = 150 },
+                .width = .{ .nominal_um = 1600, .tolerance_um = 150 },
                 .height = .{ .nominal_um = 3200, .tolerance_um = 150 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 1600, .tolerance_um = 150 },
+                .width = .{ .nominal_um = 1600, .tolerance_um = 150 },
                 .height = .{ .nominal_um = 3200, .tolerance_um = 150 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -42,7 +42,7 @@ pub fn _0805(comptime max_z_um: comptime_int, comptime polarized: bool, package_
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...2 => true,
                 else => false,
             };
@@ -51,11 +51,11 @@ pub fn _0805(comptime max_z_um: comptime_int, comptime polarized: bool, package_
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 1250, .tolerance_um = 100 },
+                .width = .{ .nominal_um = 1250, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 2000, .tolerance_um = 100 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 1250, .tolerance_um = 100 },
+                .width = .{ .nominal_um = 1250, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 2000, .tolerance_um = 100 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -78,7 +78,7 @@ pub fn _0603(comptime max_z_um: comptime_int, comptime polarized: bool, comptime
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...2 => true,
                 else => false,
             };
@@ -87,11 +87,11 @@ pub fn _0603(comptime max_z_um: comptime_int, comptime polarized: bool, comptime
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 800, .tolerance_um = 100 },
+                .width = .{ .nominal_um = 800, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 1600, .tolerance_um = 100 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 800, .tolerance_um = 100 },
+                .width = .{ .nominal_um = 800, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 1600, .tolerance_um = 100 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -114,7 +114,7 @@ pub fn _0402(comptime max_z_um: comptime_int, comptime polarized: bool, comptime
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...2 => true,
                 else => false,
             };
@@ -123,11 +123,11 @@ pub fn _0402(comptime max_z_um: comptime_int, comptime polarized: bool, comptime
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 500, .tolerance_um = 50 },
+                .width = .{ .nominal_um = 500, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 1000, .tolerance_um = 50 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 500, .tolerance_um = 50 },
+                .width = .{ .nominal_um = 500, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 1000, .tolerance_um = 50 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -150,20 +150,20 @@ pub fn _0201(comptime max_z_um: comptime_int, comptime polarized: bool, comptime
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...2 => true,
                 else => false,
             };
         }
-        
+
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 300, .tolerance_um = 30 },
+                .width = .{ .nominal_um = 300, .tolerance_um = 30 },
                 .height = .{ .nominal_um = 600, .tolerance_um = 30 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 300, .tolerance_um = 30 },
+                .width = .{ .nominal_um = 300, .tolerance_um = 30 },
                 .height = .{ .nominal_um = 600, .tolerance_um = 30 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -186,7 +186,7 @@ pub fn K1206(comptime max_z_um: comptime_int, comptime package_name: []const u8)
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...4 => true,
                 else => false,
             };
@@ -195,11 +195,11 @@ pub fn K1206(comptime max_z_um: comptime_int, comptime package_name: []const u8)
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 1600, .tolerance_um = 150 },
+                .width = .{ .nominal_um = 1600, .tolerance_um = 150 },
                 .height = .{ .nominal_um = 3200, .tolerance_um = 150 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 1600, .tolerance_um = 150 },
+                .width = .{ .nominal_um = 1600, .tolerance_um = 150 },
                 .height = .{ .nominal_um = 3200, .tolerance_um = 150 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -222,7 +222,7 @@ pub fn K0805(comptime max_z_um: comptime_int, package_name: []const u8) type {
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...4 => true,
                 else => false,
             };
@@ -231,11 +231,11 @@ pub fn K0805(comptime max_z_um: comptime_int, package_name: []const u8) type {
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 1250, .tolerance_um = 100 },
+                .width = .{ .nominal_um = 1250, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 2000, .tolerance_um = 100 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 1250, .tolerance_um = 100 },
+                .width = .{ .nominal_um = 1250, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 2000, .tolerance_um = 100 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -258,7 +258,7 @@ pub fn K0603(comptime max_z_um: comptime_int, comptime package_name: []const u8)
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...4 => true,
                 else => false,
             };
@@ -267,11 +267,11 @@ pub fn K0603(comptime max_z_um: comptime_int, comptime package_name: []const u8)
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 800, .tolerance_um = 100 },
+                .width = .{ .nominal_um = 800, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 1600, .tolerance_um = 100 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 800, .tolerance_um = 100 },
+                .width = .{ .nominal_um = 800, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 1600, .tolerance_um = 100 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -294,7 +294,7 @@ pub fn K0402(comptime max_z_um: comptime_int, comptime package_name: []const u8)
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...4 => true,
                 else => false,
             };
@@ -303,11 +303,11 @@ pub fn K0402(comptime max_z_um: comptime_int, comptime package_name: []const u8)
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 500, .tolerance_um = 50 },
+                .width = .{ .nominal_um = 500, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 1000, .tolerance_um = 50 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 500, .tolerance_um = 50 },
+                .width = .{ .nominal_um = 500, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 1000, .tolerance_um = 50 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -330,20 +330,20 @@ pub fn K0201(comptime max_z_um: comptime_int, comptime package_name: []const u8)
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...4 => true,
                 else => false,
             };
         }
-        
+
         pub const data: fp.SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 300, .tolerance_um = 30 },
+                .width = .{ .nominal_um = 300, .tolerance_um = 30 },
                 .height = .{ .nominal_um = 600, .tolerance_um = 30 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 300, .tolerance_um = 30 },
+                .width = .{ .nominal_um = 300, .tolerance_um = 30 },
                 .height = .{ .nominal_um = 600, .tolerance_um = 30 },
             },
             .max_z = .{ .nominal_um = max_z_um, .tolerance_um = 0 },
@@ -367,20 +367,20 @@ pub const taiyo_yuden = struct {
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...2 => true,
                 else => false,
             };
         }
-        
+
         pub const data: fp.SMD_Data = .{
             .package_name = "NRS5040",
             .body = .{
-                .width  = .init_mm(4.9, 0.2),
+                .width = .init_mm(4.9, 0.2),
                 .height = .init_mm(4.9, 0.2),
             },
             .overall = .{
-                .width  = .init_mm(4.9, 0.2),
+                .width = .init_mm(4.9, 0.2),
                 .height = .init_mm(4.9, 0.2),
             },
             .max_z = .init_mm(4.1, 0),

@@ -19,7 +19,7 @@ pub fn MS_001D(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -28,11 +28,11 @@ pub fn MS_001D(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: DIL_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = body_width,
+                .width = body_width,
                 .height = .init_inches_range(0.24, 0.28),
             },
             .overall = .{
-                .width  = body_width,
+                .width = body_width,
                 .height = .init_inches_range(0.3, 0.325),
             },
             .max_z = .init_inches_range(0.21, 0.21),
@@ -65,7 +65,7 @@ pub fn MS_010C(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -74,11 +74,11 @@ pub fn MS_010C(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: DIL_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = body_width,
+                .width = body_width,
                 .height = .init_inches_range(0.33, 0.39),
             },
             .overall = .{
-                .width  = body_width,
+                .width = body_width,
                 .height = .init_inches_range(0.39, 0.425),
             },
             .max_z = .init_inches_range(0.21, 0.21),
@@ -110,7 +110,7 @@ pub fn MS_011B(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -119,11 +119,11 @@ pub fn MS_011B(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: DIL_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = body_width,
+                .width = body_width,
                 .height = .init_inches_range(0.485, 0.58),
             },
             .overall = .{
-                .width  = body_width,
+                .width = body_width,
                 .height = .init_inches_range(0.600, 0.625),
             },
             .max_z = .init_inches_range(0.25, 0.25),
@@ -185,7 +185,7 @@ pub fn MS_015A(comptime lead_count: comptime_int, comptime row_spacing_mil: comp
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -194,7 +194,7 @@ pub fn MS_015A(comptime lead_count: comptime_int, comptime row_spacing_mil: comp
         pub const data: DIL_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = body_width,
+                .width = body_width,
                 .height = switch (row_spacing_mil) {
                     300 => .init_inches_range(0.28, 0.31),
                     400 => .init_inches_range(0.38, 0.41),
@@ -204,7 +204,7 @@ pub fn MS_015A(comptime lead_count: comptime_int, comptime row_spacing_mil: comp
                 },
             },
             .overall = .{
-                .width  = body_width,
+                .width = body_width,
                 .height = switch (row_spacing_mil) {
                     300 => .init_inches_range(0.3, 0.325),
                     400 => .init_inches_range(0.4, 0.425),
@@ -225,7 +225,6 @@ pub fn MS_015A(comptime lead_count: comptime_int, comptime row_spacing_mil: comp
         };
     };
 }
-
 
 pub const MS_026D_Variant = enum {
     thin, // up to 1.0mm thick
@@ -248,7 +247,7 @@ pub fn MS_026D(comptime lead_count: comptime_int, comptime width_mm: comptime_in
     } else {
         std.debug.assert(height_mm == width_mm);
     }
-    
+
     if (width_mm == 28) {
         std.debug.assert(variant == .low_profile);
     }
@@ -328,7 +327,7 @@ pub fn MS_026D(comptime lead_count: comptime_int, comptime width_mm: comptime_in
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -337,11 +336,11 @@ pub fn MS_026D(comptime lead_count: comptime_int, comptime width_mm: comptime_in
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = width_mm * 1000, .tolerance_um = 50 },
+                .width = .{ .nominal_um = width_mm * 1000, .tolerance_um = 50 },
                 .height = .{ .nominal_um = height_mm * 1000, .tolerance_um = 50 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = (width_mm + 2) * 1000, .tolerance_um = 250 },
+                .width = .{ .nominal_um = (width_mm + 2) * 1000, .tolerance_um = 250 },
                 .height = .{ .nominal_um = (height_mm + 2) * 1000, .tolerance_um = 250 },
             },
             .max_z = .{ .nominal_um = max_z, .tolerance_um = 0 },
@@ -409,7 +408,7 @@ pub fn MS_024H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -418,11 +417,11 @@ pub fn MS_024H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 50 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 10160, .tolerance_um = 50 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 250 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 250 },
                 .height = .{ .nominal_um = 11760, .tolerance_um = 250 },
             },
             .max_z = .{ .nominal_um = 1200, .tolerance_um = 0 },
@@ -467,7 +466,7 @@ pub fn MS_027A__MO_065A_077D_088A(comptime lead_count: comptime_int, comptime bo
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -476,11 +475,11 @@ pub fn MS_027A__MO_065A_077D_088A(comptime lead_count: comptime_int, comptime bo
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 127 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 127 },
                 .height = .{ .nominal_um = body_height, .tolerance_um = 127 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 127 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 127 },
                 .height = .{ .nominal_um = body_height + 1016, .tolerance_um = 127 },
             },
             .max_z = .{ .nominal_um = 3760, .tolerance_um = 0 },
@@ -520,7 +519,7 @@ pub fn MS_016A(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -529,11 +528,11 @@ pub fn MS_016A(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = overall_width - 1070, .tolerance_um = 127 },
+                .width = .{ .nominal_um = overall_width - 1070, .tolerance_um = 127 },
                 .height = .{ .nominal_um = overall_height - 1070, .tolerance_um = 127 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = overall_width, .tolerance_um = 127 },
+                .width = .{ .nominal_um = overall_width, .tolerance_um = 127 },
                 .height = .{ .nominal_um = overall_height, .tolerance_um = 127 },
             },
             .max_z = .{ .nominal_um = 3550, .tolerance_um = 0 },
@@ -572,7 +571,7 @@ pub fn MO_047B(comptime lead_count: comptime_int, comptime pin1: footprints.Pin1
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -581,11 +580,11 @@ pub fn MO_047B(comptime lead_count: comptime_int, comptime pin1: footprints.Pin1
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_dim, .tolerance_um = 127 },
+                .width = .{ .nominal_um = body_dim, .tolerance_um = 127 },
                 .height = .{ .nominal_um = body_dim, .tolerance_um = 127 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = overall_dim, .tolerance_um = 127 },
+                .width = .{ .nominal_um = overall_dim, .tolerance_um = 127 },
                 .height = .{ .nominal_um = overall_dim, .tolerance_um = 127 },
             },
             .max_z = .{
@@ -621,7 +620,7 @@ pub fn MS_012G_02(comptime lead_count: comptime_int, comptime package_name: []co
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -630,11 +629,11 @@ pub fn MS_012G_02(comptime lead_count: comptime_int, comptime package_name: []co
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 50 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 3900, .tolerance_um = 50 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 250 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 250 },
                 .height = .{ .nominal_um = 6000, .tolerance_um = 250 },
             },
             .max_z = .{ .nominal_um = 1250, .tolerance_um = 0 },
@@ -662,7 +661,7 @@ pub fn MO_046B(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -671,11 +670,11 @@ pub fn MO_046B(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 200 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 200 },
                 .height = .{ .nominal_um = 5300, .tolerance_um = 200 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 400 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 400 },
                 .height = .{ .nominal_um = 7800, .tolerance_um = 400 },
             },
             .max_z = .{ .nominal_um = 1800, .tolerance_um = 0 },
@@ -707,7 +706,7 @@ pub fn MS_013G(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -716,11 +715,11 @@ pub fn MS_013G(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 50 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 50 },
                 .height = .{ .nominal_um = 7500, .tolerance_um = 50 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 250 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 250 },
                 .height = .{ .nominal_um = 10300, .tolerance_um = 250 },
             },
             .max_z = .{ .nominal_um = 2650, .tolerance_um = 0 },
@@ -747,7 +746,7 @@ pub fn MO_059B(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -756,11 +755,11 @@ pub fn MO_059B(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 450 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 450 },
                 .height = .{ .nominal_um = 8454, .tolerance_um = 450 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 600 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 600 },
                 .height = .{ .nominal_um = 12100, .tolerance_um = 600 },
             },
             .max_z = .{ .nominal_um = 3050, .tolerance_um = 0 },
@@ -787,7 +786,7 @@ pub fn MO_126B(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -796,11 +795,11 @@ pub fn MO_126B(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 200 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 200 },
                 .height = .{ .nominal_um = 12600, .tolerance_um = 200 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 200 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 200 },
                 .height = .{ .nominal_um = 16050, .tolerance_um = 200 },
             },
             .max_z = .{ .nominal_um = 3100, .tolerance_um = 0 },
@@ -831,7 +830,7 @@ pub fn MO_150B(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -840,11 +839,11 @@ pub fn MO_150B(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 300 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 300 },
                 .height = .{ .nominal_um = 5300, .tolerance_um = 300 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 300 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 300 },
                 .height = .{ .nominal_um = 7800, .tolerance_um = 400 },
             },
             .max_z = .{ .nominal_um = 2000, .tolerance_um = 0 },
@@ -872,7 +871,7 @@ pub fn MO_117A(comptime package_name: []const u8) type {
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...64 => true,
                 else => false,
             };
@@ -881,11 +880,11 @@ pub fn MO_117A(comptime package_name: []const u8) type {
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 26300, .tolerance_um = 130 },
+                .width = .{ .nominal_um = 26300, .tolerance_um = 130 },
                 .height = .{ .nominal_um = 11700, .tolerance_um = 1000 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 26300, .tolerance_um = 130 },
+                .width = .{ .nominal_um = 26300, .tolerance_um = 130 },
                 .height = .{ .nominal_um = 14000, .tolerance_um = 500 },
             },
             .max_z = .{ .nominal_um = 2380, .tolerance_um = 0 },
@@ -914,7 +913,7 @@ pub fn MO_118B(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -923,11 +922,11 @@ pub fn MO_118B(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 300 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 300 },
                 .height = .{ .nominal_um = 7500, .tolerance_um = 300 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 300 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 300 },
                 .height = .{ .nominal_um = 10300, .tolerance_um = 400 },
             },
             .max_z = .{ .nominal_um = 2800, .tolerance_um = 0 },
@@ -955,7 +954,7 @@ pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
         650 => 250,
         else => unreachable,
     };
-    
+
     const body_height = switch (body) {
         .a => 2800,
         .b => 4400,
@@ -1050,7 +1049,7 @@ pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
         },
         else => unreachable,
     };
-        
+
     return struct {
         pub const pkg: Package = .{
             .default_footprint = fp.SMD(data, .normal),
@@ -1058,7 +1057,7 @@ pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -1067,11 +1066,11 @@ pub fn MO_153H(comptime lead_count: comptime_int, comptime pitch_um: comptime_in
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 100 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 100 },
                 .height = .{ .nominal_um = body_height, .tolerance_um = 100 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 100 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 100 },
                 .height = .{ .nominal_um = body_height + 2000, .tolerance_um = 100 },
             },
             .max_z = .{ .nominal_um = 1200, .tolerance_um = 0 },
@@ -1107,7 +1106,7 @@ pub fn MO_194B(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -1116,11 +1115,11 @@ pub fn MO_194B(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 100 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 100 },
                 .height = .{ .nominal_um = body_height, .tolerance_um = 100 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = body_width, .tolerance_um = 100 },
+                .width = .{ .nominal_um = body_width, .tolerance_um = 100 },
                 .height = .{ .nominal_um = body_height + 2000, .tolerance_um = 100 },
             },
             .max_z = .{ .nominal_um = 1200, .tolerance_um = 0 },
@@ -1142,7 +1141,7 @@ pub fn MO_187F_AA(comptime with_heat_slug: bool, comptime package_name: []const 
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 0 => with_heat_slug,
                 1...8 => true,
                 else => false,
@@ -1152,11 +1151,11 @@ pub fn MO_187F_AA(comptime with_heat_slug: bool, comptime package_name: []const 
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mm(3, 0.1),
+                .width = .init_mm(3, 0.1),
                 .height = .init_mm(3, 0.1),
             },
             .overall = .{
-                .width  = .init_mm(3, 0.1),
+                .width = .init_mm(3, 0.1),
                 .height = .init_mm(4.9, 0.1),
             },
             .max_z = .init_mm_range(0.9, 1.1),
@@ -1182,7 +1181,7 @@ pub fn MO_187F_BA(comptime with_heat_slug: bool, comptime package_name: []const 
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 0 => with_heat_slug,
                 1...10 => true,
                 else => false,
@@ -1192,11 +1191,11 @@ pub fn MO_187F_BA(comptime with_heat_slug: bool, comptime package_name: []const 
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mm(3, 0.1),
+                .width = .init_mm(3, 0.1),
                 .height = .init_mm(3, 0.1),
             },
             .overall = .{
-                .width  = .init_mm(3, 0.1),
+                .width = .init_mm(3, 0.1),
                 .height = .init_mm(4.9, 0.1),
             },
             .max_z = .init_mm_range(0.9, 1.1),
@@ -1222,7 +1221,7 @@ pub fn MO_187F_CA(comptime package_name: []const u8) type {
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...8 => true,
                 else => false,
             };
@@ -1231,11 +1230,11 @@ pub fn MO_187F_CA(comptime package_name: []const u8) type {
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mm(2, 0.1),
+                .width = .init_mm(2, 0.1),
                 .height = .init_mm(2.3, 0.1),
             },
             .overall = .{
-                .width  = .init_mm(2, 0.1),
+                .width = .init_mm(2, 0.1),
                 .height = .init_mm(3.1, 0.1),
             },
             .max_z = .init_mm_range(0.8, 1),
@@ -1257,7 +1256,7 @@ pub fn MO_187F_DA(comptime package_name: []const u8) type {
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...8 => true,
                 else => false,
             };
@@ -1266,11 +1265,11 @@ pub fn MO_187F_DA(comptime package_name: []const u8) type {
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mm(2.95, 0.1),
+                .width = .init_mm(2.95, 0.1),
                 .height = .init_mm(2.8, 0.1),
             },
             .overall = .{
-                .width  = .init_mm(2.95, 0.1),
+                .width = .init_mm(2.95, 0.1),
                 .height = .init_mm(4, 0.25),
             },
             .max_z = .init_mm_range(1.15, 1.35),
@@ -1298,7 +1297,7 @@ pub fn MO_203E(comptime lead_count: comptime_int, comptime package_name: []const
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -1307,11 +1306,11 @@ pub fn MO_203E(comptime lead_count: comptime_int, comptime package_name: []const
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mm(2, 0.1),
+                .width = .init_mm(2, 0.1),
                 .height = .init_mm(1.25, 0.1),
             },
             .overall = .{
-                .width  = .init_mm(2, 0.1),
+                .width = .init_mm(2, 0.1),
                 .height = .init_mm(2.1, 0.15),
             },
             .max_z = .init_mm_range(0.9, 1.1),
@@ -1319,7 +1318,7 @@ pub fn MO_203E(comptime lead_count: comptime_int, comptime package_name: []const
             .pins_on_first_side = pins / 2,
             .omitted_pins = switch (lead_count) {
                 3 => &.{ 2, 4, 6 },
-                5 => &.{ 5 },
+                5 => &.{5},
                 6, 8 => &.{},
                 else => unreachable,
             },
@@ -1339,7 +1338,7 @@ pub fn TO_236H__MO_193G(comptime lead_count: comptime_int, comptime package_name
     };
     const omitted_pins = switch (lead_count) {
         3 => &.{ 2, 4, 6 },
-        5 => &.{ 5 },
+        5 => &.{5},
         6, 8 => &.{},
         else => unreachable,
     };
@@ -1361,7 +1360,7 @@ pub fn TO_236H__MO_193G(comptime lead_count: comptime_int, comptime package_name
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -1370,11 +1369,11 @@ pub fn TO_236H__MO_193G(comptime lead_count: comptime_int, comptime package_name
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .{ .nominal_um = 2900, .tolerance_um = 100 },
+                .width = .{ .nominal_um = 2900, .tolerance_um = 100 },
                 .height = .{ .nominal_um = 1600, .tolerance_um = 100 },
             },
             .overall = .{
-                .width  = .{ .nominal_um = 2900, .tolerance_um = 150 },
+                .width = .{ .nominal_um = 2900, .tolerance_um = 150 },
                 .height = .{ .nominal_um = 2800, .tolerance_um = 150 },
             },
             .max_z = .{ .nominal_um = 1170, .tolerance_um = 0 },
@@ -1395,7 +1394,7 @@ pub const TO_253D = struct {
     };
 
     pub fn has_pin(pin: Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...4 => true,
             else => false,
         };
@@ -1404,7 +1403,7 @@ pub const TO_253D = struct {
     pub const data: SOT_Data = .{
         .package_name = "SOT143-4",
         .body = .{
-            .width  = .{ .nominal_um = 2920, .tolerance_um = 120 },
+            .width = .{ .nominal_um = 2920, .tolerance_um = 120 },
             .height = .{ .nominal_um = 1300, .tolerance_um = 100 },
         },
         .max_z = .{ .nominal_um = 1220, .tolerance_um = 0 },
@@ -1448,7 +1447,7 @@ pub const TO_261AA = struct {
     };
 
     pub fn has_pin(pin: Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...4 => true,
             else => false,
         };
@@ -1457,7 +1456,7 @@ pub const TO_261AA = struct {
     pub const data: SOT_Data = .{
         .package_name = "SOT223-4",
         .body = .{
-            .width  = .{ .nominal_um = 6500, .tolerance_um = 200 },
+            .width = .{ .nominal_um = 6500, .tolerance_um = 200 },
             .height = .{ .nominal_um = 3500, .tolerance_um = 200 },
         },
         .max_z = .{ .nominal_um = 1800, .tolerance_um = 0 },
@@ -1501,7 +1500,7 @@ pub const TO_261AB = struct {
     };
 
     pub fn has_pin(pin: Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...5 => true,
             else => false,
         };
@@ -1510,7 +1509,7 @@ pub const TO_261AB = struct {
     pub const data: SOT_Data = .{
         .package_name = "SOT223-5",
         .body = .{
-            .width  = .{ .nominal_um = 6500, .tolerance_um = 200 },
+            .width = .{ .nominal_um = 6500, .tolerance_um = 200 },
             .height = .{ .nominal_um = 3500, .tolerance_um = 200 },
         },
         .max_z = .{ .nominal_um = 1800, .tolerance_um = 0 },
@@ -1554,7 +1553,6 @@ pub const TO_261AB = struct {
     };
 };
 
-
 // FBGA-48: 6x8 balls, 6x8mm, 0.75mm pitch
 pub const MO_207AD = struct {
     pub const pkg: Package = .{
@@ -1563,7 +1561,7 @@ pub const MO_207AD = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...48 => true,
             else => false,
         };
@@ -1572,7 +1570,7 @@ pub const MO_207AD = struct {
     pub const data: BGA_Data = .{
         .package_name = "FBGA-48",
         .body = .{
-            .width  = .{ .nominal_um = 6000, .tolerance_um = 100 },
+            .width = .{ .nominal_um = 6000, .tolerance_um = 100 },
             .height = .{ .nominal_um = 8000, .tolerance_um = 100 },
         },
         .max_z = .{ .nominal_um = 1150, .tolerance_um = 200 },
@@ -1584,7 +1582,8 @@ pub const MO_207AD = struct {
         .pin_name_format_func = kicad.format_pin_name(MO_207AD.Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
         A1 = 1,  A2 = 2,  A3 = 3,  A4 = 4,  A5 = 5,  A6 = 6,
         B1 = 7,  B2 = 8,  B3 = 9,  B4 = 10, B5 = 11, B6 = 12,
         C1 = 13, C2 = 14, C3 = 15, C4 = 16, C5 = 17, C6 = 18,
@@ -1593,12 +1592,13 @@ pub const MO_207AD = struct {
         F1 = 31, F2 = 32, F3 = 33, F4 = 34, F5 = 35, F6 = 36,
         G1 = 37, G2 = 38, G3 = 39, G4 = 40, G5 = 41, G6 = 42,
         H1 = 43, H2 = 44, H3 = 45, H4 = 46, H5 = 47, H6 = 48,
+        // zig fmt: on
 
         pub fn from_generic(id: enums.Pin_ID) MO_207AD.Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: MO_207AD.Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };
@@ -1640,7 +1640,7 @@ pub fn MO_209(comptime lead_count: comptime_int, comptime package_name: []const 
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...lead_count => true,
                 else => false,
             };
@@ -1649,11 +1649,11 @@ pub fn MO_209(comptime lead_count: comptime_int, comptime package_name: []const 
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mm(width_mm, 0.1),
+                .width = .init_mm(width_mm, 0.1),
                 .height = .init_mm(height_mm, 0.1),
             },
             .overall = .{
-                .width  = .init_mm(width_mm, 0.1),
+                .width = .init_mm(width_mm, 0.1),
                 .height = .init_mm(height_mm, 0.1),
             },
             .max_z = .init_mm(1.2, 0),
@@ -1665,7 +1665,6 @@ pub fn MO_209(comptime lead_count: comptime_int, comptime package_name: []const 
         };
     };
 }
-
 
 // height x width
 pub const MO_220_Body_Dimensions = enum {
@@ -1700,6 +1699,7 @@ pub const MO_220_Body_Thickness = enum {
 /// QFN
 pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_side: comptime_int, comptime pitch_um: comptime_int, comptime dim: MO_220_Body_Dimensions, comptime has_heat_slug: bool, comptime thickness: MO_220_Body_Thickness, comptime package_name: []const u8) type {
     const width_mm: comptime_float, const height_mm: comptime_float = switch (dim) {
+        // zig fmt: off
         .@"2x2"     => .{ 2, 2 },
         .@"3x3"     => .{ 3, 3 },
         .@"3.5x3.5" => .{ 3.5, 3.5 },
@@ -1723,6 +1723,7 @@ pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_si
         .@"9x9"     => .{ 9, 9 },
         .@"10x10"   => .{ 10, 10 },
         .@"12x12"   => .{ 12, 12 },
+        // zig fmt: on
     };
 
     switch (dim) {
@@ -1849,7 +1850,7 @@ pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_si
             else => unreachable,
         },
         .@"4.5x6.5" => switch (lead_count) {
-            36 => switch(pitch_um) {
+            36 => switch (pitch_um) {
                 500 => std.debug.assert(lead_count_first_side == 12),
                 else => unreachable,
             },
@@ -2157,7 +2158,7 @@ pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_si
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 0 => has_heat_slug,
                 1...lead_count => true,
                 else => false,
@@ -2167,11 +2168,11 @@ pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_si
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mm(width_mm, 0.1),
+                .width = .init_mm(width_mm, 0.1),
                 .height = .init_mm(height_mm, 0.1),
             },
             .overall = .{
-                .width  = .init_mm(width_mm, 0.1),
+                .width = .init_mm(width_mm, 0.1),
                 .height = .init_mm(height_mm, 0.1),
             },
             .max_z = .init_mm(switch (thickness) {
@@ -2209,7 +2210,6 @@ pub fn MO_220K01(comptime lead_count: comptime_int, comptime lead_count_first_si
         };
     };
 }
-
 
 // height x width (D x E)
 pub const MO_229_Body_Dimensions = enum {
@@ -2267,6 +2267,7 @@ pub fn MO_229(comptime lead_count: comptime_int, comptime pitch_um: comptime_int
     }
 
     const width_mm: comptime_float, const height_mm: comptime_float = switch (dim) {
+        // zig fmt: off
         .@"1.5x1"           => .{ 1, 1.5 },
         .@"1.5x1.5"         => .{ 1.5, 1.5 },
         .@"2x1"             => .{ 1, 2 },
@@ -2293,6 +2294,7 @@ pub fn MO_229(comptime lead_count: comptime_int, comptime pitch_um: comptime_int
         .@"5x4"             => .{ 4, 5 },
         .@"5x5"             => .{ 5, 5 },
         .@"6x5"             => .{ 5, 6 },
+        // zig fmt: on
     };
 
     const lead_count_first_side = lead_count / 2;
@@ -2424,7 +2426,7 @@ pub fn MO_229(comptime lead_count: comptime_int, comptime pitch_um: comptime_int
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 0 => has_heat_slug,
                 1...lead_count => true,
                 else => false,
@@ -2434,11 +2436,11 @@ pub fn MO_229(comptime lead_count: comptime_int, comptime pitch_um: comptime_int
         pub const data: SMD_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mm(width_mm, 0.1),
+                .width = .init_mm(width_mm, 0.1),
                 .height = .init_mm(height_mm, 0.1),
             },
             .overall = .{
-                .width  = .init_mm(width_mm, 0.1),
+                .width = .init_mm(width_mm, 0.1),
                 .height = .init_mm(height_mm + 0.26, 0.1),
             },
             .max_z = .init_mm(switch (thickness) {
@@ -2474,7 +2476,7 @@ pub fn TO_226G_AA(comptime package_name: []const u8) type {
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...3 => true,
                 else => false,
             };
@@ -2483,7 +2485,7 @@ pub fn TO_226G_AA(comptime package_name: []const u8) type {
         pub const data: SIL_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_inches_range(0.175, 0.205),
+                .width = .init_inches_range(0.175, 0.205),
                 .height = .init_inches_range(0.175, 0.205),
             },
             .max_z = .init_inches_range(0.270, 0.310),
@@ -2507,7 +2509,7 @@ pub fn TO_226G_AC(comptime package_name: []const u8) type {
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...2 => true,
                 else => false,
             };
@@ -2516,7 +2518,7 @@ pub fn TO_226G_AC(comptime package_name: []const u8) type {
         pub const data: SIL_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_inches_range(0.175, 0.205),
+                .width = .init_inches_range(0.175, 0.205),
                 .height = .init_inches_range(0.175, 0.205),
             },
             .max_z = .init_inches_range(0.270, 0.310),
@@ -2531,7 +2533,6 @@ pub fn TO_226G_AC(comptime package_name: []const u8) type {
         };
     };
 }
-
 
 const SIL_Data = footprints.SIL_Data;
 const DIL_Data = footprints.DIL_Data;

@@ -7,7 +7,7 @@ offset: @Vector(2, f64) = @splat(0),
 unapplied_offset: @Vector(2, f64) = @splat(0),
 
 pub fn init_from_footprint(fp: kicad.Footprint, hash: u64) Bounding_Box {
-    var self = Bounding_Box {
+    var self = Bounding_Box{
         .hash = hash,
     };
 
@@ -40,7 +40,7 @@ pub fn init_from_footprint(fp: kicad.Footprint, hash: u64) Bounding_Box {
         self.min = @splat(0);
         self.max = @splat(0);
     }
-    
+
     return self;
 }
 

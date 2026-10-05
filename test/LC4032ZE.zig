@@ -3,7 +3,7 @@ const Chip = lc4k.LC4032ZE_TQFP48;
 const clock_pin = Chip.clock_pins[2];
 const oe_pin = Chip.pins._41;
 
-const output_pins = [_]Chip.Pin {
+const output_pins = [_]Chip.Pin{
     Chip.pins._23,
     Chip.pins._24,
     Chip.pins._26,
@@ -23,24 +23,25 @@ fn configure_chip(chip: *Chip) !void {
 
     inline for (output_pins, 0..) |out, bit| {
         var mc = chip.mc(out.mc());
-        mc.func = .{ .t_ff = .{ .clock = .bclock2 }};
+        mc.func = .{ .t_ff = .{ .clock = .bclock2 } };
         mc.output.oe = .goe0;
 
-        mc.logic = comptime .{ .sum = .{
-            .sum = &.{ blk: {
-                // Each bit of the counter should toggle when every lower bit is a 1
-                var pt = Chip.PT.always();
-                var n = 0;
-                while (n < bit) : (n += 1) {
-                    pt = pt.and_factor(Chip.Signal.mc_fb(output_pins[n].mc()).when_high());
-                }
-                break :blk pt;
-            }},
-            .polarity = .positive,
-        }};
+        mc.logic = comptime .{
+            .sum = .{
+                .sum = &.{blk: {
+                    // Each bit of the counter should toggle when every lower bit is a 1
+                    var pt = Chip.PT.always();
+                    var n = 0;
+                    while (n < bit) : (n += 1) {
+                        pt = pt.and_factor(Chip.Signal.mc_fb(output_pins[n].mc()).when_high());
+                    }
+                    break :blk pt;
+                }},
+                .polarity = .positive,
+            },
+        };
     }
 }
-
 
 pub fn configure(b: *Board, config: *const Chip) !void {
     const U1 = b.part(LC4032ZE, "chip", .{

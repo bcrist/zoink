@@ -133,7 +133,7 @@ pub fn generate_mapping(self: *Net_Remap, board: *Board) !void {
 
             if (std.meta.stringToEnum(Net_ID, name_a)) |net_a| {
                 if (std.meta.stringToEnum(Net_ID, name_b)) |net_b| {
-                    return @intFromEnum(net_a) < @intFromEnum(net_b);
+                    return @backingInt(net_a) < @backingInt(net_b);
                 } else {
                     return true;
                 }
@@ -144,7 +144,7 @@ pub fn generate_mapping(self: *Net_Remap, board: *Board) !void {
             return std.mem.lessThan(u8, name_a, name_b);
         }
     };
-    names.entries.sort(Sort_Context { .names = names.keys() }); // note not using names.sort because we don't need the hash table part anymore
+    names.entries.sort(Sort_Context{ .names = names.keys() }); // note not using names.sort because we don't need the hash table part anymore
 
     self.name_to_kicad_id.clearRetainingCapacity();
     self.ordered_net_names.clearRetainingCapacity();

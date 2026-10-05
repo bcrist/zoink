@@ -25,7 +25,7 @@ pub fn LC4k(
         .BMC149 => pkg.bmc.BGA149,
     };
 
-    const base_part: []const u8 = std.fmt.comptimePrint("LC4{d:0>3}", .{ Device.num_glbs * 16 });
+    const base_part: []const u8 = std.fmt.comptimePrint("LC4{d:0>3}", .{Device.num_glbs * 16});
 
     const value: []const u8 = base_part ++ switch (Device.family) {
         .low_power => switch (vcc) {
@@ -212,7 +212,7 @@ pub fn LC4k(
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            const pin_number = @intFromEnum(pin_id);
+            const pin_number = @backingInt(pin_id);
             if (pin_id == .heatsink or pin_number > Device.all_pins.len) return .no_connect;
 
             const pin_index = pin_number - 1;

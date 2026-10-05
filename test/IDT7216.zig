@@ -114,7 +114,7 @@ fn clk_x(v: *zoink.Validator, b: *zoink.Board, x: u16, xm: IDT7216.Input_Format)
     const clk = b.net("CLK_X");
     try v.clock_low(clk, TTL);
     try v.set_bus(b.get_bus("X"), x, TTL);
-    try v.set_logic(b.net("XM"), @intFromEnum(xm) != 0, TTL);
+    try v.set_logic(b.net("XM"), @backingInt(xm) != 0, TTL);
     try v.clock_high(clk, TTL);
 }
 
@@ -122,12 +122,12 @@ fn clk_y(v: *zoink.Validator, b: *zoink.Board, y: u16, ym: IDT7216.Input_Format)
     const clk = b.net("CLK_Y");
     try v.clock_low(clk, TTL);
     try v.set_bus(b.get_bus("Y"), y, TTL);
-    try v.set_logic(b.net("YM"), @intFromEnum(ym) != 0, TTL);
+    try v.set_logic(b.net("YM"), @backingInt(ym) != 0, TTL);
     try v.clock_high(clk, TTL);
 }
 
 fn expect_product(v: *zoink.Validator, b: *zoink.Board, expected: i64) !void {
-    errdefer log.err("expected product: {d}", .{ expected });
+    errdefer log.err("expected product: {d}", .{expected});
 
     const unsigned: u64 = @bitCast(expected);
     const expected_lsp: u16 = @truncate(unsigned);

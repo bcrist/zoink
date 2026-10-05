@@ -27,37 +27,37 @@ pub fn BJT(comptime bjt_type: BJT_Type, comptime Pkg: type, comptime pinout: BJT
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (pinout) {
-                .bce => switch (@intFromEnum(pin_id)) {
+                .bce => switch (@backingInt(pin_id)) {
                     1 => self.b,
                     2 => self.c,
                     3 => self.e,
                     else => unreachable,
                 },
-                .bec => switch (@intFromEnum(pin_id)) {
+                .bec => switch (@backingInt(pin_id)) {
                     1 => self.b,
                     2 => self.e,
                     3 => self.c,
                     else => unreachable,
                 },
-                .cbe => switch (@intFromEnum(pin_id)) {
+                .cbe => switch (@backingInt(pin_id)) {
                     1 => self.c,
                     2 => self.b,
                     3 => self.e,
                     else => unreachable,
                 },
-                .ceb => switch (@intFromEnum(pin_id)) {
+                .ceb => switch (@backingInt(pin_id)) {
                     1 => self.c,
                     2 => self.e,
                     3 => self.b,
                     else => unreachable,
                 },
-                .ebc => switch (@intFromEnum(pin_id)) {
+                .ebc => switch (@backingInt(pin_id)) {
                     1 => self.e,
                     2 => self.b,
                     3 => self.c,
                     else => unreachable,
                 },
-                .ecb => switch (@intFromEnum(pin_id)) {
+                .ecb => switch (@backingInt(pin_id)) {
                     1 => self.e,
                     2 => self.c,
                     3 => self.b,
@@ -119,37 +119,37 @@ pub fn FET(comptime fet_type: FET_Type, comptime Pkg: type, comptime pinout: FET
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (pinout) {
-                .gds => switch (@intFromEnum(pin_id)) {
+                .gds => switch (@backingInt(pin_id)) {
                     1 => self.g,
                     2 => self.d,
                     3 => self.s,
                     else => unreachable,
                 },
-                .gsd => switch (@intFromEnum(pin_id)) {
+                .gsd => switch (@backingInt(pin_id)) {
                     1 => self.g,
                     2 => self.s,
                     3 => self.d,
                     else => unreachable,
                 },
-                .dgs => switch (@intFromEnum(pin_id)) {
+                .dgs => switch (@backingInt(pin_id)) {
                     1 => self.d,
                     2 => self.g,
                     3 => self.s,
                     else => unreachable,
                 },
-                .dsg => switch (@intFromEnum(pin_id)) {
+                .dsg => switch (@backingInt(pin_id)) {
                     1 => self.d,
                     2 => self.s,
                     3 => self.g,
                     else => unreachable,
                 },
-                .sgd => switch (@intFromEnum(pin_id)) {
+                .sgd => switch (@backingInt(pin_id)) {
                     1 => self.s,
                     2 => self.g,
                     3 => self.d,
                     else => unreachable,
                 },
-                .sdg => switch (@intFromEnum(pin_id)) {
+                .sdg => switch (@backingInt(pin_id)) {
                     1 => self.s,
                     2 => self.d,
                     3 => self.g,

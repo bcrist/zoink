@@ -15,7 +15,7 @@ pub fn Linear_5pin(comptime part_number: []const u8, comptime Input_Cap: type, c
         enable: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.pwr_in.vcc(0),
                 2 => self.pwr_in.gnd,
                 3 => self.enable,
@@ -24,7 +24,7 @@ pub fn Linear_5pin(comptime part_number: []const u8, comptime Input_Cap: type, c
                 else => unreachable,
             };
         }
-        
+
         pub fn validate(self: @This(), v: *Validator, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {},
@@ -53,7 +53,7 @@ pub const AP62300TWU = struct {
     feedback: Net_ID = .unset,
 
     pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-        return switch (@intFromEnum(pin_id)) {
+        return switch (@backingInt(pin_id)) {
             1 => self.gnd,
             2 => self.out,
             3 => self.v_in,

@@ -87,7 +87,7 @@ pub fn formatNumber(self: Micron, writer: *std.Io.Writer, options: std.fmt.Numbe
         // options requested less precision, and we're discarding some information.  We may need to round up the last displayed digit.
         const truncated = frac_trimmed[precision];
         if (truncated >= '5') {
-            frac_trimmed[precision - 1] = switch(truncated) {
+            frac_trimmed[precision - 1] = switch (truncated) {
                 '0'...'8' => truncated + 1,
                 '9' => '0',
                 else => unreachable,
@@ -96,14 +96,14 @@ pub fn formatNumber(self: Micron, writer: *std.Io.Writer, options: std.fmt.Numbe
         frac_trimmed = frac_trimmed[0..precision];
     }
     if (frac_trimmed.len > 0) {
-        const moved_frac = slice[slice_end_of_int_part + 1..][0..frac_trimmed.len];
+        const moved_frac = slice[slice_end_of_int_part + 1 ..][0..frac_trimmed.len];
         std.mem.copyBackwards(u8, moved_frac, frac_trimmed);
         slice[slice_end_of_int_part] = '.';
         end += 1 + frac_trimmed.len;
     }
 
     buf[end] = 'm';
-    buf[end+1] = 'm';
+    buf[end + 1] = 'm';
 
     return writer.alignBuffer(buf[0 .. end + 2], options.width, options.alignment, options.fill);
 }

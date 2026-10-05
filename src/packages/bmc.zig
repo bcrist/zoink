@@ -5,7 +5,7 @@ pub const BGA149 = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...149 => true,
             else => false,
         };
@@ -14,8 +14,8 @@ pub const BGA149 = struct {
     pub const data: BGA_Data = .{
         .package_name = "BMC-149",
         .body = .{
-            .width  = .init_mm(22, 0.2),
-            .height  = .init_mm(22, 0.2),
+            .width = .init_mm(22, 0.2),
+            .height = .init_mm(22, 0.2),
         },
         .max_z = .init_mm(2, 1.5),
         .courtyard_expansion_scale = 0.75,
@@ -28,30 +28,32 @@ pub const BGA149 = struct {
             .{ .ring = .{
                 .dist_from_edges = 0,
                 .thickness = 3,
-            }},
-            .{ .ring = .{ // center 5x5
-                .dist_from_edges = 8,
-                .thickness = 3,
-            }},
-            .{ .individual = .{ .row = 3,  .col = 10, .mirror = .ns } },
-            .{ .individual = .{ .row = 10, .col = 3,  .mirror = .we } },
-            .{ .individual = .{ .row = 3,  .col = 3,  .mirror = .all } },
+            } },
+            .{
+                .ring = .{ // center 5x5
+                    .dist_from_edges = 8,
+                    .thickness = 3,
+                },
+            },
+            .{ .individual = .{ .row = 3, .col = 10, .mirror = .ns } },
+            .{ .individual = .{ .row = 10, .col = 3, .mirror = .we } },
+            .{ .individual = .{ .row = 3, .col = 3, .mirror = .all } },
         },
         .exclude_balls = &.{
             .{ .rows = .{
                 .dist_from_top = 5,
                 .row_count = 1,
                 .mirror = .ns,
-            }},
+            } },
             .{ .cols = .{
                 .dist_from_left = 5,
                 .col_count = 1,
                 .mirror = .we,
-            }},
+            } },
             .{ .corners = .{
                 .width = 2,
                 .height = 2,
-            }},
+            } },
             .{ .individual = .{ .row = 0, .col = 9, .mirror = .ns } },
             .{ .individual = .{ .row = 0, .col = 10, .mirror = .ns } },
             .{ .individual = .{ .row = 0, .col = 11, .mirror = .ns } },
@@ -60,12 +62,12 @@ pub const BGA149 = struct {
             .{ .individual = .{ .row = 2, .col = 9, .mirror = .ns } },
             .{ .individual = .{ .row = 2, .col = 11, .mirror = .ns } },
 
-            .{ .individual = .{ .row = 9,  .col = 0, .mirror = .we } },
+            .{ .individual = .{ .row = 9, .col = 0, .mirror = .we } },
             .{ .individual = .{ .row = 10, .col = 0, .mirror = .we } },
             .{ .individual = .{ .row = 11, .col = 0, .mirror = .we } },
-            .{ .individual = .{ .row = 9,  .col = 1, .mirror = .we } },
+            .{ .individual = .{ .row = 9, .col = 1, .mirror = .we } },
             .{ .individual = .{ .row = 11, .col = 1, .mirror = .we } },
-            .{ .individual = .{ .row = 9,  .col = 2, .mirror = .we } },
+            .{ .individual = .{ .row = 9, .col = 2, .mirror = .we } },
             .{ .individual = .{ .row = 11, .col = 2, .mirror = .we } },
 
             .{ .individual = .{ .row = 0, .col = 2, .mirror = .all } },
@@ -80,7 +82,8 @@ pub const BGA149 = struct {
         .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
                                                      A6=1  , A7=2  , A8=3  ,                            A12=4  , A13=5  , A14=6  ,                                
                           B3=7  , B4=8  ,            B6=9  , B7=10 , B8=11 ,          B10=12 ,          B12=13 , B13=14 , B14=15 ,             B16=16 , B17=17 ,
                   C2=18 , C3=19 , C4=20 , C5=21 ,    C6=22 , C7=23 , C8=24 ,          C10=25 ,          C12=26 , C13=27 , C14=28 ,    C15=29 , C16=30 , C17=31 , C18=32 ,
@@ -102,12 +105,13 @@ pub const BGA149 = struct {
                   U2=118, U3=119, U4=120, U5=121,    U6=122, U7=123, U8=124,          U10=125,          U12=126, U13=127, U14=128,    U15=129, U16=130, U17=131, U18=132,
                           V3=133, V4=134,            V6=135, V7=136, V8=137,          V10=138,          V12=139, V13=140, V14=141,             V16=142, V17=143,
                                                      W6=144, W7=145, W8=146,                            W12=147, W13=148, W14=149,
+        // zig fmt: on
 
         pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };
@@ -119,7 +123,7 @@ pub const BGA151 = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...151 => true,
             else => false,
         };
@@ -128,8 +132,8 @@ pub const BGA151 = struct {
     pub const data: BGA_Data = .{
         .package_name = "BMC-151",
         .body = .{
-            .width  = .init_mm(22, 0.2),
-            .height  = .init_mm(22, 0.2),
+            .width = .init_mm(22, 0.2),
+            .height = .init_mm(22, 0.2),
         },
         .max_z = .init_mm(2, 1.5),
         .courtyard_expansion_scale = 0.75,
@@ -142,30 +146,32 @@ pub const BGA151 = struct {
             .{ .ring = .{
                 .dist_from_edges = 0,
                 .thickness = 3,
-            }},
-            .{ .ring = .{ // center 3x3
-                .dist_from_edges = 9,
-                .thickness = 2,
-            }},
-            .{ .individual = .{ .row = 3,  .col = 10, .mirror = .ns } },
-            .{ .individual = .{ .row = 10, .col = 3,  .mirror = .we } },
-            .{ .individual = .{ .row = 3,  .col = 3,  .mirror = .both } },
+            } },
+            .{
+                .ring = .{ // center 3x3
+                    .dist_from_edges = 9,
+                    .thickness = 2,
+                },
+            },
+            .{ .individual = .{ .row = 3, .col = 10, .mirror = .ns } },
+            .{ .individual = .{ .row = 10, .col = 3, .mirror = .we } },
+            .{ .individual = .{ .row = 3, .col = 3, .mirror = .both } },
         },
         .exclude_balls = &.{
             .{ .rows = .{
                 .dist_from_top = 5,
                 .row_count = 1,
                 .mirror = .ns,
-            }},
+            } },
             .{ .cols = .{
                 .dist_from_left = 5,
                 .col_count = 1,
                 .mirror = .we,
-            }},
+            } },
             .{ .corners = .{
                 .width = 2,
                 .height = 2,
-            }},
+            } },
             .{ .individual = .{ .row = 0, .col = 9, .mirror = .ns } },
             .{ .individual = .{ .row = 0, .col = 10, .mirror = .ns } },
             .{ .individual = .{ .row = 0, .col = 11, .mirror = .ns } },
@@ -174,12 +180,12 @@ pub const BGA151 = struct {
             .{ .individual = .{ .row = 2, .col = 9, .mirror = .ns } },
             .{ .individual = .{ .row = 2, .col = 11, .mirror = .ns } },
 
-            .{ .individual = .{ .row = 9,  .col = 0, .mirror = .we } },
+            .{ .individual = .{ .row = 9, .col = 0, .mirror = .we } },
             .{ .individual = .{ .row = 10, .col = 0, .mirror = .we } },
             .{ .individual = .{ .row = 11, .col = 0, .mirror = .we } },
-            .{ .individual = .{ .row = 9,  .col = 1, .mirror = .we } },
+            .{ .individual = .{ .row = 9, .col = 1, .mirror = .we } },
             .{ .individual = .{ .row = 11, .col = 1, .mirror = .we } },
-            .{ .individual = .{ .row = 9,  .col = 2, .mirror = .we } },
+            .{ .individual = .{ .row = 9, .col = 2, .mirror = .we } },
             .{ .individual = .{ .row = 11, .col = 2, .mirror = .we } },
 
             .{ .individual = .{ .row = 0, .col = 2, .mirror = .both } },
@@ -192,7 +198,8 @@ pub const BGA151 = struct {
         .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
                                                      A6=1  , A7=2  , A8=3  ,                            A12=4  , A13=5  , A14=6  ,    A15=7  , A16=8  , A17=9  ,
                           B3=10 , B4=11 , B5=12 ,    B6=13 , B7=14 , B8=15 ,          B10=16 ,          B12=17 , B13=18 , B14=19 ,    B15=20 , B16=21 , B17=22 ,
                   C2=23 , C3=24 , C4=25 , C5=26 ,    C6=27 , C7=28 , C8=29 ,          C10=30 ,          C12=31 , C13=32 , C14=33 ,    C15=34 , C16=35 , C17=36 , C18=37 , C19=38 ,
@@ -214,16 +221,16 @@ pub const BGA151 = struct {
           U1=114, U2=115, U3=116, U4=117, U5=118,    U6=119, U7=120, U8=121,          U10=122,          U12=123, U13=124, U14=125,    U15=126, U16=127, U17=128, U18=129,
                           V3=130, V4=131, V5=132,    V6=133, V7=134, V8=135,          V10=136,          V12=137, V13=138, V14=139,    V15=140, V16=141, V17=142,
                           W3=143, W4=144, W5=145,    W6=146, W7=147, W8=148,                            W12=149, W13=150, W14=151,
+        // zig fmt: on
 
         pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };
-
 
 /// A pogo-pin based programming harness system similar to tag-connect, but cheaper:
 ///      - uses 10x P50 pogo pins
@@ -231,7 +238,7 @@ pub const BGA151 = struct {
 ///          - inserted into through-holes on the target board
 ///      - 7 signal pins
 ///          - Usually power, ground, target presence sense, and up to 4 serial signals
-///      - Requires a board area of approx. 6mm x 4.5mm 
+///      - Requires a board area of approx. 6mm x 4.5mm
 ///      - The land pattern on a board looks like a trident, hence the name
 ///      - When looking at the land pattern in a "portrait" orientation (trident pointing up)
 ///          - The land pattern should look like this:
@@ -253,7 +260,7 @@ pub const Trident = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             0...7 => true,
             else => false,
         };
@@ -281,33 +288,33 @@ pub const Trident = struct {
         };
 
         result.circles = &.{
-            kicad.Circle {
+            kicad.Circle{
                 .center = holes[0],
                 .end = .{
-                    .x = .{ .um = holes[0].x.um, },
-                    .y = .{ .um = holes[0].y.um  - hole_courtyard_radius_um, },
+                    .x = .{ .um = holes[0].x.um },
+                    .y = .{ .um = holes[0].y.um - hole_courtyard_radius_um },
                 },
                 .layer = .courtyard_front,
                 .stroke = .{
                     .width = .init_mm(0.01),
                 },
             },
-            kicad.Circle {
+            kicad.Circle{
                 .center = holes[1],
                 .end = .{
-                    .x = .{ .um = holes[1].x.um, },
-                    .y = .{ .um = holes[1].y.um  - hole_courtyard_radius_um, },
+                    .x = .{ .um = holes[1].x.um },
+                    .y = .{ .um = holes[1].y.um - hole_courtyard_radius_um },
                 },
                 .layer = .courtyard_front,
                 .stroke = .{
                     .width = .init_mm(0.01),
                 },
             },
-            kicad.Circle {
+            kicad.Circle{
                 .center = holes[2],
                 .end = .{
-                    .x = .{ .um = holes[2].x.um, },
-                    .y = .{ .um = holes[2].y.um  - hole_courtyard_radius_um, },
+                    .x = .{ .um = holes[2].x.um },
+                    .y = .{ .um = holes[2].y.um - hole_courtyard_radius_um },
                 },
                 .layer = .courtyard_front,
                 .stroke = .{
@@ -317,8 +324,8 @@ pub const Trident = struct {
         };
 
         result.pads = &.{
-            kicad.Pad {
-                .pin = @enumFromInt(0),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(0)),
                 .kind = .through_hole,
                 .location = holes[0],
                 .w = .init_um(pth_diameter_um),
@@ -330,8 +337,8 @@ pub const Trident = struct {
                 .copper_layers = .connected_and_outside_only,
                 .teardrops = .{},
             },
-            kicad.Pad {
-                .pin = @enumFromInt(0),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(0)),
                 .kind = .through_hole,
                 .location = holes[1],
                 .w = .init_um(pth_diameter_um),
@@ -343,8 +350,8 @@ pub const Trident = struct {
                 .copper_layers = .connected_and_outside_only,
                 .teardrops = .{},
             },
-            kicad.Pad {
-                .pin = @enumFromInt(0),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(0)),
                 .kind = .through_hole,
                 .location = holes[2],
                 .w = .init_um(pth_diameter_um),
@@ -356,8 +363,8 @@ pub const Trident = struct {
                 .copper_layers = .connected_and_outside_only,
                 .teardrops = .{},
             },
-            kicad.Pad {
-                .pin = @enumFromInt(1),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(1)),
                 .kind = .smd,
                 .location = .init_um(-pitch_um, -offset_um - pitch_um),
                 .w = .init_um(pad_diameter_um),
@@ -367,8 +374,8 @@ pub const Trident = struct {
                 .copper_layers = .all,
                 .teardrops = .{},
             },
-            kicad.Pad {
-                .pin = @enumFromInt(2),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(2)),
                 .kind = .smd,
                 .location = .init_um(-pitch_um, -offset_um),
                 .w = .init_um(pad_diameter_um),
@@ -379,8 +386,8 @@ pub const Trident = struct {
                 .teardrops = .{},
             },
 
-            kicad.Pad {
-                .pin = @enumFromInt(3),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(3)),
                 .kind = .smd,
                 .location = .init_um(0, -pitch_um * 2),
                 .w = .init_um(pad_diameter_um),
@@ -390,8 +397,8 @@ pub const Trident = struct {
                 .copper_layers = .all,
                 .teardrops = .{},
             },
-            kicad.Pad {
-                .pin = @enumFromInt(4),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(4)),
                 .kind = .smd,
                 .location = .init_um(0, -pitch_um),
                 .w = .init_um(pad_diameter_um),
@@ -401,8 +408,8 @@ pub const Trident = struct {
                 .copper_layers = .all,
                 .teardrops = .{},
             },
-            kicad.Pad {
-                .pin = @enumFromInt(5),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(5)),
                 .kind = .smd,
                 .location = .init_um(0, 0),
                 .w = .init_um(pad_diameter_um),
@@ -413,8 +420,8 @@ pub const Trident = struct {
                 .teardrops = .{},
             },
 
-            kicad.Pad {
-                .pin = @enumFromInt(6),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(6)),
                 .kind = .smd,
                 .location = .init_um(pitch_um, -offset_um),
                 .w = .init_um(pad_diameter_um),
@@ -424,8 +431,8 @@ pub const Trident = struct {
                 .copper_layers = .all,
                 .teardrops = .{},
             },
-            kicad.Pad {
-                .pin = @enumFromInt(7),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(7)),
                 .kind = .smd,
                 .location = .init_um(pitch_um, -offset_um - pitch_um),
                 .w = .init_um(pad_diameter_um),
@@ -441,7 +448,6 @@ pub const Trident = struct {
         return &final_result;
     }
 };
-
 
 const BGA_Data = footprints.BGA_Data;
 const fp = footprints;

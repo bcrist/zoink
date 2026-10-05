@@ -16,7 +16,7 @@ pub const csBGA56 = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...56 => true,
             else => false,
         };
@@ -25,7 +25,7 @@ pub const csBGA56 = struct {
     pub const data: BGA_Data = .{
         .package_name = "csBGA-56",
         .body = .{
-            .width  = .{ .nominal_um = 6000, .tolerance_um = 100 },
+            .width = .{ .nominal_um = 6000, .tolerance_um = 100 },
             .height = .{ .nominal_um = 6000, .tolerance_um = 100 },
         },
         .max_z = .{ .nominal_um = 1230, .tolerance_um = 130 },
@@ -38,16 +38,17 @@ pub const csBGA56 = struct {
             .{ .ring = .{
                 .dist_from_edges = 0,
                 .thickness = 1,
-            }},
+            } },
             .{ .ring = .{
                 .dist_from_edges = 2,
                 .thickness = 1,
-            }},
+            } },
         },
         .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
         A1 = 1,  A2 = 2,  A3 = 3,  A4 = 4,  A5 = 5,  A6 = 6,  A7 = 7,  A8 = 8,  A9 = 9,  A10 = 10,
         B1 = 11,                                                                         B10 = 12,
         C1 = 13,          C3 = 14, C4 = 15, C5 = 16, C6 = 17, C7 = 18, C8 = 19,          C10 = 20,
@@ -58,12 +59,12 @@ pub const csBGA56 = struct {
         H1 = 37,          H3 = 38, H4 = 39, H5 = 40, H6 = 41, H7 = 42, H8 = 43,          H10 = 44,
         J1 = 45,                                                                         J10 = 46,
         K1 = 47, K2 = 48, K3 = 49, K4 = 50, K5 = 51, K6 = 52, K7 = 53, K8 = 54, K9 = 55, K10 = 56,
-
+        // zig fmt: on
         pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };
@@ -81,7 +82,7 @@ pub const csBGA64 = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...64 => true,
             else => false,
         };
@@ -90,7 +91,7 @@ pub const csBGA64 = struct {
     pub const data: BGA_Data = .{
         .package_name = "csBGA-64",
         .body = .{
-            .width  = .{ .nominal_um = 5000, .tolerance_um = 100 },
+            .width = .{ .nominal_um = 5000, .tolerance_um = 100 },
             .height = .{ .nominal_um = 5000, .tolerance_um = 100 },
         },
         .max_z = .{ .nominal_um = 1000, .tolerance_um = 100 },
@@ -102,7 +103,8 @@ pub const csBGA64 = struct {
         .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
         A1 = 1,  A2 = 2,  A3 = 3,  A4 = 4,  A5 = 5,  A6 = 6,  A7 = 7,  A8 = 8,
         B1 = 9,  B2 = 10, B3 = 11, B4 = 12, B5 = 13, B6 = 14, B7 = 15, B8 = 16,
         C1 = 17, C2 = 18, C3 = 19, C4 = 20, C5 = 21, C6 = 22, C7 = 23, C8 = 24,
@@ -111,12 +113,13 @@ pub const csBGA64 = struct {
         F1 = 41, F2 = 42, F3 = 43, F4 = 44, F5 = 45, F6 = 46, F7 = 47, F8 = 48,
         G1 = 49, G2 = 50, G3 = 51, G4 = 52, G5 = 53, G6 = 54, G7 = 55, G8 = 56,
         H1 = 57, H2 = 58, H3 = 59, H4 = 60, H5 = 61, H6 = 62, H7 = 63, H8 = 64,
+        // zig fmt: on
 
         pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };
@@ -134,7 +137,7 @@ pub const ucBGA64 = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...64 => true,
             else => false,
         };
@@ -143,7 +146,7 @@ pub const ucBGA64 = struct {
     pub const data: BGA_Data = .{
         .package_name = "ucBGA-64",
         .body = .{
-            .width  = .{ .nominal_um = 4000, .tolerance_um = 100 },
+            .width = .{ .nominal_um = 4000, .tolerance_um = 100 },
             .height = .{ .nominal_um = 4000, .tolerance_um = 100 },
         },
         .max_z = .{ .nominal_um = 900, .tolerance_um = 100 },
@@ -155,7 +158,8 @@ pub const ucBGA64 = struct {
         .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
         A1 = 1,  A2 = 2,  A3 = 3,  A4 = 4,  A5 = 5,  A6 = 6,  A7 = 7,  A8 = 8,
         B1 = 9,  B2 = 10, B3 = 11, B4 = 12, B5 = 13, B6 = 14, B7 = 15, B8 = 16,
         C1 = 17, C2 = 18, C3 = 19, C4 = 20, C5 = 21, C6 = 22, C7 = 23, C8 = 24,
@@ -164,12 +168,13 @@ pub const ucBGA64 = struct {
         F1 = 41, F2 = 42, F3 = 43, F4 = 44, F5 = 45, F6 = 46, F7 = 47, F8 = 48,
         G1 = 49, G2 = 50, G3 = 51, G4 = 52, G5 = 53, G6 = 54, G7 = 55, G8 = 56,
         H1 = 57, H2 = 58, H3 = 59, H4 = 60, H5 = 61, H6 = 62, H7 = 63, H8 = 64,
+        // zig fmt: on
 
         pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };
@@ -188,7 +193,7 @@ pub const csBGA132 = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...132 => true,
             else => false,
         };
@@ -197,7 +202,7 @@ pub const csBGA132 = struct {
     pub const data: BGA_Data = .{
         .package_name = "csBGA-132",
         .body = .{
-            .width  = .{ .nominal_um = 8000, .tolerance_um = 100 },
+            .width = .{ .nominal_um = 8000, .tolerance_um = 100 },
             .height = .{ .nominal_um = 8000, .tolerance_um = 100 },
         },
         .max_z = .{ .nominal_um = 1230, .tolerance_um = 130 },
@@ -210,12 +215,13 @@ pub const csBGA132 = struct {
             .{ .ring = .{
                 .dist_from_edges = 0,
                 .thickness = 3,
-            }},
+            } },
         },
         .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
         A1 = 1,  A2 = 2,  A3 = 3,  A4 = 4,  A5 = 5,  A6 = 6,  A7 = 7,  A8 = 8,  A9 = 9,  A10 = 10, A11 = 11, A12 = 12, A13 = 13, A14 = 14,
         B1 = 15, B2 = 16, B3 = 17, B4 = 18, B5 = 19, B6 = 20, B7 = 21, B8 = 22, B9 = 23, B10 = 24, B11 = 25, B12 = 26, B13 = 27, B14 = 28,
         C1 = 29, C2 = 30, C3 = 31, C4 = 32, C5 = 33, C6 = 34, C7 = 35, C8 = 36, C9 = 37, C10 = 38, C11 = 39, C12 = 40, C13 = 41, C14 = 42,
@@ -230,12 +236,13 @@ pub const csBGA132 = struct {
         M1 = 91, M2 = 92, M3 = 93, M4 = 94, M5 = 95, M6 = 96, M7 = 97, M8 = 98, M9 = 99, M10 =100, M11 =101, M12 =102, M13 =103, M14 =104,
         N1 =105, N2 =106, N3 =107, N4 =108, N5 =109, N6 =110, N7 =111, N8 =112, N9 =113, N10 =114, N11 =115, N12 =116, N13 =117, N14 =118,
         P1 =119, P2 =120, P3 =121, P4 =122, P5 =123, P6 =124, P7 =125, P8 =126, P9 =127, P10 =128, P11 =129, P12 =130, P13 =131, P14 =132,
+        // zig fmt: on
 
         pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };
@@ -254,7 +261,7 @@ pub const ucBGA132 = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...132 => true,
             else => false,
         };
@@ -263,7 +270,7 @@ pub const ucBGA132 = struct {
     pub const data: BGA_Data = .{
         .package_name = "ucBGA-132",
         .body = .{
-            .width  = .{ .nominal_um = 6000, .tolerance_um = 100 },
+            .width = .{ .nominal_um = 6000, .tolerance_um = 100 },
             .height = .{ .nominal_um = 6000, .tolerance_um = 100 },
         },
         .max_z = .{ .nominal_um = 900, .tolerance_um = 100 },
@@ -277,22 +284,23 @@ pub const ucBGA132 = struct {
                 .row = 4,
                 .col = 5,
                 .mirror = .all,
-            }},
+            } },
             .{ .individual = .{
                 .row = 5,
                 .col = 5,
                 .mirror = .all,
-            }},
+            } },
             .{ .individual = .{
                 .row = 5,
                 .col = 4,
                 .mirror = .all,
-            }},
+            } },
         },
         .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
         A1 = 1,  A2 = 2,  A3 = 3,  A4 = 4,  A5 = 5,  A6 = 6,  A7 = 7,  A8 = 8,  A9 = 9,  A10 = 10, A11 = 11, A12 = 12,
         B1 = 13, B2 = 14, B3 = 15, B4 = 16, B5 = 17, B6 = 18, B7 = 19, B8 = 20, B9 = 21, B10 = 22, B11 = 23, B12 = 24,
         C1 = 25, C2 = 26, C3 = 27, C4 = 28, C5 = 29, C6 = 30, C7 = 31, C8 = 32, C9 = 33, C10 = 34, C11 = 35, C12 = 36,
@@ -305,12 +313,13 @@ pub const ucBGA132 = struct {
         K1 = 97, K2 = 98, K3 = 99, K4 =100, K5 =101, K6 =102, K7 =103, K8 =104, K9 =105, K10 =106, K11 =107, K12 =108,
         L1 =109, L2 =110, L3 =111, L4 =112, L5 =113, L6 =114, L7 =115, L8 =116, L9 =117, L10 =118, L11 =119, L12 =120,
         M1 =121, M2 =122, M3 =123, M4 =124, M5 =125, M6 =126, M7 =127, M8 =128, M9 =129, M10 =130, M11 =131, M12 =132,
+        // zig fmt: on
 
         pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };
@@ -328,7 +337,7 @@ pub const csBGA144 = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...144 => true,
             else => false,
         };
@@ -337,7 +346,7 @@ pub const csBGA144 = struct {
     pub const data: BGA_Data = .{
         .package_name = "csBGA-144",
         .body = .{
-            .width  = .{ .nominal_um = 7000, .tolerance_um = 100 },
+            .width = .{ .nominal_um = 7000, .tolerance_um = 100 },
             .height = .{ .nominal_um = 7000, .tolerance_um = 100 },
         },
         .max_z = .{ .nominal_um = 1000, .tolerance_um = 100 },
@@ -349,7 +358,8 @@ pub const csBGA144 = struct {
         .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
         A1 = 1,  A2 = 2,  A3 = 3,  A4 = 4,  A5 = 5,  A6 = 6,  A7 = 7,  A8 = 8,  A9 = 9,  A10 = 10, A11 = 11, A12 = 12,
         B1 = 13, B2 = 14, B3 = 15, B4 = 16, B5 = 17, B6 = 18, B7 = 19, B8 = 20, B9 = 21, B10 = 22, B11 = 23, B12 = 24,
         C1 = 25, C2 = 26, C3 = 27, C4 = 28, C5 = 29, C6 = 30, C7 = 31, C8 = 32, C9 = 33, C10 = 34, C11 = 35, C12 = 36,
@@ -362,12 +372,13 @@ pub const csBGA144 = struct {
         K1 =109, K2 =110, K3 =111, K4 =112, K5 =113, K6 =114, K7 =115, K8 =116, K9 =117, K10 =118, K11 =119, K12 =120,
         L1 =121, L2 =122, L3 =123, L4 =124, L5 =125, L6 =126, L7 =127, L8 =128, L9 =129, L10 =130, L11 =131, L12 =132,
         M1 =133, M2 =134, M3 =135, M4 =136, M5 =137, M6 =138, M7 =139, M8 =140, M9 =141, M10 =142, M11 =143, M12 =144,
+        // zig fmt: on
 
         pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };

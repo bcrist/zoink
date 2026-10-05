@@ -139,7 +139,6 @@ pub fn read_effects(self: *Text_Style, r: *sx.Reader, arena: std.mem.Allocator) 
                 } else break;
             }
             try r.require_close();
-
         } else if (try r.expression("justify")) {
             while (true) {
                 if (try r.expression("left")) {
@@ -170,7 +169,6 @@ pub fn read_effects(self: *Text_Style, r: *sx.Reader, arena: std.mem.Allocator) 
                 } else break;
             }
             try r.require_close();
-
         } else if (try r.any_expression()) |_| {
             try r.ignore_remaining_expression();
         } else if (try r.any_string()) |_| {

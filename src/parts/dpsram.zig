@@ -72,11 +72,11 @@ pub fn CY7C0xx(
 
         pub const Power = if (addr_bits < 15)
             power.Multi(3, 6, pwr, Decoupler)
-            else switch (byte_bits) {
-                8 => power.Multi(3, 8, pwr, Decoupler),
-                9 => power.Multi(4, 9, pwr, Decoupler),
-                else => unreachable,
-            };
+        else switch (byte_bits) {
+            8 => power.Multi(3, 8, pwr, Decoupler),
+            9 => power.Multi(4, 9, pwr, Decoupler),
+            else => unreachable,
+        };
 
         pub fn check_config(self: @This()) !void {
             var mapped_lower_data_bits: [byte_bits]bool = @splat(false);
@@ -114,7 +114,7 @@ pub fn CY7C0xx(
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (Pkg) {
-                packages.TQFP_100_14mm => if (addr_bits >= 15 and byte_bits == 8) switch (@intFromEnum(pin_id)) {
+                packages.TQFP_100_14mm => if (addr_bits >= 15 and byte_bits == 8) switch (@backingInt(pin_id)) {
                     // CY7C027/CY7C028
                     87 => self.master,
 
@@ -224,14 +224,14 @@ pub fn CY7C0xx(
                     58 => self.pwr.gnd[5],
                     61 => self.pwr.gnd[6],
                     88 => self.pwr.gnd[7],
-                    
+
                     15 => @field(self.pwr, @tagName(pwr))[0],
                     28 => @field(self.pwr, @tagName(pwr))[1],
                     46 => @field(self.pwr, @tagName(pwr))[2],
 
                     8, 9, 50, 67, 68, 91 => .no_connect,
                     else => unreachable,
-                } else if (addr_bits >= 15 and byte_bits == 9) switch (@intFromEnum(pin_id)) {
+                } else if (addr_bits >= 15 and byte_bits == 9) switch (@backingInt(pin_id)) {
                     // CY7C037/CY7C038
                     86 => self.master,
 
@@ -346,13 +346,13 @@ pub fn CY7C0xx(
                     61 => self.pwr.gnd[6],
                     88 => self.pwr.gnd[7],
                     89 => self.pwr.gnd[8],
-                    
+
                     15 => @field(self.pwr, @tagName(pwr))[0],
                     28 => @field(self.pwr, @tagName(pwr))[1],
                     46 => @field(self.pwr, @tagName(pwr))[2],
                     87 => @field(self.pwr, @tagName(pwr))[3],
                     else => unreachable,
-                } else switch (@intFromEnum(pin_id)) {
+                } else switch (@backingInt(pin_id)) {
                     // CY7C024/CY7C0241/CY7C025/CY7C0251/CY7C0246
                     62 => self.master,
 
@@ -460,7 +460,7 @@ pub fn CY7C0xx(
                     38 => self.pwr.gnd[3],
                     63 => self.pwr.gnd[4],
                     92 => self.pwr.gnd[5],
-                    
+
                     12 => @field(self.pwr, @tagName(pwr))[0],
                     17 => @field(self.pwr, @tagName(pwr))[1],
                     88 => @field(self.pwr, @tagName(pwr))[2],
@@ -468,7 +468,7 @@ pub fn CY7C0xx(
                     1, 2, 24, 25, 51, 52, 53, 73, 74, 75 => .no_connect,
                     else => unreachable,
                 },
-                packages.PLCC_84M => switch (@intFromEnum(pin_id)) {
+                packages.PLCC_84M => switch (@backingInt(pin_id)) {
                     // CY7C024/CY7C025
                     63 => self.master,
 
@@ -576,7 +576,7 @@ pub fn CY7C0xx(
             right_interrupt: bool,
             left_semaphores: [8]Semaphore_State,
             right_semaphores: [8]Semaphore_State,
-            left_busy: bool,  // not really state; just a copy of the busy signal we're
+            left_busy: bool, // not really state; just a copy of the busy signal we're
             right_busy: bool, // outputting in case it's assigned to .no_connect
             mem: [1 << addr_bits]Word,
 
@@ -638,7 +638,7 @@ pub fn CY7C0xx(
                         .other_semaphores = &state.left_semaphores,
                         .mem = &state.mem,
                     });
-                
+
                     try finalize_semaphores(self.left, v, &state.left_semaphores);
                     try finalize_semaphores(self.right, v, &state.right_semaphores);
 
@@ -694,10 +694,7 @@ pub fn CY7C0xx(
 
         fn read_port(mode: Validator.Update_Mode, port: Port, v: *Validator, ce: bool, mem: *const [1 << addr_bits]Validator_State.Word, semaphores: [8]Validator_State.Semaphore_State) !?usize {
             var addr: ?usize = null;
-            if (ce
-                and v.read_logic(port.n_oe, levels) == false
-                and v.read_logic(port.n_we, levels) == true
-            ) {
+            if (ce and v.read_logic(port.n_oe, levels) == false and v.read_logic(port.n_we, levels) == true) {
                 addr = v.read_bus(port.addr, levels);
                 const word = mem[addr.?];
 
@@ -713,11 +710,7 @@ pub fn CY7C0xx(
                         else => try v.drive_bus(port.upper_data, word.upper, levels),
                     }
                 }
-            } else if (v.read_logic(port.n_ce, levels) == true
-                and v.read_logic(port.n_semaphore_enable, levels) == false
-                and v.read_logic(port.n_oe, levels) == false
-                and v.read_logic(port.n_we, levels) == true
-            ) {
+            } else if (v.read_logic(port.n_ce, levels) == true and v.read_logic(port.n_semaphore_enable, levels) == false and v.read_logic(port.n_oe, levels) == false and v.read_logic(port.n_we, levels) == true) {
                 const sem_addr = v.read_bus(port.addr[0..2], levels);
                 const sem = semaphores[sem_addr];
 
@@ -745,17 +738,7 @@ pub fn CY7C0xx(
             return v.read_logic(port.n_busy, levels) == false;
         }
 
-        const Write_Port_Params = struct {
-            busy: bool,
-            mutex_addr: *usize,
-            interrupt_addr: usize,
-            other_interrupt_addr: usize,
-            interrupt_flag: *bool,
-            other_interrupt_flag: *bool,
-            semaphores: *[8]Validator_State.Semaphore_State,
-            other_semaphores: *[8]Validator_State.Semaphore_State,
-            mem: *[1 << addr_bits]Validator_State.Word
-        };
+        const Write_Port_Params = struct { busy: bool, mutex_addr: *usize, interrupt_addr: usize, other_interrupt_addr: usize, interrupt_flag: *bool, other_interrupt_flag: *bool, semaphores: *[8]Validator_State.Semaphore_State, other_semaphores: *[8]Validator_State.Semaphore_State, mem: *[1 << addr_bits]Validator_State.Word };
         fn write_port(port: Port, v: *Validator, p: Write_Port_Params) !void {
             if (@TypeOf(port.ce) != void) {
                 try v.expect_valid(port.ce, levels);
@@ -801,10 +784,7 @@ pub fn CY7C0xx(
                         }
                     }
                 }
-            } else if (v.read_logic(port.n_ce, levels) == true
-                and v.read_logic(port.n_semaphore_enable, levels) == false
-                and v.read_logic(port.n_we, levels) == false
-            ) {
+            } else if (v.read_logic(port.n_ce, levels) == true and v.read_logic(port.n_semaphore_enable, levels) == false and v.read_logic(port.n_we, levels) == false) {
                 try v.expect_valid(port.addr[0..2], levels);
                 try v.expect_valid(port.lower_data[0], levels);
 
@@ -834,11 +814,7 @@ pub fn CY7C0xx(
         fn finalize_semaphores(port: Port, v: *Validator, semaphores: *[8]Validator_State.Semaphore_State) !void {
             for (semaphores) |*sem| {
                 if (sem.* != .owned_masked) continue;
-                if (v.read_logic(port.n_ce, levels) == false
-                    or v.read_logic(port.n_semaphore_enable, levels) == true
-                    or v.read_logic(port.n_oe, levels) == true
-                    or v.read_logic(port.n_we, levels) == false
-                ) sem.* = .owned;
+                if (v.read_logic(port.n_ce, levels) == false or v.read_logic(port.n_semaphore_enable, levels) == true or v.read_logic(port.n_oe, levels) == true or v.read_logic(port.n_we, levels) == false) sem.* = .owned;
             }
         }
     };

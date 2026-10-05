@@ -7,7 +7,7 @@ pub fn PLCC(comptime rows: comptime_int, comptime cols: comptime_int, comptime p
         };
 
         pub fn has_pin(pin: enums.Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...(2 * (rows + cols)) => true,
                 else => false,
             };
@@ -16,7 +16,7 @@ pub fn PLCC(comptime rows: comptime_int, comptime cols: comptime_int, comptime p
         pub const data: PLCC_PGA_Data = .{
             .package_name = package_name,
             .body = .{
-                .width  = .init_mil(50 * (cols - 1) + 413, 15),
+                .width = .init_mil(50 * (cols - 1) + 413, 15),
                 .height = .init_mil(50 * (rows - 1) + 413, 15),
             },
             .max_z = .init_mm(7.7, 0.2),
@@ -35,7 +35,7 @@ pub const PGA68 = struct {
     };
 
     pub fn has_pin(pin: enums.Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...68 => true,
             else => false,
         };
@@ -57,18 +57,19 @@ pub const PGA68 = struct {
             .{ .ring = .{
                 .dist_from_edges = 0,
                 .thickness = 2,
-            }},
+            } },
         },
         .exclude_pins = &.{
             .{ .corners = .{
                 .width = 1,
                 .height = 1,
-            }},
+            } },
         },
         .pin_name_format_func = kicad.format_pin_name(Pin_ID),
     };
 
-    pub const Pin_ID = enum (u8) {
+    pub const Pin_ID = enum(u8) {
+        // zig fmt: off
                  A2 = 1,  A3 = 2,  A4 = 3,  A5 = 4,  A6 = 5,  A7 = 6,  A8 = 7,  A9 = 8,  A10 = 9,
         B1 = 10, B2 = 11, B3 = 12, B4 = 13, B5 = 14, B6 = 15, B7 = 16, B8 = 17, B9 = 18, B10 = 19,  B11 = 20,
         C1 = 21, C2 = 22,                                                                C10 = 23,  C11 = 24,
@@ -80,12 +81,13 @@ pub const PGA68 = struct {
         J1 = 45, J2 = 46,                                                                J10 = 47,  J11 = 48,
         K1 = 49, K2 = 50, K3 = 51, K4 = 52, K5 = 53, K6 = 54, K7 = 55, K8 = 56, K9 = 57, K10 = 58,  K11 = 59,
                  L2 = 60, L3 = 61, L4 = 62, L5 = 63, L6 = 64, L7 = 65, L8 = 66, L9 = 67, L10 = 68,
+        // zig fmt: on
 
         pub fn from_generic(id: enums.Pin_ID) Pin_ID {
-            return @enumFromInt(@intFromEnum(id));
+            return @fromBackingInt(@intCast(@backingInt(id)));
         }
         pub fn generic(self: Pin_ID) enums.Pin_ID {
-            return @enumFromInt(@intFromEnum(self));
+            return @fromBackingInt(@intCast(@backingInt(self)));
         }
     };
 };

@@ -39,10 +39,10 @@ pub const RP2040 = struct {
     } = .{},
 
     n_reset: Net_ID = .unset, // "RUN"
-    test_en: Net_ID = .gnd, 
+    test_en: Net_ID = .gnd,
 
     pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-        return switch (@intFromEnum(pin_id)) {
+        return switch (@backingInt(pin_id)) {
             0 => self.pwr_io.gnd[0],
             1 => self.pwr_io.vcc(0),
             2 => self.gpio[0],
@@ -100,7 +100,7 @@ pub const RP2040 = struct {
             54 => self.qspi.data[2],
             55 => self.qspi.data[1],
             56 => self.qspi.n_cs,
-            else => std.debug.panic("RP2040 does not have pin {}", .{ @intFromEnum(pin_id) }),
+            else => std.debug.panic("RP2040 does not have pin {}", .{@backingInt(pin_id)}),
         };
     }
 
@@ -113,7 +113,7 @@ pub const RP2040 = struct {
         }
         if (self.pwr_vreg_in.v == .unset) {
             self.pwr_vreg_in.v = b.unique_net("vreg_in");
-            _ = b.part(parts.C0402_Decoupler_1uf, b.fmt("{s} Vreg input cap", .{ self.base.name }), .{
+            _ = b.part(parts.C0402_Decoupler_1uf, b.fmt("{s} Vreg input cap", .{self.base.name}), .{
                 .gnd = .gnd,
                 .internal = self.pwr_vreg_in.v,
                 .external = self.pwr_io.v[4],
@@ -123,21 +123,21 @@ pub const RP2040 = struct {
             const p1v1 = b.unique_net("p1v1");
 
             self.pwr_vreg_out.v = b.unique_net("vreg_out");
-            _ = b.part(parts.C0402_Decoupler_1uf, b.fmt("{s} Vreg output cap", .{ self.base.name }), .{
+            _ = b.part(parts.C0402_Decoupler_1uf, b.fmt("{s} Vreg output cap", .{self.base.name}), .{
                 .gnd = .gnd,
                 .internal = self.pwr_vreg_out.v,
                 .external = p1v1,
             });
 
             self.pwr_int.v[0] = b.unique_net("p1v1");
-            _ = b.part(parts.C0402_Decoupler, b.fmt("{s} p1v1 decoupler #0", .{ self.base.name }), .{
+            _ = b.part(parts.C0402_Decoupler, b.fmt("{s} p1v1 decoupler #0", .{self.base.name}), .{
                 .gnd = .gnd,
                 .internal = self.pwr_int.v[0],
                 .external = p1v1,
             });
 
             self.pwr_int.v[1] = b.unique_net("p1v1");
-            _ = b.part(parts.C0402_Decoupler, b.fmt("{s} p1v1 decoupler #1", .{ self.base.name }), .{
+            _ = b.part(parts.C0402_Decoupler, b.fmt("{s} p1v1 decoupler #1", .{self.base.name}), .{
                 .gnd = .gnd,
                 .internal = self.pwr_int.v[1],
                 .external = p1v1,
@@ -202,7 +202,7 @@ pub fn RP235xA(comptime device_name: []const u8, comptime Decoupler: type) type 
         n_reset: Net_ID = .unset, // "RUN"
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => self.pwr_io.gnd[0],
                 1 => self.pwr_io.vcc(0),
                 2 => self.gpio[0],
@@ -264,7 +264,7 @@ pub fn RP235xA(comptime device_name: []const u8, comptime Decoupler: type) type 
                 58 => self.qspi.data[2],
                 59 => self.qspi.data[1],
                 60 => self.qspi.n_cs,
-                else => std.debug.panic("RP2350A does not have pin {}", .{ @intFromEnum(pin_id) }),
+                else => std.debug.panic("RP2350A does not have pin {}", .{@backingInt(pin_id)}),
             };
         }
 
@@ -334,7 +334,7 @@ pub fn RP235xB(comptime device_name: []const u8, comptime Decoupler: type) type 
         n_reset: Net_ID = .unset, // "RUN"
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => self.pwr_io.gnd[0],
                 1 => self.gpio[4],
                 2 => self.gpio[5],
@@ -416,7 +416,7 @@ pub fn RP235xB(comptime device_name: []const u8, comptime Decoupler: type) type 
                 78 => self.gpio[1],
                 79 => self.gpio[2],
                 80 => self.gpio[3],
-                else => std.debug.panic("RP2350B does not have pin {}", .{ @intFromEnum(pin_id) }),
+                else => std.debug.panic("RP2350B does not have pin {}", .{@backingInt(pin_id)}),
             };
         }
 

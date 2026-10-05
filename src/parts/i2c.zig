@@ -22,7 +22,7 @@ pub fn EMC1702(comptime Decoupler: type) type {
         scl: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => self.pwr.gnd,
                 1 => self.pwr.vcc,
                 2 => self.@"d+",
@@ -36,7 +36,7 @@ pub fn EMC1702(comptime Decoupler: type) type {
                 10 => self.threshold_sel,
                 11 => self.@"sense-",
                 12 => self.@"sense+",
-                else => std.debug.panic("EMC1702 does not have pin {}", .{ @intFromEnum(pin_id) }),
+                else => std.debug.panic("EMC1702 does not have pin {}", .{@backingInt(pin_id)}),
             };
         }
 
@@ -63,7 +63,7 @@ pub fn EMC1812(comptime Decoupler: type) type {
         scl: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => self.pwr.gnd,
                 1 => self.pwr.vcc(0),
                 2 => self.@"d+",
@@ -73,7 +73,7 @@ pub fn EMC1812(comptime Decoupler: type) type {
                 6 => self.@"n_alert/n_therm2",
                 7 => self.sda,
                 8 => self.scl,
-                else => std.debug.panic("EMC1812 does not have pin {}", .{ @intFromEnum(pin_id) }),
+                else => std.debug.panic("EMC1812 does not have pin {}", .{@backingInt(pin_id)}),
             };
         }
 
@@ -102,7 +102,7 @@ pub fn EMC1813(comptime Decoupler: type) type {
         scl: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => self.pwr.gnd,
                 1 => self.pwr.vcc(0),
                 2 => self.@"d1+",
@@ -114,7 +114,7 @@ pub fn EMC1813(comptime Decoupler: type) type {
                 8 => self.@"n_alert/n_therm2",
                 9 => self.sda,
                 10 => self.scl,
-                else => std.debug.panic("EMC1813 does not have pin {}", .{ @intFromEnum(pin_id) }),
+                else => std.debug.panic("EMC1813 does not have pin {}", .{@backingInt(pin_id)}),
             };
         }
 
@@ -143,7 +143,7 @@ pub fn EMC1814(comptime Decoupler: type) type {
         scl: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => self.pwr.gnd,
                 1 => self.pwr.vcc(0),
                 2 => self.@"d1+",
@@ -155,7 +155,7 @@ pub fn EMC1814(comptime Decoupler: type) type {
                 8 => self.@"n_alert/n_therm2",
                 9 => self.sda,
                 10 => self.scl,
-                else => std.debug.panic("EMC1814 does not have pin {}", .{ @intFromEnum(pin_id) }),
+                else => std.debug.panic("EMC1814 does not have pin {}", .{@backingInt(pin_id)}),
             };
         }
 
@@ -184,7 +184,7 @@ pub fn EMC1815(comptime Decoupler: type) type {
         scl: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => self.pwr.gnd,
                 1 => self.pwr.vcc(0),
                 2 => self.@"d1+/d2-",
@@ -196,7 +196,7 @@ pub fn EMC1815(comptime Decoupler: type) type {
                 8 => self.@"n_alert/n_therm2",
                 9 => self.sda,
                 10 => self.scl,
-                else => std.debug.panic("EMC1815 does not have pin {}", .{ @intFromEnum(pin_id) }),
+                else => std.debug.panic("EMC1815 does not have pin {}", .{@backingInt(pin_id)}),
             };
         }
 

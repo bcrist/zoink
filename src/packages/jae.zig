@@ -34,7 +34,7 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
 
     const mounting_hole_diameter_mm: f64 = 2.2;
     const mounting_pad_diameter_mm: f64 = 3.2;
-    
+
     const overall_width_mm: f64 = 0.4 + switch (total_pins) {
         30 => 31.7,
         40 => 38,
@@ -69,8 +69,8 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
     };
 
     result.pads = result.pads ++ .{
-        kicad.Pad {
-            .pin = @enumFromInt(0),
+        kicad.Pad{
+            .pin = @fromBackingInt(@intCast(0)),
             .kind = .through_hole,
             .location = .init_mm(-mounting_hole_width_mm / 2, 0),
             .w = .init_mm(mounting_pad_diameter_mm),
@@ -82,8 +82,8 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
             .copper_layers = .all,
             .teardrops = .{},
         },
-        kicad.Pad {
-            .pin = @enumFromInt(0),
+        kicad.Pad{
+            .pin = @fromBackingInt(@intCast(0)),
             .kind = .through_hole,
             .location = .init_mm(mounting_hole_width_mm / 2, 0),
             .w = .init_mm(mounting_pad_diameter_mm),
@@ -98,7 +98,7 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
     };
 
     result.rects = result.rects ++ .{
-        kicad.Rect {
+        kicad.Rect{
             .start = .init_mm(-overall_width_mm / 2 - courtyard_expansion_mm, min_y_mm - courtyard_expansion_mm),
             .end = .init_mm(overall_width_mm / 2 + courtyard_expansion_mm, max_y_mm + courtyard_expansion_mm),
             .layer = .courtyard_front,
@@ -106,7 +106,7 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
                 .width = .init_mm(0.01),
             },
         },
-        kicad.Rect {
+        kicad.Rect{
             .start = .init_mm(-overall_width_mm / 2, min_y_mm),
             .end = .init_mm(overall_width_mm / 2, max_y_mm),
             .layer = .fab_front,
@@ -118,7 +118,7 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
 
     if (mating_type == .receptacle_right_angle) {
         result.rects = result.rects ++ .{
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(-mounting_hole_width_mm / 2, min_y_mm - 7.5),
                 .end = .init_mm(mounting_hole_width_mm / 2, min_y_mm),
                 .layer = .fab_front,
@@ -126,7 +126,7 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
                     .width = .init_mm(0.1),
                 },
             },
-        }; 
+        };
     }
 
     const xf_base: zm.Mat3 = .translation(-pin_pitch_um * @as(f64, @floatFromInt(total_pins / 2 - 1)) / 2, switch (mating_type) {
@@ -134,7 +134,7 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
         .plug_right_angle, .receptacle_right_angle => 0,
     });
 
-    for (0 .. total_pins / 2) |raw_pin| {
+    for (0..total_pins / 2) |raw_pin| {
         const y_offset: f64 = if (raw_pin % 2 == 0) row_spacing_um else 0;
         const xf: zm.Mat3 = xf_base.multiply(.translation(pin_pitch_um * @as(f64, @floatFromInt(raw_pin)), y_offset));
 
@@ -150,8 +150,8 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
         }
 
         result.pads = result.pads ++ .{
-            kicad.Pad {
-                .pin = @enumFromInt(raw_pin + 1),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(raw_pin + 1)),
                 .kind = .through_hole,
                 .location = .init_um_transformed(xf, 0, 2 * row_spacing_um),
                 .w = .init_mm(pad_diameter_mm),
@@ -163,8 +163,8 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
                 .copper_layers = .connected_and_outside_only,
                 .teardrops = .{},
             },
-            kicad.Pad {
-                .pin = @enumFromInt(raw_pin + 61),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(raw_pin + 61)),
                 .kind = .through_hole,
                 .location = .init_um_transformed(xf, 0, 0),
                 .w = .init_mm(pad_diameter_mm),
@@ -180,7 +180,7 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
     }
 
     const final_footprint = result;
-    
+
     return struct {
         pub const pkg: Package = .{
             .default_footprint = &final_footprint,
@@ -188,7 +188,7 @@ pub fn TX24_TX25(comptime total_pins: usize, comptime mating_type: Mating_Type) 
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 0...total_pins => true,
                 else => false,
             };

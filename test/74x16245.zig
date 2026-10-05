@@ -28,7 +28,7 @@ test {
     const DIR = b.bus("DIR", 2);
 
     try v.reset();
-    
+
     try v.set_with_impedance(B, .p1v5, 10_000);
 
     try v.set_bus(A, 0xFEDC, LVCMOS);

@@ -194,7 +194,6 @@ pub const Family = enum {
             },
         };
     }
-
 };
 
 pub const Options = struct {
@@ -232,7 +231,7 @@ fn Single_Buffer(comptime value_suffix: []const u8, comptime options: Options, c
         y: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => .no_connect,
                 2 => self.a,
                 3 => self.pwr.gnd,
@@ -269,7 +268,7 @@ fn Dual_Buffer(comptime value_suffix: []const u8, comptime options: Options, com
         base: Part.Base = options.base(value_suffix),
 
         pwr: power.Single(options.pwr, options.Decoupler) = .{},
-        logic: union (enum) {
+        logic: union(enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
         } = .{ .bus = .{} },
@@ -300,7 +299,7 @@ fn Dual_Buffer(comptime value_suffix: []const u8, comptime options: Options, com
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
-                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                .bus => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     2 => self.pwr.gnd,
@@ -314,7 +313,7 @@ fn Dual_Buffer(comptime value_suffix: []const u8, comptime options: Options, com
 
                     else => unreachable,
                 },
-                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                .individual => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     2 => self.pwr.gnd,
@@ -366,7 +365,7 @@ fn Hex_Buffer(comptime value_suffix: []const u8, comptime options: Options, inve
         base: Part.Base = options.base(value_suffix),
 
         pwr: power.Single(options.pwr, options.Decoupler) = .{},
-        logic: union (enum) {
+        logic: union(enum) {
             bus: Bus_Impl,
             individual: [6]Individual_Impl,
         } = .{ .bus = .{} },
@@ -397,7 +396,7 @@ fn Hex_Buffer(comptime value_suffix: []const u8, comptime options: Options, inve
 
         fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
-                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                .bus => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     7 => self.pwr.gnd,
@@ -423,7 +422,7 @@ fn Hex_Buffer(comptime value_suffix: []const u8, comptime options: Options, inve
 
                     else => unreachable,
                 },
-                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                .individual => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     7 => self.pwr.gnd,
@@ -486,7 +485,7 @@ fn Hex_Buffer(comptime value_suffix: []const u8, comptime options: Options, inve
     };
 }
 
-fn Single_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn(a: usize, b: usize) usize) type {
+fn Single_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn (a: usize, b: usize) usize) type {
     return struct {
         base: Part.Base = options.base(value_suffix),
 
@@ -496,7 +495,7 @@ fn Single_Gate(comptime value_suffix: []const u8, comptime options: Options, fun
         y: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.b,
                 2 => self.a,
                 3 => self.pwr.gnd,
@@ -527,17 +526,17 @@ fn Single_Gate(comptime value_suffix: []const u8, comptime options: Options, fun
     };
 }
 
-fn Dual_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn(a: usize, b: usize) usize) type {
+fn Dual_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn (a: usize, b: usize) usize) type {
     return struct {
         base: Part.Base = options.base(value_suffix),
 
         pwr: power.Single(options.pwr, options.Decoupler) = .{},
-        logic: union (enum) {
+        logic: union(enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
         } = .{ .bus = .{} },
         remap: [4]u2 = .{ 0, 1 },
-        
+
         const Bus_Impl = struct {
             a: [2]Net_ID = @splat(.unset),
             b: [2]Net_ID = @splat(.unset),
@@ -565,7 +564,7 @@ fn Dual_Gate(comptime value_suffix: []const u8, comptime options: Options, func:
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
-                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                .bus => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
@@ -581,7 +580,7 @@ fn Dual_Gate(comptime value_suffix: []const u8, comptime options: Options, func:
 
                     else => unreachable,
                 },
-                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                .individual => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
@@ -640,12 +639,12 @@ const Quad_Gate_Pinout = enum {
     aby,
     yab, // mainly just 74x02, but also used by some quad gate open-collector chips
 };
-fn Quad_Gate(comptime value_suffix: []const u8, comptime options: Options, pinout: Quad_Gate_Pinout, func: *const fn(a: usize, b: usize) usize) type {
+fn Quad_Gate(comptime value_suffix: []const u8, comptime options: Options, pinout: Quad_Gate_Pinout, func: *const fn (a: usize, b: usize) usize) type {
     return struct {
         base: Part.Base = options.base(value_suffix),
 
         pwr: power.Single(options.pwr, options.Decoupler) = .{},
-        logic: union (enum) {
+        logic: union(enum) {
             bus: Bus_Impl,
             individual: [4]Individual_Impl,
         } = .{ .bus = .{} },
@@ -679,7 +678,7 @@ fn Quad_Gate(comptime value_suffix: []const u8, comptime options: Options, pinou
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (pinout) {
                 .aby => switch (self.logic) {
-                    .bus => |impl| switch (@intFromEnum(pin_id)) {
+                    .bus => |impl| switch (@backingInt(pin_id)) {
                         0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                         7 => self.pwr.gnd,
@@ -703,7 +702,7 @@ fn Quad_Gate(comptime value_suffix: []const u8, comptime options: Options, pinou
 
                         else => unreachable,
                     },
-                    .individual => |impl| switch (@intFromEnum(pin_id)) {
+                    .individual => |impl| switch (@backingInt(pin_id)) {
                         0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                         7 => self.pwr.gnd,
@@ -729,7 +728,7 @@ fn Quad_Gate(comptime value_suffix: []const u8, comptime options: Options, pinou
                     },
                 },
                 .yab => switch (self.logic) {
-                    .bus => |impl| switch (@intFromEnum(pin_id)) {
+                    .bus => |impl| switch (@backingInt(pin_id)) {
                         0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                         7 => self.pwr.gnd,
@@ -753,7 +752,7 @@ fn Quad_Gate(comptime value_suffix: []const u8, comptime options: Options, pinou
 
                         else => unreachable,
                     },
-                    .individual => |impl| switch (@intFromEnum(pin_id)) {
+                    .individual => |impl| switch (@backingInt(pin_id)) {
                         0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                         7 => self.pwr.gnd,
@@ -814,11 +813,10 @@ fn Quad_Gate(comptime value_suffix: []const u8, comptime options: Options, pinou
                 },
             }
         }
-
     };
 }
 
-fn Single_3in_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn(a: usize, b: usize, c: usize) usize) type {
+fn Single_3in_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn (a: usize, b: usize, c: usize) usize) type {
     return struct {
         base: Part.Base = options.base(value_suffix),
 
@@ -829,7 +827,7 @@ fn Single_3in_Gate(comptime value_suffix: []const u8, comptime options: Options,
         y: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.b,
                 2 => self.pwr.gnd,
                 3 => self.a,
@@ -863,7 +861,7 @@ fn Single_3in_Gate(comptime value_suffix: []const u8, comptime options: Options,
     };
 }
 
-fn Single_3in_Mux_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn(a: usize, b: usize, sel: usize) usize) type {
+fn Single_3in_Mux_Gate(comptime value_suffix: []const u8, comptime options: Options, func: *const fn (a: usize, b: usize, sel: usize) usize) type {
     return struct {
         base: Part.Base = options.base(value_suffix),
 
@@ -874,7 +872,7 @@ fn Single_3in_Mux_Gate(comptime value_suffix: []const u8, comptime options: Opti
         y: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.b,
                 2 => self.pwr.gnd,
                 3 => self.a,
@@ -1147,7 +1145,7 @@ pub fn x1G3157(comptime options: Options, switch_levels: type) type {
         r_on: f32 = 5,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.a[1],
                 2 => self.pwr.gnd,
                 3 => self.a[0],
@@ -1196,7 +1194,7 @@ fn Single_1_2_Demux(comptime value_suffix: []const u8, comptime options: Options
         sel: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.sel,
                 2 => self.pwr.gnd,
                 3 => self.a,
@@ -1257,7 +1255,7 @@ pub fn x1G29(comptime options: Options) type {
         sel: [2]Net_ID = @splat(.unset),
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.a,
                 2 => self.y[1],
                 3 => self.sel[0],
@@ -1333,7 +1331,7 @@ pub fn x1G139(comptime options: Options) type {
         sel: [2]Net_ID = @splat(.unset),
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.sel[0],
                 2 => self.sel[1],
                 3 => self.y[3],
@@ -1375,7 +1373,7 @@ fn Single_Tristate_Driver_Active_Low(comptime value_suffix: []const u8, comptime
         n_oe: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.n_oe,
                 2 => self.a,
                 3 => self.pwr.gnd,
@@ -1418,7 +1416,7 @@ fn Single_Tristate_Driver_Active_High(comptime value_suffix: []const u8, comptim
         oe: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.oe,
                 2 => self.a,
                 3 => self.pwr.gnd,
@@ -1456,7 +1454,7 @@ fn Dual_Tristate_Driver_Active_Low(comptime value_suffix: []const u8, comptime o
         base: Part.Base = options.base(value_suffix),
 
         pwr: power.Single(options.pwr, options.Decoupler) = .{},
-        logic: union (enum) {
+        logic: union(enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
         },
@@ -1475,7 +1473,7 @@ fn Dual_Tristate_Driver_Active_Low(comptime value_suffix: []const u8, comptime o
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
-                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                .bus => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
@@ -1491,7 +1489,7 @@ fn Dual_Tristate_Driver_Active_Low(comptime value_suffix: []const u8, comptime o
 
                     else => unreachable,
                 },
-                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                .individual => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
@@ -1504,7 +1502,7 @@ fn Dual_Tristate_Driver_Active_Low(comptime value_suffix: []const u8, comptime o
                     7 => impl[1].n_oe,
                     5 => impl[1].a,
                     3 => impl[1].y,
-                    
+
                     else => unreachable,
                 },
             };
@@ -1578,7 +1576,7 @@ fn Dual_Tristate_Driver_Active_High(comptime value_suffix: []const u8, comptime 
         base: Part.Base = options.base(value_suffix),
 
         pwr: power.Single(options.pwr, options.Decoupler) = .{},
-        logic: union (enum) {
+        logic: union(enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
         },
@@ -1597,7 +1595,7 @@ fn Dual_Tristate_Driver_Active_High(comptime value_suffix: []const u8, comptime 
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
-                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                .bus => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
@@ -1613,7 +1611,7 @@ fn Dual_Tristate_Driver_Active_High(comptime value_suffix: []const u8, comptime 
 
                     else => unreachable,
                 },
-                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                .individual => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
@@ -1626,7 +1624,7 @@ fn Dual_Tristate_Driver_Active_High(comptime value_suffix: []const u8, comptime 
                     7 => impl[1].oe,
                     5 => impl[1].a,
                     3 => impl[1].y,
-                    
+
                     else => unreachable,
                 },
             };
@@ -1725,7 +1723,7 @@ pub fn x1G74(comptime options: Options) type {
         n_async_clr: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.clk,
                 2 => self.d,
                 3 => self.n_q,
@@ -1816,7 +1814,7 @@ fn Single_DFF(comptime value_suffix: []const u8, comptime options: Options, comp
         q: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.d,
                 2 => self.clk,
                 3 => self.pwr.gnd,
@@ -1863,7 +1861,7 @@ fn Dual_DFF(comptime value_suffix: []const u8, comptime options: Options, compti
         base: Part.Base = options.base(value_suffix),
 
         pwr: power.Single(options.pwr, options.Decoupler) = .{},
-        logic: union (enum) {
+        logic: union(enum) {
             bus: Bus_Impl,
             individual: [2]Individual_Impl,
         },
@@ -1883,7 +1881,7 @@ fn Dual_DFF(comptime value_suffix: []const u8, comptime options: Options, compti
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (self.logic) {
-                .individual => |impl| switch (@intFromEnum(pin_id)) {
+                .individual => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
@@ -1899,7 +1897,7 @@ fn Dual_DFF(comptime value_suffix: []const u8, comptime options: Options, compti
 
                     else => unreachable,
                 },
-                .bus => |impl| switch (@intFromEnum(pin_id)) {
+                .bus => |impl| switch (@backingInt(pin_id)) {
                     0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                     4 => self.pwr.gnd,
@@ -1917,7 +1915,7 @@ fn Dual_DFF(comptime value_suffix: []const u8, comptime options: Options, compti
                 },
             };
         }
-        
+
         pub fn check_config(self: @This()) !void {
             var mapped_logical_gates: [2]bool = @splat(false);
             for (self.remap) |logical| {
@@ -2007,7 +2005,7 @@ pub fn x1G175(comptime options: Options) type {
         n_async_clr: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.clk,
                 2 => self.pwr.gnd,
                 3 => self.d,
@@ -2074,7 +2072,7 @@ pub fn x1G374(comptime options: Options) type {
         n_oe: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.clk,
                 2 => self.pwr.gnd,
                 3 => self.d,
@@ -2132,7 +2130,7 @@ pub fn x1G373(comptime options: Options) type {
         n_oe: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.transparent,
                 2 => self.pwr.gnd,
                 3 => self.d,
@@ -2146,7 +2144,7 @@ pub fn x1G373(comptime options: Options) type {
         const Validator_State = struct {
             q: bool,
         };
-        
+
         pub fn validate(self: @This(), v: *Validator, state: *Validator_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
@@ -2192,7 +2190,7 @@ pub fn x138(comptime options: Options) type {
         n_enable: [2]Net_ID = @splat(.unset),
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.sel[0],
@@ -2239,7 +2237,6 @@ pub fn x138(comptime options: Options) type {
                 },
             }
         }
-
     };
 }
 
@@ -2272,7 +2269,7 @@ pub fn x139(comptime options: Options) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 8 => self.pwr.gnd,
@@ -2356,7 +2353,7 @@ pub fn x163(comptime options: Options) type {
         count_enable_ripple: Net_ID = .unset, // affects `c` asynchronously
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.n_clear_enable,
@@ -2386,7 +2383,7 @@ pub fn x163(comptime options: Options) type {
             data: u4,
             clk: bool,
         };
-        
+
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
@@ -2477,7 +2474,7 @@ fn Dual_4b_Tristate_Buffer(comptime value_suffix: []const u8, comptime options: 
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.u[self.remap[0]].n_oe,
@@ -2607,7 +2604,7 @@ pub fn x241(comptime options: Options) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.u0.n_oe,
@@ -2703,7 +2700,7 @@ pub fn x245(comptime options: Options) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.a_to_b,
@@ -2794,7 +2791,7 @@ pub fn Octal_Line_Driver(comptime value_suffix: []const u8, comptime options: Op
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.n_oe[0],
@@ -2886,7 +2883,7 @@ pub fn x573(comptime options: Options) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.n_oe,
@@ -2920,7 +2917,7 @@ pub fn x573(comptime options: Options) type {
         const Validate_State = struct {
             data: u8,
         };
-        
+
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
@@ -2978,7 +2975,7 @@ pub fn x574(comptime options: Options) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.n_oe,
@@ -3013,7 +3010,7 @@ pub fn x574(comptime options: Options) type {
             data: u8,
             clk: bool,
         };
-        
+
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
@@ -3058,7 +3055,7 @@ pub fn x164(comptime options: Options) type {
         q: [8]Net_ID = @splat(.unset),
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.d_in[0],
@@ -3086,7 +3083,7 @@ pub fn x164(comptime options: Options) type {
             data: u8,
             clk: bool,
         };
-        
+
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
@@ -3142,7 +3139,7 @@ pub fn x165(comptime options: Options) type {
         d: [8]Net_ID = @splat(.unset),
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 1 => self.n_async_load,
@@ -3172,7 +3169,7 @@ pub fn x165(comptime options: Options) type {
             data: u8,
             clk: bool,
         };
-        
+
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
@@ -3244,7 +3241,7 @@ pub fn x595(comptime options: Options) type {
         } = .{},
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd else unreachable,
 
                 9 => self.serial.out,
@@ -3276,7 +3273,7 @@ pub fn x595(comptime options: Options) type {
             sclk: bool,
             oclk: bool,
         };
-        
+
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
@@ -3383,7 +3380,7 @@ pub fn x16244(comptime options: Options, comptime bus_hold: bool) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.u[self.remap[0]].n_oe,
@@ -3555,7 +3552,7 @@ pub fn x16245(comptime options: Options, comptime bus_hold: bool) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.u[self.remap[0]].a_to_b,
@@ -3598,7 +3595,7 @@ pub fn x16245(comptime options: Options, comptime bus_hold: bool) type {
                 20 => self.u[self.remap[1]].logical_b_net(5),
                 22 => self.u[self.remap[1]].logical_b_net(6),
                 23 => self.u[self.remap[1]].logical_b_net(7),
-                
+
                 4 => self.pwr.gnd[0],
                 10 => self.pwr.gnd[1],
                 15 => self.pwr.gnd[2],
@@ -3695,7 +3692,7 @@ pub fn CBT16212(comptime options: Options) type {
         remap: [12]u4 = .{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 },
         r_on: f32 = 3,
 
-        pub const Op = enum (u3) {
+        pub const Op = enum(u3) {
             disconnect = 0,
             l0_r0 = 1, // l1, r1 Hi-Z
             l0_r1 = 2, // l1, r0 Hi-Z
@@ -3703,7 +3700,7 @@ pub fn CBT16212(comptime options: Options) type {
             l1_r1 = 4, // l0, r0 Hi-Z
             disconnect_alt = 5,
             passthrough = 6, // l0 <=> r0, l1 <=> r1
-            exchange = 7,    // l0 <=> r1, l1 <=> r0
+            exchange = 7, // l0 <=> r1, l1 <=> r0
         };
 
         fn logical_l_net(self: @This(), bus: u1, physical_bit: usize) Net_ID {
@@ -3728,20 +3725,20 @@ pub fn CBT16212(comptime options: Options) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.op_sel[0],
                 56 => self.op_sel[1],
                 55 => self.op_sel[2],
 
-                2  => self.logical_l_net(0, 0),
-                3  => self.logical_l_net(1, 0),
-                4  => self.logical_l_net(0, 1),
-                5  => self.logical_l_net(1, 1),
-                6  => self.logical_l_net(0, 2),
-                7  => self.logical_l_net(1, 2),
-                9  => self.logical_l_net(0, 3),
+                2 => self.logical_l_net(0, 0),
+                3 => self.logical_l_net(1, 0),
+                4 => self.logical_l_net(0, 1),
+                5 => self.logical_l_net(1, 1),
+                6 => self.logical_l_net(0, 2),
+                7 => self.logical_l_net(1, 2),
+                9 => self.logical_l_net(0, 3),
                 10 => self.logical_l_net(1, 3),
                 11 => self.logical_l_net(0, 4),
                 12 => self.logical_l_net(1, 4),
@@ -3844,7 +3841,7 @@ pub fn CBT16212(comptime options: Options) type {
         }
 
         fn read_op(self: @This(), v: *Validator) Op {
-            return @enumFromInt(v.read_bus(self.op_sel, options.levels));
+            return @fromBackingInt(@intCast(v.read_bus(self.op_sel, options.levels)));
         }
     };
 }
@@ -3887,7 +3884,7 @@ pub fn x16260(comptime options: Options, comptime bus_hold: bool) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.a.n_oe,
@@ -3964,7 +3961,7 @@ pub fn x16260(comptime options: Options, comptime bus_hold: bool) type {
             bx_hold: if (bus_hold) u12 else void,
             by_hold: if (bus_hold) u12 else void,
         };
-        
+
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
@@ -4100,7 +4097,7 @@ pub fn x16652(comptime options: Options, comptime bus_hold: bool) type {
                 clk: Net_ID = .unset,
             } = .{},
             remap: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
-            
+
             fn logical_a_net(self: Unit, physical_bit: usize) Net_ID {
                 return self.a[self.remap[physical_bit]];
             }
@@ -4137,7 +4134,7 @@ pub fn x16652(comptime options: Options, comptime bus_hold: bool) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.u[self.remap[0]].a_to_b.oe,
@@ -4189,7 +4186,7 @@ pub fn x16652(comptime options: Options, comptime bus_hold: bool) type {
                 36 => self.u[self.remap[1]].logical_b_net(5),
                 34 => self.u[self.remap[1]].logical_b_net(6),
                 33 => self.u[self.remap[1]].logical_b_net(7),
-                
+
                 4 => self.pwr.gnd[0],
                 11 => self.pwr.gnd[1],
                 18 => self.pwr.gnd[2],
@@ -4322,7 +4319,7 @@ pub fn x16721(comptime options: Options, comptime bus_hold: bool) type {
         n_ce: Net_ID = .unset,
         n_oe: Net_ID = .unset,
         pwr: power.Multi(4, 8, options.pwr, options.Decoupler) = .{},
-        remap: [20]u5 = .{ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 },
+        remap: [20]u5 = .{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 },
 
         pub fn check_config(self: @This()) !void {
             var mapped_bits: [20]bool = @splat(false);
@@ -4338,7 +4335,7 @@ pub fn x16721(comptime options: Options, comptime bus_hold: bool) type {
         }
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => if (self.base.package.has_pin(.heatsink)) self.pwr.gnd[0] else unreachable,
 
                 1 => self.n_oe,
@@ -4412,7 +4409,7 @@ pub fn x16721(comptime options: Options, comptime bus_hold: bool) type {
             bus_hold: if (bus_hold) u20 else void,
             clk: bool,
         };
-        
+
         pub fn validate(self: @This(), v: *Validator, state: *Validate_State, mode: Validator.Update_Mode) !void {
             switch (mode) {
                 .reset => {
@@ -4445,7 +4442,7 @@ pub fn x16721(comptime options: Options, comptime bus_hold: bool) type {
                     if (v.read_logic(self.n_oe, options.levels) == false) {
                         try v.drive_bus(self.q, state.data, options.levels);
                     }
-                    
+
                     if (bus_hold) {
                         state.bus_hold = self.read_d(v, state);
                     }

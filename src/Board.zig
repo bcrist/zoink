@@ -31,7 +31,7 @@ pub fn deinit(self: *Board) void {
 pub fn net_name(self: *const Board, net_id: Net_ID) []const u8 {
     if (net_id == .no_connect) return "";
     if (net_id.is_power() or net_id == .unset) return @tagName(net_id);
-    const idx = @intFromEnum(net_id);
+    const idx = @backingInt(net_id);
     if (idx >= self.net_names.items.len) return "";
     return self.net_names.items[idx];
 }
@@ -48,7 +48,7 @@ pub fn print_bus_name(self: *const Board, nets: anytype, writer: *std.Io.Writer)
         const full_name = self.net_name(net_id);
         const end = std.mem.indexOfScalar(u8, full_name, '[') orelse break false;
         if (full_name[full_name.len - 1] != ']') break false;
-        const name = full_name[0 .. end];
+        const name = full_name[0..end];
         if (!std.mem.eql(u8, base_name, name)) break false;
         const bit = std.fmt.parseInt(u16, full_name[end + 1 .. full_name.len - 1], 10) catch break false;
         if (bit != i) break false;
@@ -74,7 +74,7 @@ pub fn get_net(self: *Board, name: []const u8) Net_ID {
         }
     }
 
-    return self.net_lookup.get(name) orelse std.debug.panic("Net not found: {s}", .{ name });
+    return self.net_lookup.get(name) orelse std.debug.panic("Net not found: {s}", .{name});
 }
 
 pub fn net(self: *Board, name: []const u8) Net_ID {
@@ -94,7 +94,7 @@ pub fn net(self: *Board, name: []const u8) Net_ID {
         self.net_names.append(self.gpa, "") catch @panic("OOM");
     }
 
-    const net_id: Net_ID = @enumFromInt(self.net_names.items.len);
+    const net_id: Net_ID = @fromBackingInt(@intCast(self.net_names.items.len));
     gop.key_ptr.* = name;
     gop.value_ptr.* = net_id;
     self.net_names.append(self.gpa, name) catch @panic("OOM");
@@ -106,16 +106,16 @@ pub fn fmt(self: *Board, comptime format: []const u8, args: anytype) []const u8 
 }
 
 pub fn unique_net(self: *Board, comptime name_prefix: []const u8) Net_ID {
-    const name = self.fmt(name_prefix ++ "#{}", .{ self.net_names.items.len });
+    const name = self.fmt(name_prefix ++ "#{}", .{self.net_names.items.len});
     return self.net(name);
 }
 
 pub fn unique_part_name(self: *Board, comptime name_prefix: []const u8) []const u8 {
-    return self.fmt(name_prefix ++ "#{}", .{ self.parts.items.len });
+    return self.fmt(name_prefix ++ "#{}", .{self.parts.items.len});
 }
 
 pub fn get_bus(self: *Board, name: []const u8) []const Net_ID {
-    return self.bus_lookup.get(name) orelse std.debug.panic("Bus not found: {s}", .{ name });
+    return self.bus_lookup.get(name) orelse std.debug.panic("Bus not found: {s}", .{name});
 }
 
 pub fn bus(self: *Board, comptime name: []const u8, comptime bits: comptime_int) [bits]Net_ID {
@@ -214,7 +214,7 @@ pub fn part(self: *Board, comptime Type: type, name: []const u8, init: Type) *Ty
     });
     const hash = std.hash.Wyhash.hash(0x057c11, name_owned);
     if (self.part_lookup.contains(hash)) {
-        log.err("Duplicate part name or hash collision for name: {s}", .{ name_owned });
+        log.err("Duplicate part name or hash collision for name: {s}", .{name_owned});
     }
     self.part_lookup.putAssumeCapacityNoClobber(hash, self.parts.items.len - 1);
     return ptr;
@@ -409,7 +409,7 @@ pub fn generate_bom(self: *Board, temp: std.mem.Allocator, name: []const u8, wri
         }
     }
 
-    parts.sort(BOM_Part.Sort_Context { .keys = parts.keys() });
+    parts.sort(BOM_Part.Sort_Context{ .keys = parts.keys() });
 
     var w = sx.writer(temp, writer);
     defer w.deinit();
@@ -895,47 +895,46 @@ pub fn generate_kicad_pcb(self: *Board, w: *sx.Writer, options: kicad.Writer_Opt
     try remap.generate_mapping(self);
 
     try w.expression_expanded("kicad_pcb");
-        try w.expression("version");
-        try w.int(20241229, 10);
-        try w.close();
+    try w.expression("version");
+    try w.int(20241229, 10);
+    try w.close();
 
-        try w.expression("generator");
-        try w.string_quoted("pcbnew");
-        try w.close();
+    try w.expression("generator");
+    try w.string_quoted("pcbnew");
+    try w.close();
 
-        try w.expression("generator_version");
-        try w.string_quoted("9.0");
-        try w.close();
+    try w.expression("generator_version");
+    try w.string_quoted("9.0");
+    try w.close();
 
-        try w.expression_expanded("general");
-            try w.expression("thickness");
-            try w.float(1.59);
-            try w.close();
+    try w.expression_expanded("general");
+    try w.expression("thickness");
+    try w.float(1.59);
+    try w.close();
 
-            try w.expression("legacy_teardrops");
-            try w.string("no");
-            try w.close();
-        try w.close();
+    try w.expression("legacy_teardrops");
+    try w.string("no");
+    try w.close();
+    try w.close();
 
-        try w.expression("paper");
-        try w.string_quoted("A4");
-        try w.close();
+    try w.expression("paper");
+    try w.string_quoted("A4");
+    try w.close();
 
-        try write_layers(w);
-        try write_setup(w);
+    try write_layers(w);
+    try write_setup(w);
 
-        try remap.write_nets(w);
+    try remap.write_nets(w);
 
-        try self.write_footprints(w, &remap, options);
+    try self.write_footprints(w, &remap, options);
 
-        try self.write_board_outline(w);
+    try self.write_board_outline(w);
 
-        try w.expression("embedded_fonts");
-        try w.string("no");
-        try w.close();
+    try w.expression("embedded_fonts");
+    try w.string("no");
+    try w.close();
     try w.done();
 }
-
 
 fn update_kicad_pcb(self: *Board, r: *sx.Reader, w: *sx.Writer, options: kicad.Writer_Options) !void {
     var remap: Net_Remap = .init(self.gpa);
@@ -1020,7 +1019,7 @@ fn update_kicad_pcb(self: *Board, r: *sx.Reader, w: *sx.Writer, options: kicad.W
                 // segment, via, or zone
                 try w.expression_expanded(expr);
 
-                try copy_until_expr(r, w, &.{ "net" });
+                try copy_until_expr(r, w, &.{"net"});
 
                 if (try r.expression("net")) {
                     const old_net_id = try r.require_any_int(usize, 10);
@@ -1092,7 +1091,7 @@ fn copy_until_end_of_expr(r: *sx.Reader, w: *sx.Writer) !void {
 fn write_layers(w: *sx.Writer) !void {
     try w.expression_expanded("layers");
 
-    const layers = [_]kicad.Layer {
+    const layers = [_]kicad.Layer{
         .copper_front,
         .copper_internal_1,
         .copper_internal_2,
@@ -1127,7 +1126,7 @@ fn write_layers(w: *sx.Writer) !void {
         const name = layer.get_kicad_name(.{});
         const long_name = layer.get_kicad_name(.{ .long_form = true });
         try w.open();
-        try w.int(@intFromEnum(layer), 10);
+        try w.int(@backingInt(layer), 10);
         try w.string_quoted(name);
         try w.string(if (layer.is_copper()) "signal" else "user");
         if (!std.mem.eql(u8, name, long_name)) {
@@ -1229,13 +1228,13 @@ fn write_stackup_layer(w: *sx.Writer, name: []const u8, layer_type: []const u8, 
         try w.string_quoted(extra.material);
         try w.close();
     }
-    
+
     if (extra.epsilon_r != 0) {
         try w.expression("epsilon_r");
         try w.float(extra.epsilon_r);
         try w.close();
     }
-    
+
     if (extra.loss_tangent != 0) {
         try w.expression("loss_tangent");
         try w.float(extra.loss_tangent);
@@ -1271,15 +1270,15 @@ fn update_footprints(self: *Board, r: *sx.Reader, remap: *const Net_Remap, w: *s
                     if (existing_fp.location.x.um > dimensions.width.um) continue;
                     if (existing_fp.location.y.um > dimensions.height.um) continue;
                 }
-                log.info("Updating existing footprint: {f}", .{ existing_fp.uuid });
+                log.info("Updating existing footprint: {f}", .{existing_fp.uuid});
                 try written_footprints.put(self.gpa, hash, {});
                 const p = self.parts.items[part_index];
                 try self.write_footprint(hash, p, .origin, existing_fp, temp.allocator(), w, remap, options);
             } else {
-                log.warn("Deleting obsolete footprint: {f}", .{ existing_fp.uuid });
+                log.warn("Deleting obsolete footprint: {f}", .{existing_fp.uuid});
             }
         } else {
-            log.warn("Deleting footprint with invalid UUID: {f}", .{ existing_fp.uuid });
+            log.warn("Deleting footprint with invalid UUID: {f}", .{existing_fp.uuid});
         }
     }
 
@@ -1301,7 +1300,7 @@ fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, remap: *co
 
     for (self.part_lookup.keys(), self.part_lookup.values()) |hash, part_index| {
         if (maybe_written_footprints) |written| if (written.contains(hash)) continue;
-        log.info("Adding new footprint: {X:0<8}", .{ hash });
+        log.info("Adding new footprint: {X:0<8}", .{hash});
         const p = self.parts.items[part_index];
         if (p.base.footprint) |base_fp| {
             if (p.base.location) |loc| {
@@ -1323,7 +1322,7 @@ fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, remap: *co
                 @floatFromInt(rnd.intRangeAtMostBiased(isize, -10, -1)),
                 @floatFromInt(rnd.intRangeAtMostBiased(isize, 0, @intFromFloat(board_outline.max[1] / 2))),
             };
-        } else { 
+        } else {
             bb.unapplied_offset = .{
                 @floatFromInt(rnd.intRangeAtMostBiased(isize, -10, -1)),
                 @floatFromInt(rnd.intRangeAtMostBiased(isize, 0, @intFromFloat(board_outline.max[1]))),
@@ -1357,11 +1356,11 @@ fn write_new_footprints(self: *Board, temp: *std.heap.ArenaAllocator, remap: *co
                 bb.apply_offset();
             }
         } else {
-            log.debug("Found non-overlapping positions for new footprints after {} iterations", .{ iteration + 1 });
+            log.debug("Found non-overlapping positions for new footprints after {} iterations", .{iteration + 1});
             break;
         }
     } else {
-        log.warn("Failed to find non-overlapping positions for footprints after {} iterations", .{ max_iterations });
+        log.warn("Failed to find non-overlapping positions for footprints after {} iterations", .{max_iterations});
     }
 
     for (bounding_boxes.items) |bb| {
@@ -1387,7 +1386,7 @@ fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Loc
         fp.do_not_populate = !p.base.populate;
         fp.exclude_from_bom = !p.base.include_in_bom;
         fp.exclude_from_position_files = !p.base.include_in_position_files;
-        
+
         const line_height = 0.6;
 
         var properties: std.ArrayList(kicad.Property) = .empty;
@@ -1447,7 +1446,7 @@ fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Loc
                 prop.text.style.layer = prop.text.style.get_layer().flip_sides();
             }
         }
-        
+
         if (needed_layer != fp.layer or needed_rotation.deg != fp.rotation.deg) {
             const rotation_delta = needed_rotation.deg - fp.rotation.deg;
 
@@ -1640,7 +1639,7 @@ fn write_footprint(self: *Board, hash: u64, p: Part, initial_location: kicad.Loc
 
         try fp.write(w, self, p, remap, options);
     } else {
-        log.err("No footprint specified for part: {s}", .{ p.base.name });
+        log.err("No footprint specified for part: {s}", .{p.base.name});
     }
 }
 
@@ -1662,7 +1661,7 @@ fn write_board_outline(self: *Board, w: *sx.Writer) !void {
         };
         try rect.write(w, "gr_rect");
     } else {
-        try (kicad.Line {
+        try (kicad.Line{
             .start = .{
                 .x = dimensions.corner_radius,
                 .y = .zero,
@@ -1676,7 +1675,7 @@ fn write_board_outline(self: *Board, w: *sx.Writer) !void {
             .uuid = .{ .raw = 0x00000000_8888_8888_8888_000000000000 },
         }).write(w, "gr_line");
 
-        try (kicad.Line {
+        try (kicad.Line{
             .start = .{
                 .x = dimensions.width,
                 .y = dimensions.corner_radius,
@@ -1690,7 +1689,7 @@ fn write_board_outline(self: *Board, w: *sx.Writer) !void {
             .uuid = .{ .raw = 0x00000000_8888_8888_8888_000000000001 },
         }).write(w, "gr_line");
 
-        try (kicad.Line {
+        try (kicad.Line{
             .start = .{
                 .x = .{ .um = dimensions.width.um - dimensions.corner_radius.um },
                 .y = dimensions.height,
@@ -1704,7 +1703,7 @@ fn write_board_outline(self: *Board, w: *sx.Writer) !void {
             .uuid = .{ .raw = 0x00000000_8888_8888_8888_000000000002 },
         }).write(w, "gr_line");
 
-        try (kicad.Line {
+        try (kicad.Line{
             .start = .{
                 .x = .zero,
                 .y = .{ .um = dimensions.height.um - dimensions.corner_radius.um },
@@ -1718,7 +1717,7 @@ fn write_board_outline(self: *Board, w: *sx.Writer) !void {
             .uuid = .{ .raw = 0x00000000_8888_8888_8888_000000000003 },
         }).write(w, "gr_line");
 
-        try (kicad.Arc {
+        try (kicad.Arc{
             .start = .{
                 .x = .{ .um = dimensions.width.um - dimensions.corner_radius.um },
                 .y = .zero,
@@ -1737,7 +1736,7 @@ fn write_board_outline(self: *Board, w: *sx.Writer) !void {
             .uuid = .{ .raw = 0x00000000_8888_8888_8888_000000000004 },
         }).write(w, "gr_arc");
 
-        try (kicad.Arc {
+        try (kicad.Arc{
             .start = .{
                 .x = dimensions.width,
                 .y = .{ .um = dimensions.height.um - dimensions.corner_radius.um },
@@ -1756,7 +1755,7 @@ fn write_board_outline(self: *Board, w: *sx.Writer) !void {
             .uuid = .{ .raw = 0x00000000_8888_8888_8888_000000000005 },
         }).write(w, "gr_arc");
 
-        try (kicad.Arc {
+        try (kicad.Arc{
             .start = .{
                 .x = dimensions.corner_radius,
                 .y = dimensions.height,
@@ -1775,7 +1774,7 @@ fn write_board_outline(self: *Board, w: *sx.Writer) !void {
             .uuid = .{ .raw = 0x00000000_8888_8888_8888_000000000006 },
         }).write(w, "gr_arc");
 
-        try (kicad.Arc {
+        try (kicad.Arc{
             .start = .{
                 .x = .zero,
                 .y = dimensions.corner_radius,

@@ -194,7 +194,7 @@ const Matrix = struct {
             const pivot_row = pivot_row: {
                 var pivot = i;
                 var mag = @abs(a.get(i, i));
-                for (i + 1 .. n) |row| {
+                for (i + 1..n) |row| {
                     const row_mag = @abs(a.get(i, row));
                     if (row_mag > mag) {
                         pivot = row;
@@ -207,10 +207,10 @@ const Matrix = struct {
             const pivot_value = a.get(i, pivot_row);
 
             // TODO may need to adjust this
-            if (@abs(pivot_value) <= 1.0/10_000_000.0) return error.Noninvertible;
+            if (@abs(pivot_value) <= 1.0 / 10_000_000.0) return error.Noninvertible;
 
             if (pivot_row != i) a.swap_rows(pivot_row, i);
-            if (pivot_value != 1) a.scale_row(i, 1/pivot_value);
+            if (pivot_value != 1) a.scale_row(i, 1 / pivot_value);
 
             for (0..n) |row| {
                 if (row == i) continue;

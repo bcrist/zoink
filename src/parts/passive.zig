@@ -11,21 +11,21 @@ pub fn Cap(comptime Pkg: type) type {
         dielectric: []const u8 = "",
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.a,
                 2 => self.b,
-                else => .unset
+                else => .unset,
             };
         }
 
         pub fn check_config(self: *@This(), b: *Board) !void {
             if (self.base.value.len == 0) {
                 if (self.value_nf < 1) {
-                    self.base.value = b.fmt("{} pF", .{ self.value_nf * 1000 });
+                    self.base.value = b.fmt("{} pF", .{self.value_nf * 1000});
                 } else if (self.value_nf < 1000) {
-                    self.base.value = b.fmt("{} nF", .{ self.value_nf });
+                    self.base.value = b.fmt("{} nF", .{self.value_nf});
                 } else {
-                    self.base.value = b.fmt("{} µF", .{ self.value_nf / 1000 });
+                    self.base.value = b.fmt("{} µF", .{self.value_nf / 1000});
                 }
             }
             if (self.base.bom_name.len == 0) {
@@ -62,23 +62,23 @@ pub fn Cap_Decoupler(comptime Pkg: type, comptime value_nf: comptime_float) type
         dielectric: []const u8 = "",
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.gnd,
                 2 => self.gnd,
                 3 => self.internal,
                 4 => self.external,
-                else => .unset
+                else => .unset,
             };
         }
 
         pub fn check_config(self: *@This(), b: *Board) !void {
             if (self.base.value.len == 0) {
                 if (self.value_nf < 1) {
-                    self.base.value = b.fmt("{} pF", .{ self.value_nf * 1000 });
+                    self.base.value = b.fmt("{} pF", .{self.value_nf * 1000});
                 } else if (self.value_nf < 1000) {
-                    self.base.value = b.fmt("{} nF", .{ self.value_nf });
+                    self.base.value = b.fmt("{} nF", .{self.value_nf});
                 } else {
-                    self.base.value = b.fmt("{} µF", .{ self.value_nf / 1000 });
+                    self.base.value = b.fmt("{} µF", .{self.value_nf / 1000});
                 }
             }
             if (self.base.bom_name.len == 0) {
@@ -114,21 +114,21 @@ pub fn Resistor(comptime Pkg: type) type {
         tolerance_percent: ?f32 = null,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.a,
                 2 => self.b,
-                else => .unset
+                else => .unset,
             };
         }
 
         pub fn check_config(self: *@This(), b: *Board) !void {
             if (self.base.value.len == 0) {
                 if (self.value < 1000) {
-                    self.base.value = b.fmt("{}", .{ self.value });
+                    self.base.value = b.fmt("{}", .{self.value});
                 } else if (self.value < 1000000) {
-                    self.base.value = b.fmt("{} k", .{ self.value / 1000 });
+                    self.base.value = b.fmt("{} k", .{self.value / 1000});
                 } else {
-                    self.base.value = b.fmt("{} M", .{ self.value / 1000000 });
+                    self.base.value = b.fmt("{} M", .{self.value / 1000000});
                 }
             }
             if (self.base.bom_name.len == 0) {
@@ -166,23 +166,23 @@ pub fn Resistor_Kelvin(comptime Pkg: type) type {
         tolerance_percent: ?f32 = null,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.a,
                 2 => self.a_sense,
                 3 => self.b_sense,
                 4 => self.b,
-                else => .unset
+                else => .unset,
             };
         }
 
         pub fn check_config(self: *@This(), b: *Board) !void {
             if (self.base.value.len == 0) {
                 if (self.value < 1000) {
-                    self.base.value = b.fmt("{}", .{ self.value });
+                    self.base.value = b.fmt("{}", .{self.value});
                 } else if (self.value < 1000000) {
-                    self.base.value = b.fmt("{} k", .{ self.value / 1000 });
+                    self.base.value = b.fmt("{} k", .{self.value / 1000});
                 } else {
-                    self.base.value = b.fmt("{} M", .{ self.value / 1000000 });
+                    self.base.value = b.fmt("{} M", .{self.value / 1000000});
                 }
             }
             if (self.base.bom_name.len == 0) {
@@ -220,21 +220,21 @@ pub fn Inductor(comptime Pkg: type) type {
         value_nh: f32 = 1_000,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.a,
                 2 => self.b,
-                else => .unset
+                else => .unset,
             };
         }
 
         pub fn check_config(self: *@This(), b: *Board) !void {
             if (self.base.value.len == 0) {
                 if (self.value_nh < 1) {
-                    self.base.value = b.fmt("{} pH", .{ self.value_nh * 1000 });
+                    self.base.value = b.fmt("{} pH", .{self.value_nh * 1000});
                 } else if (self.value_nh < 1000) {
-                    self.base.value = b.fmt("{} nH", .{ self.value_nh });
+                    self.base.value = b.fmt("{} nH", .{self.value_nh});
                 } else {
-                    self.base.value = b.fmt("{} µH", .{ self.value_nh / 1000 });
+                    self.base.value = b.fmt("{} µH", .{self.value_nh / 1000});
                 }
             }
         }
@@ -260,10 +260,10 @@ pub fn Diode(comptime Pkg: type) type {
         a: Net_ID = .unset,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.k,
                 2 => self.a,
-                else => .unset
+                else => .unset,
             };
         }
 
@@ -279,7 +279,7 @@ pub fn Diode(comptime Pkg: type) type {
 }
 
 pub fn Crystal(comptime Pkg: type) type {
-    if (Pkg.has_pin(@enumFromInt(4))) {
+    if (Pkg.has_pin(@fromBackingInt(@intCast(4)))) {
         return struct {
             base: Part.Base = .{
                 .package = &Pkg.pkg,
@@ -291,12 +291,12 @@ pub fn Crystal(comptime Pkg: type) type {
             value_hz: u64 = 32_768,
 
             pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-                return switch (@intFromEnum(pin_id)) {
+                return switch (@backingInt(pin_id)) {
                     1 => self.x1,
                     2 => self.gnd[0],
                     3 => self.x2,
                     4 => self.gnd[1],
-                    else => .unset
+                    else => .unset,
                 };
             }
 
@@ -304,16 +304,16 @@ pub fn Crystal(comptime Pkg: type) type {
                 if (self.base.value.len == 0) {
                     const hz: f64 = @floatFromInt(self.value_hz);
                     if (self.value_hz < 1000) {
-                        self.base.value = b.fmt("{} Hz", .{ self.value_hz });
+                        self.base.value = b.fmt("{} Hz", .{self.value_hz});
                     } else if (self.value_hz < 1_000_000) {
-                        self.base.value = b.fmt("{} kHz", .{ hz / 1000 });
+                        self.base.value = b.fmt("{} kHz", .{hz / 1000});
                     } else {
-                        self.base.value = b.fmt("{} MHz", .{ hz / 1_000_000 });
+                        self.base.value = b.fmt("{} MHz", .{hz / 1_000_000});
                     }
                 }
             }
         };
-    } else if (Pkg.has_pin(@enumFromInt(3))) {
+    } else if (Pkg.has_pin(@fromBackingInt(@intCast(3)))) {
         return struct {
             base: Part.Base = .{
                 .package = &Pkg.pkg,
@@ -325,11 +325,11 @@ pub fn Crystal(comptime Pkg: type) type {
             value_hz: u64 = 32_768,
 
             pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-                return switch (@intFromEnum(pin_id)) {
+                return switch (@backingInt(pin_id)) {
                     1 => self.x1,
                     2 => self.x2,
                     3 => self.gnd,
-                    else => .unset
+                    else => .unset,
                 };
             }
 
@@ -337,11 +337,11 @@ pub fn Crystal(comptime Pkg: type) type {
                 if (self.base.value.len == 0) {
                     const hz: f64 = @floatFromInt(self.value_hz);
                     if (self.value_hz < 1000) {
-                        self.base.value = b.fmt("{} Hz", .{ self.value_hz });
+                        self.base.value = b.fmt("{} Hz", .{self.value_hz});
                     } else if (self.value_hz < 1_000_000) {
-                        self.base.value = b.fmt("{} kHz", .{ hz / 1000 });
+                        self.base.value = b.fmt("{} kHz", .{hz / 1000});
                     } else {
-                        self.base.value = b.fmt("{} MHz", .{ hz / 1_000_000 });
+                        self.base.value = b.fmt("{} MHz", .{hz / 1_000_000});
                     }
                 }
             }
@@ -357,10 +357,10 @@ pub fn Crystal(comptime Pkg: type) type {
             value_hz: u64 = 32_768,
 
             pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-                return switch (@intFromEnum(pin_id)) {
+                return switch (@backingInt(pin_id)) {
                     1 => self.x1,
                     2 => self.x2,
-                    else => .unset
+                    else => .unset,
                 };
             }
 
@@ -368,11 +368,11 @@ pub fn Crystal(comptime Pkg: type) type {
                 if (self.base.value.len == 0) {
                     const hz: f64 = @floatFromInt(self.value_hz);
                     if (self.value_hz < 1000) {
-                        self.base.value = b.fmt("{} Hz", .{ self.value_hz });
+                        self.base.value = b.fmt("{} Hz", .{self.value_hz});
                     } else if (self.value_hz < 1_000_000) {
-                        self.base.value = b.fmt("{} kHz", .{ hz / 1000 });
+                        self.base.value = b.fmt("{} kHz", .{hz / 1000});
                     } else {
-                        self.base.value = b.fmt("{} MHz", .{ hz / 1_000_000 });
+                        self.base.value = b.fmt("{} MHz", .{hz / 1_000_000});
                     }
                 }
             }

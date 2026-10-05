@@ -30,7 +30,7 @@ pub fn L4C381(comptime Decoupler: type, comptime Package: type) type {
         n_ce_f: Net_ID = .unset,
         clk: Net_ID = .unset,
 
-        pub const Operation = enum (u3) {
+        pub const Operation = enum(u3) {
             zeroes = 0,
             nadd = 1,
             sub = 2,
@@ -49,7 +49,7 @@ pub fn L4C381(comptime Decoupler: type, comptime Package: type) type {
         };
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 1 => self.a[0],
                 2 => self.a[1],
                 3 => self.a[2],
@@ -118,7 +118,7 @@ pub fn L4C381(comptime Decoupler: type, comptime Package: type) type {
                 66 => self.b[13],
                 67 => self.b[14],
                 68 => self.b[15],
-                else => std.debug.panic("Invalid pin: {} for L4C381", .{ @intFromEnum(pin_id) }),
+                else => std.debug.panic("Invalid pin: {} for L4C381", .{@backingInt(pin_id)}),
             };
         }
 
@@ -282,15 +282,14 @@ pub fn L4C381(comptime Decoupler: type, comptime Package: type) type {
                 .zero = (unsigned_sum & 0xFFFF) == 0,
             };
         }
-        
+
         fn read_operand_select(self: @This(), v: *Validator) Operand_Select {
-            return @enumFromInt(v.read_bus(self.operand_select, levels));
+            return @fromBackingInt(@intCast(v.read_bus(self.operand_select, levels)));
         }
 
         fn read_operation(self: @This(), v: *Validator) Operation {
-            return @enumFromInt(v.read_bus(self.operation, levels));
+            return @fromBackingInt(@intCast(v.read_bus(self.operation, levels)));
         }
-
     };
 }
 
@@ -359,20 +358,19 @@ pub fn M16(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
         clk_msp: Net_ID = .unset,
         clk_lsp: Net_ID = .unset,
 
-
-        pub const Input_Format = enum (u1) {
+        pub const Input_Format = enum(u1) {
             unsigned = 0,
             signed = 1,
         };
 
-        pub const Output_Format = enum (u1) {
+        pub const Output_Format = enum(u1) {
             adjusted = 0,
             normal = 1,
         };
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (package_type) {
-                .dip64 => switch (@intFromEnum(pin_id)) {
+                .dip64 => switch (@backingInt(pin_id)) {
                     1 => self.x[4],
                     2 => self.x[3],
                     3 => self.x[2],
@@ -439,7 +437,7 @@ pub fn M16(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
                     64 => self.x[5],
                     else => unreachable,
                 },
-                .plcc68, .plcc68_pga68 => switch (@intFromEnum(pin_id)) {
+                .plcc68, .plcc68_pga68 => switch (@backingInt(pin_id)) {
                     68 => @field(self.pwr, @tagName(pwr))[0],
                     67 => self.ym,
                     66 => self.xm,
@@ -581,7 +579,7 @@ pub fn M16(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
                     .L10 => .no_connect,
                     .K1 => .no_connect,
                 },
-                .flatpack64 => switch (@intFromEnum(pin_id)) {
+                .flatpack64 => switch (@backingInt(pin_id)) {
                     64 => self.clk_msp,
                     63 => self.n_oe_p,
                     62 => self.fa,
@@ -807,15 +805,14 @@ pub fn M16(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
         }
 
         fn read_input_format(v: *Validator, signal: Net_ID) Input_Format {
-            return @enumFromInt(@intFromBool(v.read_logic(signal, levels)));
+            return @fromBackingInt(@intCast(@intFromBool(v.read_logic(signal, levels))));
         }
 
         fn read_output_format(self: @This(), v: *Validator) Output_Format {
-            return @enumFromInt(@intFromBool(v.read_logic(self.fa, levels)));
+            return @fromBackingInt(@intCast(@intFromBool(v.read_logic(self.fa, levels))));
         }
     };
 }
-
 
 // 16b x 16b => 32b signed/unsigned multipliers with single clock
 // Manufactured by various companies
@@ -886,7 +883,7 @@ pub fn M17(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
             return switch (package_type) {
-                .dip64 => switch (@intFromEnum(pin_id)) {
+                .dip64 => switch (@backingInt(pin_id)) {
                     1 => self.x[4],
                     2 => self.x[3],
                     3 => self.x[2],
@@ -953,7 +950,7 @@ pub fn M17(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
                     64 => self.x[5],
                     else => unreachable,
                 },
-                .plcc68, .plcc68_pga68 => switch (@intFromEnum(pin_id)) {
+                .plcc68, .plcc68_pga68 => switch (@backingInt(pin_id)) {
                     68 => @field(self.pwr, @tagName(pwr))[0],
                     67 => self.ym,
                     66 => self.xm,
@@ -1095,7 +1092,7 @@ pub fn M17(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
                     .L10 => .no_connect,
                     .K1 => .no_connect,
                 },
-                .flatpack64 => switch (@intFromEnum(pin_id)) {
+                .flatpack64 => switch (@backingInt(pin_id)) {
                     64 => self.n_ce_p,
                     63 => self.n_oe_p,
                     62 => self.fa,
@@ -1308,11 +1305,11 @@ pub fn M17(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
         }
 
         fn read_input_format(v: *Validator, signal: Net_ID) Input_Format {
-            return @enumFromInt(@intFromBool(v.read_logic(signal, levels)));
+            return @fromBackingInt(@intCast(@intFromBool(v.read_logic(signal, levels))));
         }
 
         fn read_output_format(self: @This(), v: *Validator) Output_Format {
-            return @enumFromInt(@intFromBool(v.read_logic(self.fa, levels)));
+            return @fromBackingInt(@intCast(@intFromBool(v.read_logic(self.fa, levels))));
         }
     };
 }

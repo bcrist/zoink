@@ -33,10 +33,8 @@ pub fn read(r: *sx.Reader, expr: []const u8) !?Arc {
                 }
             }
             try r.ignore_remaining_expression();
-
         } else if (try r.any_expression()) |_| {
             try r.ignore_remaining_expression();
-
         } else if (try r.any_string()) |_| {
             // ignore
         } else break;
@@ -97,7 +95,6 @@ pub fn write(self: Arc, w: *sx.Writer, expr: []const u8) !void {
         // special case: 0 degrees
         try self.start.write(w, "mid", null);
         try self.start.write(w, "end", null);
-        
     } else if (self.start.x.um == self.end.x.um and self.start.y.um == self.end.y.um) {
         // special case: 360 degrees
         const mid: Location = .{
@@ -107,7 +104,6 @@ pub fn write(self: Arc, w: *sx.Writer, expr: []const u8) !void {
 
         try mid.write(w, "mid", null);
         try self.end.write(w, "end", null);
-
     } else {
         // 1. normalize endpoint to have same radius from center as start point
         // 2. find the midpoint between start and normalized end point
@@ -173,7 +169,7 @@ pub fn write(self: Arc, w: *sx.Writer, expr: []const u8) !void {
     }
 
     try self.stroke.write(w);
-    
+
     try w.expression("layer");
     try w.string_quoted(self.layer.get_kicad_name(.{}));
     try w.close();

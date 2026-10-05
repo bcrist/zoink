@@ -1,4 +1,3 @@
-
 pub fn QSPI(
     comptime value: []const u8,
     comptime Power: type,
@@ -18,7 +17,7 @@ pub fn QSPI(
         data: [4]Net_ID = @splat(.unset),
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => self.pwr.gnd,
                 1 => self.n_cs,
                 2 => self.data[1], // SO in SPI mode
@@ -28,7 +27,7 @@ pub fn QSPI(
                 6 => self.clk,
                 7 => self.data[3],
                 8 => self.pwr.vcc(0),
-                else => std.debug.panic("QSPI flash does not have pin {}", .{ @intFromEnum(pin_id) }),
+                else => std.debug.panic("QSPI flash does not have pin {}", .{@backingInt(pin_id)}),
             };
         }
 

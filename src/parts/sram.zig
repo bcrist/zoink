@@ -1,7 +1,7 @@
 pub fn Pins_8b_Alliance(comptime Self: type, comptime Pkg: type) type {
     if (Pkg == packages.TSOP_II_32 or Pkg == packages.SOJ_32_400 or Pkg == packages.SOJ_32_300) return struct {
         pub fn pin(self: Self, pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 28 => self.n_oe,
                 5 => self.n_ce,
                 12 => self.n_we,
@@ -42,7 +42,7 @@ pub fn Pins_8b_Alliance(comptime Self: type, comptime Pkg: type) type {
             };
         }
     };
-    
+
     @compileError("Alliance SRAM pinout is not known for " ++ @typeName(Pkg));
 }
 
@@ -105,7 +105,7 @@ pub fn Pins_16b_GSI(comptime Self: type, comptime Pkg: type) type {
 
     if (Pkg == packages.SOJ_44 or Pkg == packages.TSOP_II_44) return struct {
         pub fn pin(self: Self, pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 39 => self.n_lower_byte_enable,
                 40 => self.n_upper_byte_enable,
 
@@ -163,13 +163,12 @@ pub fn Pins_16b_GSI(comptime Self: type, comptime Pkg: type) type {
     @compileError("GSI 16b SRAM pinout is not known for " ++ @typeName(Pkg));
 }
 
-
 pub fn Async_8b(
     comptime value: []const u8,
     comptime addr_bits: comptime_int,
     comptime Power: type,
     comptime levels: type,
-    comptime Pins_Provider: fn(comptime Self: type, comptime Pkg: type) type,
+    comptime Pins_Provider: fn (comptime Self: type, comptime Pkg: type) type,
     comptime Pkg: type,
 ) type {
     return struct {
@@ -185,7 +184,7 @@ pub fn Async_8b(
         n_ce: Net_ID = .unset,
         n_we: Net_ID = .unset,
         n_oe: Net_ID = .unset,
-        remap_data: [8]u3 = .{ 0,1,2,3,4,5,6,7 },
+        remap_data: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
         remap_addr: [addr_bits]u5 = Part.identity_remap(u5, addr_bits),
 
         pub fn check_config(self: @This()) !void {
@@ -241,10 +240,7 @@ pub fn Async_8b(
                     }
                 },
                 .nets_only => {
-                    if (v.read_logic(self.n_ce, levels) == false 
-                        and v.read_logic(self.n_oe, levels) == false
-                        and v.read_logic(self.n_we, levels) == true
-                    ) {
+                    if (v.read_logic(self.n_ce, levels) == false and v.read_logic(self.n_oe, levels) == false and v.read_logic(self.n_we, levels) == true) {
                         const addr = v.read_bus(self.addr, levels);
                         try v.drive_bus(self.data, state.mem[addr], levels);
                     }
@@ -259,7 +255,7 @@ pub fn Async_16b(
     comptime addr_bits: comptime_int,
     comptime Power: type,
     comptime levels: type,
-    comptime Pins_Provider: fn(comptime Self: type, comptime Pkg: type) type,
+    comptime Pins_Provider: fn (comptime Self: type, comptime Pkg: type) type,
     comptime Pkg: type,
 ) type {
     return struct {
@@ -278,8 +274,8 @@ pub fn Async_16b(
         n_upper_byte_enable: Net_ID = .unset,
         n_we: Net_ID = .unset,
         n_oe: Net_ID = .unset,
-        remap_lower_data: [8]u3 = .{ 0,1,2,3,4,5,6,7 },
-        remap_upper_data: [8]u3 = .{ 0,1,2,3,4,5,6,7 },
+        remap_lower_data: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
+        remap_upper_data: [8]u3 = .{ 0, 1, 2, 3, 4, 5, 6, 7 },
         remap_addr: [addr_bits]u5 = Part.identity_remap(u5, addr_bits),
 
         pub fn check_config(self: @This()) !void {
@@ -361,10 +357,7 @@ pub fn Async_16b(
                     }
                 },
                 .nets_only => {
-                    if (v.read_logic(self.n_ce, levels) == false 
-                        and v.read_logic(self.n_oe, levels) == false
-                        and v.read_logic(self.n_we, levels) == true
-                    ) {
+                    if (v.read_logic(self.n_ce, levels) == false and v.read_logic(self.n_oe, levels) == false and v.read_logic(self.n_we, levels) == true) {
                         const addr = v.read_bus(self.addr, levels);
                         const word = state.mem[addr];
 

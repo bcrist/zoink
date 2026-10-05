@@ -21,8 +21,8 @@ pub fn NPTH(comptime name: []const u8, comptime hole_diameter_um: comptime_int, 
     };
 
     result.pads = &.{
-        kicad.Pad {
-            .pin = @enumFromInt(0),
+        kicad.Pad{
+            .pin = @fromBackingInt(@intCast(0)),
             .kind = .non_plated_through_hole,
             .location = .init_mm(0, 0),
             .w = .{ .um = outer_diameter_um },
@@ -37,7 +37,7 @@ pub fn NPTH(comptime name: []const u8, comptime hole_diameter_um: comptime_int, 
     };
 
     const final_footprint = result;
-    
+
     return struct {
         pub const pkg: Package = .{
             .default_footprint = &final_footprint,
@@ -45,11 +45,10 @@ pub fn NPTH(comptime name: []const u8, comptime hole_diameter_um: comptime_int, 
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return @intFromEnum(pin) == 0;
+            return @backingInt(pin) == 0;
         }
     };
 }
-
 
 pub fn PTH(comptime name: []const u8, comptime hole_diameter_um: comptime_int, comptime pad_diameter_um: comptime_int, comptime num_vias: comptime_int, comptime via_diameter_um: comptime_int) type {
     var result: Footprint = .{
@@ -60,8 +59,8 @@ pub fn PTH(comptime name: []const u8, comptime hole_diameter_um: comptime_int, c
     };
 
     result.pads = &.{
-        kicad.Pad {
-            .pin = @enumFromInt(0),
+        kicad.Pad{
+            .pin = @fromBackingInt(@intCast(0)),
             .kind = .through_hole,
             .location = .init_mm(0, 0),
             .w = .{ .um = pad_diameter_um },
@@ -75,12 +74,11 @@ pub fn PTH(comptime name: []const u8, comptime hole_diameter_um: comptime_int, c
         },
     };
 
-
     for (0..num_vias) |v| {
         const xf: zm.Mat3 = footprints.rotation(@as(f64, std.math.tau) * v / num_vias);
         result.pads = result.pads ++ .{
-            kicad.Pad {
-                .pin = @enumFromInt(0),
+            kicad.Pad{
+                .pin = @fromBackingInt(@intCast(0)),
                 .kind = .through_hole,
                 .location = .init_um_transformed(xf, 0, (hole_diameter_um + pad_diameter_um) / 4),
                 .w = .{ .um = via_diameter_um + 100 },
@@ -96,7 +94,7 @@ pub fn PTH(comptime name: []const u8, comptime hole_diameter_um: comptime_int, c
     }
 
     const final_footprint = result;
-    
+
     return struct {
         pub const pkg: Package = .{
             .default_footprint = &final_footprint,
@@ -104,7 +102,7 @@ pub fn PTH(comptime name: []const u8, comptime hole_diameter_um: comptime_int, c
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return @intFromEnum(pin) == 0;
+            return @backingInt(pin) == 0;
         }
     };
 }

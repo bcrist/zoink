@@ -22,11 +22,11 @@ pub const Base = struct {
 };
 
 pub const VTable = struct {
-    pin_to_net: *const fn(base: *Part.Base, pin: Pin_ID) Net_ID,
-    check_config: ?*const fn(base: *Part.Base, b: *Board) anyerror!void,
-    check_for_unset_nets: *const fn(base: *Part.Base) anyerror!void,
-    get_or_generate_decouplers: *const fn(base: *Part.Base, b: *Board, decoupler_buf: []Part) []const Part,
-    validate: ?*const fn(base: *const Part.Base, v: *Validator, state: *anyopaque, mode: Validator.Update_Mode) anyerror!void,
+    pin_to_net: *const fn (base: *Part.Base, pin: Pin_ID) Net_ID,
+    check_config: ?*const fn (base: *Part.Base, b: *Board) anyerror!void,
+    check_for_unset_nets: *const fn (base: *Part.Base) anyerror!void,
+    get_or_generate_decouplers: *const fn (base: *Part.Base, b: *Board, decoupler_buf: []Part) []const Part,
+    validate: ?*const fn (base: *const Part.Base, v: *Validator, state: *anyopaque, mode: Validator.Update_Mode) anyerror!void,
     validator_state_bytes: usize,
     validator_state_align: usize,
 
@@ -211,7 +211,7 @@ pub const VTable = struct {
                 if (Validator_State_Pointer == void) {
                     try part.validate(v, mode);
                 } else {
-                    const state: Validator_State_Pointer = @alignCast(@ptrCast(raw_state));
+                    const state: Validator_State_Pointer = @ptrCast(@alignCast(raw_state));
                     try part.validate(v, state, mode);
                 }
             }

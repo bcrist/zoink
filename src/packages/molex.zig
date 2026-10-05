@@ -7,7 +7,7 @@ pub const CGrid = struct {
 
         var result: Footprint = .{
             .kind = .through_hole,
-            .name = std.fmt.comptimePrint("70280-{d}", .{ pins }),
+            .name = std.fmt.comptimePrint("70280-{d}", .{pins}),
         };
 
         const pin_pitch_mm: f64 = 2.54;
@@ -23,8 +23,8 @@ pub const CGrid = struct {
 
         for (0..positions) |col| {
             result.pads = result.pads ++ .{
-                kicad.Pad {
-                    .pin = @enumFromInt(col * 2 + 1),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(col * 2 + 1)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm * col, pin_pitch_mm / 2),
                     .w = .init_mm(pad_diameter_mm),
@@ -36,8 +36,8 @@ pub const CGrid = struct {
                     .copper_layers = .connected_and_outside_only,
                     .teardrops = .{},
                 },
-                kicad.Pad {
-                    .pin = @enumFromInt(col * 2 + 2),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(col * 2 + 2)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm * col, -pin_pitch_mm / 2),
                     .w = .init_mm(pad_diameter_mm),
@@ -53,17 +53,17 @@ pub const CGrid = struct {
         }
 
         result.rects = &.{
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm - courtyard_expansion_mm, -pin_pitch_mm - courtyard_expansion_mm),
                 .end = .init_mm(x_right_mm + courtyard_expansion_mm, pin_pitch_mm + courtyard_expansion_mm),
                 .layer = .courtyard_front,
                 .stroke = .{ .width = .init_mm(0.01) },
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm, -pin_pitch_mm),
                 .end = .init_mm(x_right_mm, pin_pitch_mm),
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm, 0),
                 .end = .init_mm(x_origin_mm + pin_pitch_mm / 2, pin_pitch_mm),
                 .stroke = .{ .width = .init_mm(0) },
@@ -80,7 +80,7 @@ pub const CGrid = struct {
             };
 
             pub fn has_pin(pin: Pin_ID) bool {
-                return switch (@intFromEnum(pin)) {
+                return switch (@backingInt(pin)) {
                     1...pins => true,
                     else => false,
                 };
@@ -96,7 +96,7 @@ pub const CGrid = struct {
 
         var result: Footprint = .{
             .kind = .through_hole,
-            .name = std.fmt.comptimePrint("70246-{d}", .{ pins }),
+            .name = std.fmt.comptimePrint("70246-{d}", .{pins}),
         };
 
         const pin_pitch_mm: f64 = 2.54;
@@ -120,8 +120,8 @@ pub const CGrid = struct {
 
         for (0..positions) |col| {
             result.pads = result.pads ++ .{
-                kicad.Pad {
-                    .pin = @enumFromInt(col * 2 + 1),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(col * 2 + 1)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm * col, pin_pitch_mm / 2),
                     .w = .init_mm(pad_diameter_mm),
@@ -133,8 +133,8 @@ pub const CGrid = struct {
                     .copper_layers = .connected_and_outside_only,
                     .teardrops = .{},
                 },
-                kicad.Pad {
-                    .pin = @enumFromInt(col * 2 + 2),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(col * 2 + 2)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm * col, -pin_pitch_mm / 2),
                     .w = .init_mm(pad_diameter_mm),
@@ -150,71 +150,71 @@ pub const CGrid = struct {
         }
 
         result.lines = &.{
-            kicad.Line {
+            kicad.Line{
                 .start = .init_mm(x_left_mm, y_top_mm),
                 .end = .init_mm(x_right_mm, y_top_mm),
             },
-            kicad.Line {
+            kicad.Line{
                 .start = .init_mm(x_left_mm, y_top_mm),
                 .end = .init_mm(x_left_mm, y_bottom_mm),
             },
-            kicad.Line {
+            kicad.Line{
                 .start = .init_mm(x_right_mm, y_top_mm),
                 .end = .init_mm(x_right_mm, y_bottom_mm),
             },
-            kicad.Line {
+            kicad.Line{
                 .start = .init_mm(x_left_mm, y_bottom_mm),
                 .end = .init_mm(x_left_mm + overall_width / 2 - 2.055, y_bottom_mm),
             },
-            kicad.Line {
+            kicad.Line{
                 .start = .init_mm(x_right_mm, y_bottom_mm),
                 .end = .init_mm(x_right_mm - overall_width / 2 + 2.055, y_bottom_mm),
             },
         };
 
         result.rects = &.{
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm - courtyard_expansion_mm, y_top_mm - courtyard_expansion_mm),
                 .end = .init_mm(x_right_mm + courtyard_expansion_mm, y_bottom_mm + courtyard_expansion_mm),
                 .layer = .courtyard_front,
                 .stroke = .{ .width = .init_mm(0.01) },
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm, y_top_mm),
                 .end = .init_mm(x_left_mm + shroud_thickness_mm, y_bottom_mm),
                 .stroke = .{ .width = .init_mm(0) },
                 .fill = true,
                 .layer = .fab_front,
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_right_mm, y_top_mm),
                 .end = .init_mm(x_right_mm - shroud_thickness_mm, y_bottom_mm),
                 .stroke = .{ .width = .init_mm(0) },
                 .fill = true,
                 .layer = .fab_front,
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm, y_top_mm),
                 .end = .init_mm(x_right_mm, y_top_mm + shroud_thickness_mm),
                 .stroke = .{ .width = .init_mm(0) },
                 .fill = true,
                 .layer = .fab_front,
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm, y_bottom_mm),
                 .end = .init_mm(x_left_mm + overall_width / 2 - 2.055, y_bottom_mm - shroud_thickness_mm),
                 .stroke = .{ .width = .init_mm(0) },
                 .fill = true,
                 .layer = .fab_front,
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_right_mm, y_bottom_mm),
                 .end = .init_mm(x_right_mm - overall_width / 2 + 2.055, y_bottom_mm - shroud_thickness_mm),
                 .stroke = .{ .width = .init_mm(0) },
                 .fill = true,
                 .layer = .fab_front,
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_origin_mm + pin_pitch_mm * -0.5, 0),
                 .end = .init_mm(x_origin_mm + pin_pitch_mm * 0.5, pin_pitch_mm),
                 .stroke = .{ .width = .init_mm(0) },
@@ -231,7 +231,7 @@ pub const CGrid = struct {
             };
 
             pub fn has_pin(pin: Pin_ID) bool {
-                return switch (@intFromEnum(pin)) {
+                return switch (@backingInt(pin)) {
                     1...pins => true,
                     else => false,
                 };
@@ -246,7 +246,7 @@ pub const KK254 = struct {
     pub fn @"42375"(comptime pins: comptime_int) type {
         var result: Footprint = .{
             .kind = .through_hole,
-            .name = std.fmt.comptimePrint("42375-{d}", .{ pins }),
+            .name = std.fmt.comptimePrint("42375-{d}", .{pins}),
         };
 
         const pin_pitch_mm: f64 = 2.54;
@@ -265,8 +265,8 @@ pub const KK254 = struct {
 
         for (0..pins) |i| {
             result.pads = result.pads ++ .{
-                kicad.Pad {
-                    .pin = @enumFromInt(1 + i),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(1 + i)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm * i, 0),
                     .w = .init_mm(pad_width_mm),
@@ -282,17 +282,17 @@ pub const KK254 = struct {
         }
 
         result.rects = &.{
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm - courtyard_expansion_mm, -overall_height / 2 - courtyard_expansion_mm),
                 .end = .init_mm(x_right_mm + courtyard_expansion_mm, overall_height / 2 + courtyard_expansion_mm),
                 .layer = .courtyard_front,
                 .stroke = .{ .width = .init_mm(0.01) },
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm, -overall_height / 2),
                 .end = .init_mm(x_right_mm, overall_height / 2),
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm, -overall_height / 2),
                 .end = .init_mm(x_left_mm + pin_pitch_mm, overall_height / 2),
                 .stroke = .{ .width = .init_mm(0) },
@@ -309,7 +309,7 @@ pub const KK254 = struct {
             };
 
             pub fn has_pin(pin: Pin_ID) bool {
-                return switch (@intFromEnum(pin)) {
+                return switch (@backingInt(pin)) {
                     1...pins => true,
                     else => false,
                 };
@@ -321,7 +321,7 @@ pub const KK254 = struct {
     pub fn @"4455"(comptime pins: comptime_int) type {
         var result: Footprint = .{
             .kind = .through_hole,
-            .name = std.fmt.comptimePrint("4455-{d}", .{ pins }),
+            .name = std.fmt.comptimePrint("4455-{d}", .{pins}),
         };
 
         const pin_pitch_mm: f64 = 2.54;
@@ -350,7 +350,7 @@ pub const KK254 = struct {
 
         for (0..pins) |i| {
             result.rects = result.rects ++ .{
-                kicad.Rect {
+                kicad.Rect{
                     .start = .init_mm(x_origin_mm + pin_pitch_mm * i - 0.3, y_terminals_mm - 0.3),
                     .end = .init_mm(x_origin_mm + pin_pitch_mm * i + 0.3, y_terminals_mm + 0.3),
                     .stroke = .{ .width = .init_mm(0) },
@@ -359,8 +359,8 @@ pub const KK254 = struct {
                 },
             };
             result.pads = result.pads ++ .{
-                kicad.Pad {
-                    .pin = @enumFromInt(1 + i),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(1 + i)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm * i, 0),
                     .w = .init_mm(pad_width_mm),
@@ -376,30 +376,30 @@ pub const KK254 = struct {
         }
 
         result.rects = result.rects ++ .{
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm - courtyard_expansion_mm, y_body_bottom_mm - body_height_mm - key_height_mm - courtyard_expansion_mm),
                 .end = .init_mm(x_right_mm + courtyard_expansion_mm, y_body_bottom_mm + cat_ear_height_mm + courtyard_expansion_mm),
                 .layer = .courtyard_front,
                 .stroke = .{ .width = .init_mm(0.01) },
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm, y_body_bottom_mm),
                 .end = .init_mm(x_right_mm, y_body_bottom_mm - body_height_mm),
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm + pin_pitch_mm / 2 - key_width_mm, y_body_bottom_mm - body_height_mm),
                 .end = .init_mm(x_left_mm + pin_pitch_mm / 2, y_body_bottom_mm - body_height_mm - key_height_mm),
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_right_mm - pin_pitch_mm / 2 + key_width_mm, y_body_bottom_mm - body_height_mm),
                 .end = .init_mm(x_right_mm - pin_pitch_mm / 2, y_body_bottom_mm - body_height_mm - key_height_mm),
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_left_mm, y_body_bottom_mm),
                 .end = .init_mm(x_left_mm + cat_ear_width_mm, y_body_bottom_mm + cat_ear_height_mm),
                 .layer = .fab_front,
             },
-            kicad.Rect {
+            kicad.Rect{
                 .start = .init_mm(x_right_mm, y_body_bottom_mm),
                 .end = .init_mm(x_right_mm - cat_ear_width_mm, y_body_bottom_mm + cat_ear_height_mm),
                 .layer = .fab_front,
@@ -415,7 +415,7 @@ pub const KK254 = struct {
             };
 
             pub fn has_pin(pin: Pin_ID) bool {
-                return switch (@intFromEnum(pin)) {
+                return switch (@backingInt(pin)) {
                     1...pins => true,
                     else => false,
                 };
@@ -432,7 +432,7 @@ pub const KK254 = struct {
         };
 
         pub fn has_pin(pin: Pin_ID) bool {
-            return switch (@intFromEnum(pin)) {
+            return switch (@backingInt(pin)) {
                 1...4 => true,
                 else => false,
             };
@@ -452,7 +452,7 @@ pub const KK254 = struct {
             const pad_height_mm: f64 = 2.6;
 
             const mounting_hole_diameter_mm: f64 = 1.25;
-            
+
             const courtyard_expansion_mm: f64 = 1;
 
             const y_top_mm: f64 = -2.54;
@@ -463,8 +463,8 @@ pub const KK254 = struct {
             const x_right_mm: f64 = 10.2 / 2.0;
 
             result.pads = &.{
-                kicad.Pad {
-                    .pin = @enumFromInt(0),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(0)),
                     .kind = .non_plated_through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm * 2, -2.16),
                     .w = .init_mm(mounting_hole_diameter_mm),
@@ -476,8 +476,8 @@ pub const KK254 = struct {
                     .copper_layers = .all,
                     .teardrops = .{},
                 },
-                kicad.Pad {
-                    .pin = @enumFromInt(1),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(1)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm, 0),
                     .w = .init_mm(pad_width_mm),
@@ -489,8 +489,8 @@ pub const KK254 = struct {
                     .copper_layers = .all,
                     .teardrops = .{},
                 },
-                kicad.Pad {
-                    .pin = @enumFromInt(2),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(2)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm, 0),
                     .w = .init_mm(pad_width_mm),
@@ -502,8 +502,8 @@ pub const KK254 = struct {
                     .copper_layers = .all,
                     .teardrops = .{},
                 },
-                kicad.Pad {
-                    .pin = @enumFromInt(3),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(3)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm * 2, 0),
                     .w = .init_mm(pad_width_mm),
@@ -515,8 +515,8 @@ pub const KK254 = struct {
                     .copper_layers = .all,
                     .teardrops = .{},
                 },
-                kicad.Pad {
-                    .pin = @enumFromInt(4),
+                kicad.Pad{
+                    .pin = @fromBackingInt(@intCast(4)),
                     .kind = .through_hole,
                     .location = .init_mm(x_origin_mm + pin_pitch_mm * 3, 0),
                     .w = .init_mm(pad_width_mm),
@@ -531,17 +531,17 @@ pub const KK254 = struct {
             };
 
             result.rects = &.{
-                kicad.Rect {
+                kicad.Rect{
                     .start = .init_mm(x_left_mm - courtyard_expansion_mm, y_top_mm - courtyard_expansion_mm),
                     .end = .init_mm(x_right_mm + courtyard_expansion_mm, y_bottom_mm + courtyard_expansion_mm),
                     .layer = .courtyard_front,
                     .stroke = .{ .width = .init_mm(0.01) },
                 },
-                kicad.Rect {
+                kicad.Rect{
                     .start = .init_mm(x_left_mm, y_bottom_mm),
                     .end = .init_mm(x_right_mm, y_top_mm),
                 },
-                kicad.Rect {
+                kicad.Rect{
                     .start = .init_mm(x_origin_mm, y_bottom_mm),
                     .end = .init_mm(x_origin_mm + pin_pitch_mm * 2, y_bottom_mm - 1.8),
                     .stroke = .{ .width = .init_mm(0) },

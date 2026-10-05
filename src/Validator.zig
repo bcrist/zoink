@@ -16,7 +16,7 @@ const Net_State = struct {
     initial_circuit: Circuit, // must be .none or .simplex
 };
 
-const Circuit = union (enum) {
+const Circuit = union(enum) {
     none,
     simplex: Simplex,
     divider: [2]Simplex,
@@ -111,7 +111,7 @@ const Circuit = union (enum) {
 
         fn power_node(self: *Complex, allocator: std.mem.Allocator, v: f32) !u32 {
             if (v == 0) return power_node_offset;
-            for (power_node_offset + 1 .., self.power.items) |i, power_v| {
+            for (power_node_offset + 1.., self.power.items) |i, power_v| {
                 if (v == power_v) return @intCast(i);
             }
             try self.power.append(allocator, v);
@@ -130,7 +130,7 @@ const Circuit = union (enum) {
 
 pub const Part_Validator = struct {
     part: *const Part.Base,
-    func: *const fn(part: *const Part.Base, validator: *Validator, state: *anyopaque, mode: Update_Mode) anyerror!void,
+    func: *const fn (part: *const Part.Base, validator: *Validator, state: *anyopaque, mode: Update_Mode) anyerror!void,
     state_offset: u32,
 };
 
@@ -169,7 +169,7 @@ pub fn init(allocator: std.mem.Allocator, b: *const Board, options: Init_Options
         if (part.vt.validate) |func| {
             const offset = std.mem.alignForward(usize, part_state_needed, part.vt.validator_state_align);
             part_state_needed = offset + part.vt.validator_state_bytes;
-            
+
             parts.appendAssumeCapacity(.{
                 .part = part.base,
                 .func = func,
@@ -195,7 +195,7 @@ pub fn init(allocator: std.mem.Allocator, b: *const Board, options: Init_Options
         .max_iterations = options.max_iterations,
         .hash_part_state = options.hash_part_state,
         .float_v = options.float_v,
-    }; 
+    };
 }
 
 fn part_less_than(ctx: void, a: Part, b: Part) bool {
@@ -245,8 +245,8 @@ pub fn set(self: *Validator, net: Net_ID, v: Voltage) !void {
 }
 
 pub fn unset(self: *Validator, net: Net_ID) !void {
-    const idx = @intFromEnum(net);
-    if (idx >= @intFromEnum(Net_ID.p24v)) return error.CantDrivePower;
+    const idx = @backingInt(net);
+    if (idx >= @backingInt(Net_ID.p24v)) return error.CantDrivePower;
     if (idx >= self.nets.len) return error.InvalidNet;
     self.nets.items(.initial_circuit)[idx] = .none;
 }
@@ -261,13 +261,13 @@ pub fn set_with_impedance(self: *Validator, what: anytype, v: Voltage, r: f32) !
 }
 
 fn set_net_with_impedance(self: *Validator, net: Net_ID, v: Voltage, r: f32) !void {
-    const idx = @intFromEnum(net);
-    if (idx >= @intFromEnum(Net_ID.p24v)) return error.CantDrivePower;
+    const idx = @backingInt(net);
+    if (idx >= @backingInt(Net_ID.p24v)) return error.CantDrivePower;
     if (idx >= self.nets.len) return error.InvalidNet;
     self.nets.items(.initial_circuit)[idx] = .{ .simplex = .{
         .v = v.as_float(),
         .r = r,
-    }};
+    } };
 }
 
 pub fn set_logic(self: *Validator, net: Net_ID, high: bool, comptime levels: type) !void {
@@ -313,7 +313,7 @@ pub fn connect_buses(self: *Validator, a: anytype, b: anytype, r: f32) !void {
 }
 
 pub fn connect_net_to_power(self: *Validator, net: Net_ID, v: f32, r: f32) !void {
-    const net_idx = @intFromEnum(net);
+    const net_idx = @backingInt(net);
     if (net_idx >= self.nets.len) return error.InvalidNet;
 
     const net_circuits = self.nets.items(.circuit);
@@ -374,8 +374,8 @@ pub fn connect_nets(self: *Validator, a: Net_ID, b: Net_ID, r: f32) !void {
         return;
     }
 
-    const a_idx = @intFromEnum(a);
-    const b_idx = @intFromEnum(b);
+    const a_idx = @backingInt(a);
+    const b_idx = @backingInt(b);
 
     if (a_idx >= self.nets.len or b_idx >= self.nets.len) return error.InvalidNet;
 
@@ -406,7 +406,7 @@ pub fn connect_nets(self: *Validator, a: Net_ID, b: Net_ID, r: f32) !void {
 }
 
 fn ensure_net_circuit_complex(self: *Validator, net: Net_ID, circuit_index: usize, circuit: *Circuit.Complex) !void {
-    const net_idx = @intFromEnum(net);
+    const net_idx = @backingInt(net);
 
     const net_circuits = self.nets.items(.circuit);
     switch (net_circuits[net_idx]) {
@@ -513,7 +513,7 @@ pub fn read_net(self: *const Validator, net: Net_ID) Voltage {
         .p15v => .saturated,
         .p19v => .saturated,
         .p24v => .saturated,
-        else => self.nets.items(.v)[@intFromEnum(net)],
+        else => self.nets.items(.v)[@backingInt(net)],
     };
 }
 
@@ -585,7 +585,7 @@ fn step(self: *Validator, mode: Update_Mode) !u64 {
     for (self.parts.items(.part), self.parts.items(.func), self.parts.items(.state_offset)) |part, func, offset| {
         try func(part, self, &self.part_state.items[offset], mode);
     }
-    
+
     if (mode == .commit) return 0;
 
     const net_v = self.nets.items(.v);
@@ -621,7 +621,7 @@ fn step(self: *Validator, mode: Update_Mode) !u64 {
             else => return err,
         };
         for (circuit.nets.items) |net| {
-            net_v[@intFromEnum(net)] = solver.get_net_voltage(net);
+            net_v[@backingInt(net)] = solver.get_net_voltage(net);
         }
     }
 
@@ -823,7 +823,7 @@ fn expect_net_state(self: *const Validator, net: Net_ID, expected: bool, comptim
 }
 
 fn expect_net_valid_or_unconnected(self: *const Validator, net: Net_ID, comptime levels: type) !void {
-    if (net ==  .no_connect or net == .unset) return;
+    if (net == .no_connect or net == .unset) return;
     try self.expect_net_valid(net, levels);
 }
 

@@ -55,7 +55,7 @@ pub const Fab_Note = enum {
     castellated,
 };
 
-pub const Shape = union (enum) {
+pub const Shape = union(enum) {
     oval, // circle if w == h
     rect: struct {
         chamfer_amount: Ratio,
@@ -73,7 +73,7 @@ pub const Shape = union (enum) {
     pub const square: Shape = .{ .rect = .{
         .chamfer_amount = .{},
         .round_amount = .{},
-    }};
+    } };
 
     pub const default_rounded: Shape = .{ .rect = .{
         .round_amount = .{
@@ -85,7 +85,7 @@ pub const Shape = union (enum) {
         .top_right = .rounded,
         .bottom_left = .rounded,
         .bottom_right = .rounded,
-    }};
+    } };
 
     pub const default_chamfered: Shape = .{ .rect = .{
         .chamfer_amount = .{
@@ -97,7 +97,7 @@ pub const Shape = union (enum) {
         .top_right = .chamfered,
         .bottom_left = .chamfered,
         .bottom_right = .chamfered,
-    }};
+    } };
 };
 
 pub const Corner_Shape = enum {
@@ -162,7 +162,7 @@ pub fn read(r: *sx.Reader) !?Pad {
             self.shape = .{ .rect = .{
                 .chamfer_amount = .{ .numer = 0 },
                 .round_amount = .{ .numer = 0 },
-            }};
+            } };
         } else if (std.mem.eql(u8, shape, "roundrect")) {
             self.shape = .{ .rect = .{
                 .chamfer_amount = .{ .numer = 0 },
@@ -171,42 +171,38 @@ pub fn read(r: *sx.Reader) !?Pad {
                 .top_right = .rounded,
                 .bottom_left = .rounded,
                 .bottom_right = .rounded,
-            }};
+            } };
         } else if (std.mem.eql(u8, shape, "trapezoid")) {
             self.shape = .{ .trapezoid = .{
                 .ratio = .{},
                 .symetry_axis = .x,
-            }};
+            } };
         }
     }
-
 
     while (true) {
         if (try r.expression("size")) {
             self.w = .init_mm(try r.require_any_float(f64));
             self.h = if (try r.any_float(f64)) |h| .init_mm(h) else self.w;
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("rect_delta")) {
             const x = try r.require_any_float(f64);
             const y = try r.require_any_float(f64);
             const mag = if (x == 0) y else x;
             self.shape = .{ .trapezoid = if (x == 0) .{
-                    .symetry_axis = .y,
-                    .ratio = .{
-                        .numer = @intCast(Micron.init_mm(mag + self.w.mm(f64)).um),
-                        .denom = @intCast(self.w.um),
-                    },
-                } else .{
-                    .symetry_axis = .x,
-                    .ratio = .{
-                        .numer = @intCast(Micron.init_mm(mag + self.h.mm(f64)).um),
-                        .denom = @intCast(self.h.um),
-                    },
-                }
-            };
+                .symetry_axis = .y,
+                .ratio = .{
+                    .numer = @intCast(Micron.init_mm(mag + self.w.mm(f64)).um),
+                    .denom = @intCast(self.w.um),
+                },
+            } else .{
+                .symetry_axis = .x,
+                .ratio = .{
+                    .numer = @intCast(Micron.init_mm(mag + self.h.mm(f64)).um),
+                    .denom = @intCast(self.h.um),
+                },
+            } };
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("drill")) {
             if (try r.any_float(f64)) |w| {
                 self.hole_w = .init_mm(w);
@@ -219,39 +215,33 @@ pub fn read(r: *sx.Reader) !?Pad {
                 self.shape_offset = offset;
             }
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("property")) {
             if (try r.any_string()) |str| {
                 if (std.mem.startsWith(u8, str, "pad_prop_")) {
-                    const str_without_prefix = str["pad_prop_".len ..];
+                    const str_without_prefix = str["pad_prop_".len..];
                     if (std.meta.stringToEnum(Fab_Property, str_without_prefix)) |fab| {
                         self.fab_property = fab;
                     }
                 }
             }
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("layers")) {
             self.layers = .empty;
             while (try r.any_string()) |layer_spec| {
                 self.layers.setUnion(Layer.parse_set(layer_spec));
             }
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("remove_unused_layers")) {
             if (self.copper_layers != .connected_and_outside_only) {
                 self.copper_layers = .connected_only;
             }
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("keep_end_layers")) {
             self.copper_layers = .connected_and_outside_only;
             try r.ignore_remaining_expression();
-        
         } else if (try r.expression("die_length")) {
             self.pad_to_die_length = .init_mm(try r.require_any_float(f64));
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("roundrect_rratio")) {
             if (self.shape == .rect) {
                 self.shape.rect.round_amount = .{
@@ -260,7 +250,6 @@ pub fn read(r: *sx.Reader) !?Pad {
                 };
             }
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("chamfer_ratio")) {
             if (self.shape == .rect) {
                 self.shape.rect.chamfer_amount = .{
@@ -269,7 +258,6 @@ pub fn read(r: *sx.Reader) !?Pad {
                 };
             }
             try r.ignore_remaining_expression();
-
         } else if (try r.expression("chamfer")) {
             if (self.shape == .rect and self.shape.rect.top_left == .rounded) {
                 while (try r.any_string()) |str| {
@@ -285,7 +273,6 @@ pub fn read(r: *sx.Reader) !?Pad {
                 }
             }
             try r.ignore_remaining_expression();
-
         } else if (try Location.read(r, "at", &self.rotation)) |loc| {
             self.location = loc;
         } else if (try Uuid.read(r)) |id| {
@@ -303,12 +290,10 @@ pub fn read(r: *sx.Reader) !?Pad {
 
 pub fn write(self: Pad, w: *sx.Writer, b: *Board, p: Part, remap: *const Net_Remap, format_pin_name: Pin_Name_Format_Func) !void {
     try w.expression("pad");
-    try w.print_quoted("{f}", .{
-        Pin_Name_Formatter{
-            .pin = self.pin,
-            .impl = format_pin_name,
-        }
-    });
+    try w.print_quoted("{f}", .{Pin_Name_Formatter{
+        .pin = self.pin,
+        .impl = format_pin_name,
+    }});
     try w.string(switch (self.kind) {
         .through_hole => "thru_hole",
         .non_plated_through_hole => "np_thru_hole",
@@ -338,7 +323,7 @@ pub fn write(self: Pad, w: *sx.Writer, b: *Board, p: Part, remap: *const Net_Rem
     try w.float(self.h.mm(f64));
     try w.close();
 
-    switch(self.shape) {
+    switch (self.shape) {
         .trapezoid => |info| {
             try w.expression("rect_delta");
             try w.float(if (info.symetry_axis == .x) info.ratio.mul(self.h).mm(f64) - self.h.mm(f64) else 0);
@@ -365,7 +350,7 @@ pub fn write(self: Pad, w: *sx.Writer, b: *Board, p: Part, remap: *const Net_Rem
 
     if (self.fab_property != .none) {
         try w.expression("property");
-        try w.print_value("pad_prop_{t}", .{ self.fab_property });
+        try w.print_value("pad_prop_{t}", .{self.fab_property});
         try w.close();
     }
 
@@ -392,7 +377,7 @@ pub fn write(self: Pad, w: *sx.Writer, b: *Board, p: Part, remap: *const Net_Rem
         },
     }
 
-    switch(self.shape) {
+    switch (self.shape) {
         .rect => |info| {
             if (info.top_left != .normal or info.top_right != .normal or info.bottom_left != .normal or info.bottom_right != .normal) {
                 try w.expression("roundrect_rratio");

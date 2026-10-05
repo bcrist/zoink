@@ -6,7 +6,7 @@ pub const SMD_3200x2500um = struct {
     };
 
     pub fn has_pin(pin: Pin_ID) bool {
-        return switch (@intFromEnum(pin)) {
+        return switch (@backingInt(pin)) {
             1...4 => true,
             else => false,
         };
@@ -15,7 +15,7 @@ pub const SMD_3200x2500um = struct {
     pub const data: SMD_Crystal_Data = .{
         .package_name = "SMD Crystal (3.2mm x 2.5mm)",
         .overall = .{
-            .width  = .init_mm(3.2, 0.2),
+            .width = .init_mm(3.2, 0.2),
             .height = .init_mm(2.5, 0.2),
         },
         .max_z = .init_mm(0.7, 0.1),

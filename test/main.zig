@@ -1,4 +1,3 @@
-
 test Grid_Region {
     const empty: [7][14]bool = @splat(@splat(false));
 
@@ -19,7 +18,7 @@ test Grid_Region {
     Grid_Region.apply(.{ .ring = .{
         .dist_from_edges = 1,
         .thickness = 2,
-    }}, 14, 7, &data, false);
+    } }, 14, 7, &data, false);
     try expect_grid_eql(14, 7, data,
         \\oooooooooooooo
         \\o............o
@@ -35,7 +34,7 @@ test Grid_Region {
     Grid_Region.apply(.{ .ring = .{
         .dist_from_edges = 2,
         .thickness = 4,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\..............
         \\..............
@@ -51,7 +50,7 @@ test Grid_Region {
     Grid_Region.apply(.{ .ring = .{
         .dist_from_edges = 0,
         .thickness = 1,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\oooooooooooooo
         \\o............o
@@ -68,7 +67,7 @@ test Grid_Region {
         .dist_from_top = 1,
         .row_count = 3,
         .mirror = .none,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\..............
         \\oooooooooooooo
@@ -85,7 +84,7 @@ test Grid_Region {
         .dist_from_top = 0,
         .row_count = 2,
         .mirror = .ns,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\oooooooooooooo
         \\oooooooooooooo
@@ -102,7 +101,7 @@ test Grid_Region {
         .dist_from_left = 0,
         .col_count = 2,
         .mirror = .none,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\oo............
         \\oo............
@@ -119,7 +118,7 @@ test Grid_Region {
         .dist_from_left = 2,
         .col_count = 3,
         .mirror = .we,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\..ooo....ooo..
         \\..ooo....ooo..
@@ -135,7 +134,7 @@ test Grid_Region {
     Grid_Region.apply(.{ .corners = .{
         .width = 4,
         .height = 2,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\oooo......oooo
         \\oooo......oooo
@@ -152,7 +151,7 @@ test Grid_Region {
         .row = 2,
         .col = 5,
         .mirror = .none,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\..............
         \\..............
@@ -169,7 +168,7 @@ test Grid_Region {
         .row = 2,
         .col = 5,
         .mirror = .ns,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\..............
         \\..............
@@ -186,7 +185,7 @@ test Grid_Region {
         .row = 2,
         .col = 5,
         .mirror = .we,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\..............
         \\..............
@@ -203,7 +202,7 @@ test Grid_Region {
         .row = 2,
         .col = 5,
         .mirror = .both,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\..............
         \\..............
@@ -220,7 +219,7 @@ test Grid_Region {
         .row = 2,
         .col = 5,
         .mirror = .all,
-    }}, 14, 7, &data, true);
+    } }, 14, 7, &data, true);
     try expect_grid_eql(14, 7, data,
         \\..............
         \\..............

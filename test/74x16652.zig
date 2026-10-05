@@ -54,7 +54,7 @@ test {
     try v.update();
     try v.clock_high(AB_CLK, LVCMOS);
     try v.expect_state(B, 0xFACE, LVCMOS);
-    
+
     try v.unset_bus(A);
     try v.set(BA_OE, .gnd);
     try v.set(AB_REG, .p3v3);

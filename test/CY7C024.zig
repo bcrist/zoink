@@ -28,7 +28,6 @@ pub fn configure(b: *Board) !void {
             .n_oe = b.net("R~OE"),
         },
     });
-
 }
 
 test {

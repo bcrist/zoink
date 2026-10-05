@@ -57,8 +57,8 @@ test {
 
     try v.set_bus(A, 0, TTL);
     try v.set_bus(B, 0, TTL);
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.zeroes), TTL);
-    try v.set_bus(OS, @intFromEnum(L4C381.Operand_Select.a_b), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.zeroes), TTL);
+    try v.set_bus(OS, @backingInt(L4C381.Operand_Select.a_b), TTL);
     try v.set(Cin, .gnd);
     try v.set(FT_AB, .p5v);
     try v.set(FT_F, .p5v);
@@ -71,15 +71,15 @@ test {
 
     try v.set_bus(A, 0x1234, TTL);
     try v.set_bus(B, 0x4564, TTL);
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.zeroes), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.zeroes), TTL);
     try v.update();
     try v.expect_state(F, 0, TTL);
 
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.ones), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.ones), TTL);
     try v.update();
     try v.expect_state(F, 0xFFFF, TTL);
 
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.xor), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.xor), TTL);
     try v.update();
     try v.expect_state(F, 0x5750, TTL);
     for (0..1_000) |_| {
@@ -94,7 +94,7 @@ test {
 
     try v.set_bus(A, 0x1234, TTL);
     try v.set_bus(B, 0x4564, TTL);
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.@"or"), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.@"or"), TTL);
     try v.update();
     try v.expect_state(F, 0x5774, TTL);
     for (0..1_000) |_| {
@@ -109,7 +109,7 @@ test {
 
     try v.set_bus(A, 0x1234, TTL);
     try v.set_bus(B, 0x4564, TTL);
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.@"and"), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.@"and"), TTL);
     try v.update();
     try v.expect_state(F, 0x0024, TTL);
     for (0..1_000) |_| {
@@ -124,7 +124,7 @@ test {
 
     try v.set_bus(A, 0x1234, TTL);
     try v.set_bus(B, 0x4564, TTL);
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.add), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.add), TTL);
     try v.update();
     try v.expect_state(F, 0x1234 + 0x4564, TTL);
     for (0..1_000) |_| {
@@ -169,7 +169,7 @@ test {
     try v.set_bus(A, 0x1234, TTL);
     try v.set_bus(B, 0x4564, TTL);
     try v.set(Cin, .gnd);
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.nadd), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.nadd), TTL);
     try v.update();
     try v.expect_state(F, (0xFFFF ^ 0x1234) + 0x4564, TTL);
     for (0..1_000) |_| {
@@ -214,10 +214,10 @@ test {
     try v.set_bus(A, 0x1234, TTL);
     try v.set_bus(B, 0x4564, TTL);
     try v.set(Cin, .gnd);
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.sub), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.sub), TTL);
     try v.update();
     try v.expect_state(F, 0x1234 + (0xFFFF ^ 0x4564), TTL);
-        for (0..1_000) |_| {
+    for (0..1_000) |_| {
         const aa: u32 = rnd.int(u16);
         const bb: u32 = rnd.int(u16);
         const cin = rnd.boolean();
@@ -265,7 +265,7 @@ test {
     try v.set_bus(A, 1234, TTL);
     try v.set_bus(B, 4567, TTL);
     try v.set(Cin, .gnd);
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.ones), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.ones), TTL);
     try v.clock_low(CLK, TTL);
     try v.clock_high(CLK, TTL);
     try v.expect_state(F, 0xFFFF, TTL);
@@ -274,7 +274,7 @@ test {
     try v.set(nCEF, .p5v);
     try v.set_bus(A, 1111, TTL);
     try v.set_bus(B, 2222, TTL);
-    try v.set_bus(OP, @intFromEnum(L4C381.Operation.add), TTL);
+    try v.set_bus(OP, @backingInt(L4C381.Operation.add), TTL);
     try v.clock_low(CLK, TTL);
     try v.clock_high(CLK, TTL);
     try v.expect_state(F, 0xFFFF, TTL);

@@ -49,7 +49,7 @@ pub fn write(self: Uuid, w: *sx.Writer) !void {
     if (self.raw == 0) return;
 
     try w.expression("uuid");
-        try w.print_quoted("{x:0>8}-{x:0>4}-{x:0>4}-{x:0>4}-{x:0>12}", .{
+    try w.print_quoted("{x:0>8}-{x:0>4}-{x:0>4}-{x:0>4}-{x:0>12}", .{
         self.raw >> 96,
         @as(u16, @truncate(self.raw >> 80)),
         @as(u16, @truncate(self.raw >> 64)),

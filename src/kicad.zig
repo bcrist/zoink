@@ -30,11 +30,11 @@ pub fn default_format_pin_name(pin: Pin_ID, writer: *std.Io.Writer) std.Io.Write
     if (pin == .heatsink) {
         try writer.writeAll("EP");
     } else {
-        try writer.print("{}", .{ @intFromEnum(pin) });
+        try writer.print("{}", .{@backingInt(pin)});
     }
 }
 
-pub const Layer = enum (u8) {
+pub const Layer = enum(u8) {
     copper_front = 0,
     soldermask_front = 1,
     copper_back = 2,
@@ -134,7 +134,8 @@ pub const Layer = enum (u8) {
 
     pub fn is_copper(self: Layer) bool {
         return switch (self) {
-            .copper_front, .copper_back,
+            .copper_front,
+            .copper_back,
             .copper_internal_1,
             .copper_internal_2,
             .copper_internal_3,
@@ -297,7 +298,7 @@ pub const Layer = enum (u8) {
         } else if (std.mem.startsWith(u8, name, "*.")) {
             var buf: [64]u8 = undefined;
             var w = std.Io.Writer.fixed(&buf);
-            w.print("F.{s}", .{ name["*.".len ..] }) catch return .empty;
+            w.print("F.{s}", .{name["*.".len..]}) catch return .empty;
             if (from_kicad_name(w.buffered())) |layer| {
                 return .initMany(&.{ layer, layer.flip_sides() });
             } else {
@@ -306,7 +307,7 @@ pub const Layer = enum (u8) {
         } else if (std.mem.startsWith(u8, name, "F&B.")) {
             var buf: [64]u8 = undefined;
             var w = std.Io.Writer.fixed(&buf);
-            w.print("F.{s}", .{ name["F&B.".len ..] }) catch return .empty;
+            w.print("F.{s}", .{name["F&B.".len..]}) catch return .empty;
             if (from_kicad_name(w.buffered())) |layer| {
                 return .initMany(&.{ layer, layer.flip_sides() });
             } else {

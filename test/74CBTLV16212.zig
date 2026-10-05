@@ -29,42 +29,42 @@ test {
     try v.set_bus(XB, 0xF0F, LVCMOS);
     try v.set_with_impedance(YA, .p1v5, 10_000);
     try v.set_with_impedance(YB, .p1v5, 10_000);
-    try v.set_bus(SEL, @intFromEnum(SN74CBTLV16212G.Op.disconnect), LVCMOS);
+    try v.set_bus(SEL, @backingInt(SN74CBTLV16212G.Op.disconnect), LVCMOS);
     try v.update();
     try v.expect_approx(YA, .p1v5, 0.1);
     try v.expect_approx(YB, .p1v5, 0.1);
 
-    try v.set_bus(SEL, @intFromEnum(SN74CBTLV16212G.Op.passthrough), LVCMOS);
+    try v.set_bus(SEL, @backingInt(SN74CBTLV16212G.Op.passthrough), LVCMOS);
     try v.update();
     try v.expect_state(YA, 0x1F3, LVCMOS);
     try v.expect_state(YB, 0xF0F, LVCMOS);
 
-    try v.set_bus(SEL, @intFromEnum(SN74CBTLV16212G.Op.exchange), LVCMOS);
+    try v.set_bus(SEL, @backingInt(SN74CBTLV16212G.Op.exchange), LVCMOS);
     try v.update();
     try v.expect_state(YA, 0xF0F, LVCMOS);
     try v.expect_state(YB, 0x1F3, LVCMOS);
 
-    try v.set_bus(SEL, @intFromEnum(SN74CBTLV16212G.Op.l0_r1), LVCMOS);
+    try v.set_bus(SEL, @backingInt(SN74CBTLV16212G.Op.l0_r1), LVCMOS);
     try v.update();
     try v.expect_approx(YA, .p1v5, 0.1);
     try v.expect_state(YB, 0x1F3, LVCMOS);
 
-    try v.set_bus(SEL, @intFromEnum(SN74CBTLV16212G.Op.l1_r1), LVCMOS);
+    try v.set_bus(SEL, @backingInt(SN74CBTLV16212G.Op.l1_r1), LVCMOS);
     try v.update();
     try v.expect_approx(YA, .p1v5, 0.1);
     try v.expect_state(YB, 0xF0F, LVCMOS);
 
-    try v.set_bus(SEL, @intFromEnum(SN74CBTLV16212G.Op.l0_r0), LVCMOS);
+    try v.set_bus(SEL, @backingInt(SN74CBTLV16212G.Op.l0_r0), LVCMOS);
     try v.update();
     try v.expect_state(YA, 0x1F3, LVCMOS);
     try v.expect_approx(YB, .p1v5, 0.1);
 
-    try v.set_bus(SEL, @intFromEnum(SN74CBTLV16212G.Op.l1_r0), LVCMOS);
+    try v.set_bus(SEL, @backingInt(SN74CBTLV16212G.Op.l1_r0), LVCMOS);
     try v.update();
     try v.expect_state(YA, 0xF0F, LVCMOS);
     try v.expect_approx(YB, .p1v5, 0.1);
 
-    try v.set_bus(SEL, @intFromEnum(SN74CBTLV16212G.Op.disconnect_alt), LVCMOS);
+    try v.set_bus(SEL, @backingInt(SN74CBTLV16212G.Op.disconnect_alt), LVCMOS);
     try v.update();
     try v.expect_approx(YA, .p1v5, 0.1);
     try v.expect_approx(YB, .p1v5, 0.1);

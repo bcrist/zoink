@@ -16,7 +16,7 @@ pub fn JTAG(comptime vcc: Net_ID) type {
         sense: Net_ID = .gnd,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => .no_connect,
                 1 => self.tck,
                 2 => self.tdi,
@@ -49,7 +49,7 @@ pub fn SWD(comptime vcc: Net_ID) type {
         sense: Net_ID = .gnd,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => .no_connect,
                 1 => self.swclk,
                 2 => self.swdio,
@@ -81,7 +81,7 @@ pub fn Generic(comptime vcc: Net_ID) type {
         sense: Net_ID = .gnd,
 
         pub fn pin(self: @This(), pin_id: Pin_ID) Net_ID {
-            return switch (@intFromEnum(pin_id)) {
+            return switch (@backingInt(pin_id)) {
                 0 => .no_connect,
                 1 => self.p1,
                 2 => self.p2,
