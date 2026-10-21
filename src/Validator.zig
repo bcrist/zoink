@@ -3,8 +3,8 @@ allocator: std.mem.Allocator,
 solver_arena: std.heap.ArenaAllocator,
 nets: std.MultiArrayList(Net_State),
 parts: std.MultiArrayList(Part_Validator),
-part_state: std.ArrayListUnmanaged(u8),
-circuits: std.ArrayListUnmanaged(Circuit.Complex),
+part_state: std.ArrayList(u8),
+circuits: std.ArrayList(Circuit.Complex),
 next_free_circuit: usize,
 max_iterations: usize,
 hash_part_state: bool,
@@ -28,9 +28,9 @@ const Circuit = union(enum) {
     };
 
     pub const Complex = struct {
-        power: std.ArrayListUnmanaged(f32),
-        nets: std.ArrayListUnmanaged(Net_ID),
-        resistors: std.ArrayListUnmanaged(Resistor),
+        power: std.ArrayList(f32),
+        nets: std.ArrayList(Net_ID),
+        resistors: std.ArrayList(Resistor),
 
         pub const empty: Complex = .{
             .power = .empty,
@@ -179,7 +179,7 @@ pub fn init(allocator: std.mem.Allocator, b: *const Board, options: Init_Options
     }
 
     part_state_needed += 1;
-    var part_state = try std.ArrayListUnmanaged(u8).initCapacity(allocator, part_state_needed);
+    var part_state = try std.ArrayList(u8).initCapacity(allocator, part_state_needed);
     errdefer part_state.deinit(allocator);
     part_state.items.len = part_state_needed;
 

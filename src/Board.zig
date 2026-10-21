@@ -5,10 +5,10 @@ dimensions: ?Dimensions = null,
 
 bus_lookup: std.StringArrayHashMapUnmanaged([]const Net_ID) = .empty,
 net_lookup: std.StringArrayHashMapUnmanaged(Net_ID) = .empty,
-net_names: std.ArrayListUnmanaged([]const u8) = .empty,
+net_names: std.ArrayList([]const u8) = .empty,
 
 part_lookup: std.AutoArrayHashMapUnmanaged(u64, usize) = .empty,
-parts: std.ArrayListUnmanaged(Part) = .empty,
+parts: std.ArrayList(Part) = .empty,
 
 const Board = @This();
 

@@ -1,7 +1,7 @@
 .{
     .name = .zoink,
     .fingerprint = 0x701de67035fe779a,
-    .version = "0.3.2",
+    .version = "0.3.3",
     .minimum_zig_version = "0.18.0-dev.349+d924f83bf",
     .paths = .{
         "src/",
