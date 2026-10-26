@@ -151,13 +151,13 @@ test {
         for (1..16) |bit| {
             const mask = @as(u16, 1) << @as(u4, @intCast(bit));
             pp[bit] = (p & mask) != 0 and pp[bit - 1];
-            gg[bit] = (g & mask) != 0 or (p & mask) != 0 and gg[bit - 1];
-            cc[bit] = gg[bit - 1] or pp[bit - 1] and cin;
+            gg[bit] = (g & mask) != 0 or ((p & mask) != 0 and gg[bit - 1]);
+            cc[bit] = gg[bit - 1] or (pp[bit - 1] and cin);
         }
 
         const ng = !gg[15];
         const np = !pp[15];
-        const c16 = gg[15] or pp[15] and cin;
+        const c16 = gg[15] or (pp[15] and cin);
         const ovf = cc[15] != c16;
 
         try v.expect_state(Cout, c16, TTL);
@@ -196,13 +196,13 @@ test {
         for (1..16) |bit| {
             const mask = @as(u16, 1) << @as(u4, @intCast(bit));
             pp[bit] = (p & mask) != 0 and pp[bit - 1];
-            gg[bit] = (g & mask) != 0 or (p & mask) != 0 and gg[bit - 1];
-            cc[bit] = gg[bit - 1] or pp[bit - 1] and cin;
+            gg[bit] = (g & mask) != 0 or ((p & mask) != 0 and gg[bit - 1]);
+            cc[bit] = gg[bit - 1] or (pp[bit - 1] and cin);
         }
 
         const ng = !gg[15];
         const np = !pp[15];
-        const c16 = gg[15] or pp[15] and cin;
+        const c16 = gg[15] or (pp[15] and cin);
         const ovf = cc[15] != c16;
 
         try v.expect_state(Cout, c16, TTL);
@@ -241,13 +241,13 @@ test {
         for (1..16) |bit| {
             const mask = @as(u16, 1) << @as(u4, @intCast(bit));
             pp[bit] = (p & mask) != 0 and pp[bit - 1];
-            gg[bit] = (g & mask) != 0 or (p & mask) != 0 and gg[bit - 1];
-            cc[bit] = gg[bit - 1] or pp[bit - 1] and cin;
+            gg[bit] = (g & mask) != 0 or ((p & mask) != 0 and gg[bit - 1]);
+            cc[bit] = gg[bit - 1] or (pp[bit - 1] and cin);
         }
 
         const ng = !gg[15];
         const np = !pp[15];
-        const c16 = gg[15] or pp[15] and cin;
+        const c16 = gg[15] or (pp[15] and cin);
         const ovf = cc[15] != c16;
 
         try v.expect_state(Cout, c16, TTL);

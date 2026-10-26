@@ -145,7 +145,7 @@ pub const VTable = struct {
                     const decoupler_name = b.fmt("Decoupler: {s} #{}", .{ part_name, decoupler_number });
                     if (b.get_part(decoupler_name)) |existing| return existing;
 
-                    if (power_net.is_power() and net_ptr.* == .unset or power_net == .unset and net_ptr.is_power()) {
+                    if ((power_net.is_power() and net_ptr.* == .unset) or (power_net == .unset and net_ptr.is_power())) {
                         const internal_net = b.unique_net(if (power_net == .unset) "Vcc" else @tagName(power_net));
                         const external_net = if (power_net == .unset) net_ptr.* else power_net;
                         net_ptr.* = internal_net;

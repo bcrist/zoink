@@ -713,7 +713,7 @@ pub fn M16(comptime value: []const u8, comptime pwr: Net_ID, comptime Decoupler:
 
                     const new_clk_lsp = v.read_logic(self.clk_lsp, levels);
                     const new_clk_msp = v.read_logic(self.clk_msp, levels);
-                    if (new_clk_lsp and !state.clk_lsp or new_clk_msp and !state.clk_msp) {
+                    if ((new_clk_lsp and !state.clk_lsp) or (new_clk_msp and !state.clk_msp)) {
                         const product = self.compute_product(v, state.*);
                         if (new_clk_lsp and !state.clk_lsp) {
                             state.lsp = @truncate(product);
