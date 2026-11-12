@@ -580,7 +580,7 @@ pub fn CY7C0xx(
             right_busy: bool, // outputting in case it's assigned to .no_connect
             mem: [1 << addr_bits]Word,
 
-            const Word = packed struct {
+            const Word = bitpack struct {
                 lower: Byte,
                 upper: Byte,
             };
